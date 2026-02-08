@@ -87,7 +87,7 @@ google-cloud-core==2.5.0
     #   google-cloud-storage
 google-cloud-firestore==2.23.0
     # via firebase-admin
-google-cloud-storage==3.8.0
+google-cloud-storage==3.9.0
     # via firebase-admin
 google-crc32c==1.8.0
     # via
