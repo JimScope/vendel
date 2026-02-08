@@ -234,7 +234,7 @@ requests==2.32.5
     #   google-cloud-storage
     #   maileroo
     #   premailer
-rich==14.2.0
+rich==14.3.2
     # via
     #   rich-toolkit
     #   typer
