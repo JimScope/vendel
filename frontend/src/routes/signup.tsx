@@ -72,9 +72,12 @@ function SignUp() {
   const onSubmit = (data: FormData) => {
     if (signUpMutation.isPending) return
 
-    // exclude confirm_password from submission data
-    const { confirm_password: _confirm_password, ...submitData } = data
-    signUpMutation.mutate(submitData)
+    signUpMutation.mutate({
+      email: data.email,
+      password: data.password,
+      passwordConfirm: data.confirm_password,
+      full_name: data.full_name,
+    })
   }
 
   return (
