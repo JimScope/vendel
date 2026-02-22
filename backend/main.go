@@ -79,6 +79,9 @@ func main() {
 		}
 		e.Record.Set("api_key", apiKey)
 
+		// Unhide so the key is returned in the create response (only shown once)
+		e.Record.Unhide("api_key")
+
 		if err := e.Next(); err != nil {
 			return err
 		}
@@ -103,6 +106,10 @@ func main() {
 			return err
 		}
 		e.Record.Set("key", key)
+
+		// Unhide so the key is returned in the create response (only shown once)
+		e.Record.Unhide("key")
+
 		return e.Next()
 	})
 
