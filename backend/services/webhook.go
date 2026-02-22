@@ -43,7 +43,12 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 	// HMAC-SHA256 signature if secret is configured
 	secretKey := webhook.GetString("secret_key")
 	if secretKey != "" {
-		sig := generateHMAC(secretKey, string(payloadJSON))
+		decrypted, err := DecryptSecret(secretKey)
+		if err != nil {
+			log.Printf("WARNING: failed to decrypt webhook secret: %v", err)
+			decrypted = secretKey // fallback to raw value
+		}
+		sig := generateHMAC(decrypted, string(payloadJSON))
 		headers["X-Webhook-Signature"] = sig
 	}
 

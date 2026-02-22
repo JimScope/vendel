@@ -107,6 +107,28 @@ func main() {
 		return services.DecrementDeviceCount(e.App, userId)
 	})
 
+	// Webhooks: encrypt secret_key on create/update
+	app.OnRecordCreate("webhook_configs").BindFunc(func(e *core.RecordEvent) error {
+		if secret := e.Record.GetString("secret_key"); secret != "" {
+			encrypted, err := services.EncryptSecret(secret)
+			if err != nil {
+				return err
+			}
+			e.Record.Set("secret_key", encrypted)
+		}
+		return e.Next()
+	})
+	app.OnRecordUpdate("webhook_configs").BindFunc(func(e *core.RecordEvent) error {
+		if secret := e.Record.GetString("secret_key"); secret != "" {
+			encrypted, err := services.EncryptSecret(secret)
+			if err != nil {
+				return err
+			}
+			e.Record.Set("secret_key", encrypted)
+		}
+		return e.Next()
+	})
+
 	// API Keys: generate secure key on create
 	app.OnRecordCreate("api_keys").BindFunc(func(e *core.RecordEvent) error {
 		key, err := services.GenerateSecureKey("ek_", 32)

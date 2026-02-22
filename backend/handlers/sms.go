@@ -5,11 +5,15 @@ import (
 	"ender/services"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/pocketbase/pocketbase/core"
 )
 
 var e164Regex = regexp.MustCompile(`^\+[1-9]\d{1,14}$`)
+
+// Rate limiter for device endpoints: 60 requests per minute per IP.
+var deviceRateLimiter = middleware.NewRateLimiter(60, time.Minute)
 
 // RegisterSMSRoutes registers custom SMS API routes.
 func RegisterSMSRoutes(se *core.ServeEvent) {
@@ -73,6 +77,9 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 
 	// POST /api/sms/report — Device ACK callback (auth: device API key)
 	se.Router.POST("/api/sms/report", func(e *core.RequestEvent) error {
+		if err := deviceRateLimiter.Check(e); err != nil {
+			return err
+		}
 		device, err := middleware.AuthenticateDevice(e)
 		if err != nil {
 			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
@@ -101,6 +108,9 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 
 	// POST /api/sms/incoming — Incoming SMS from device (auth: device API key)
 	se.Router.POST("/api/sms/incoming", func(e *core.RequestEvent) error {
+		if err := deviceRateLimiter.Check(e); err != nil {
+			return err
+		}
 		device, err := middleware.AuthenticateDevice(e)
 		if err != nil {
 			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
@@ -129,6 +139,9 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 
 	// POST /api/sms/fcm-token — Update device FCM token (auth: device API key)
 	se.Router.POST("/api/sms/fcm-token", func(e *core.RequestEvent) error {
+		if err := deviceRateLimiter.Check(e); err != nil {
+			return err
+		}
 		device, err := middleware.AuthenticateDevice(e)
 		if err != nil {
 			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
