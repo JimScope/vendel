@@ -36,6 +36,9 @@ func main() {
 		// Seed first superuser from env vars
 		seedSuperuser(se.App)
 
+		// Configure OAuth2 providers from env vars
+		configureOAuth(se.App)
+
 		// ── Custom API routes ────────────────────────────────────────
 		handlers.RegisterSMSRoutes(se)
 		handlers.RegisterPlanRoutes(se)
@@ -121,6 +124,63 @@ func main() {
 	// ── Start ────────────────────────────────────────────────────────
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+// configureOAuth registers OAuth2 providers on the users collection from env vars.
+func configureOAuth(app core.App) {
+	users, err := app.FindCollectionByNameOrId("users")
+	if err != nil {
+		return
+	}
+
+	type providerConfig struct {
+		name         string
+		clientID     string
+		clientSecret string
+	}
+
+	providers := []providerConfig{
+		{"github", os.Getenv("GITHUB_CLIENT_ID"), os.Getenv("GITHUB_CLIENT_SECRET")},
+		{"google", os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET")},
+	}
+
+	changed := false
+	for _, p := range providers {
+		if p.clientID == "" || p.clientSecret == "" {
+			continue
+		}
+
+		existing, found := users.OAuth2.GetProviderConfig(p.name)
+		if found && existing.ClientId == p.clientID {
+			continue
+		}
+
+		if found {
+			// Update existing provider in slice
+			for i, ep := range users.OAuth2.Providers {
+				if ep.Name == p.name {
+					users.OAuth2.Providers[i].ClientId = p.clientID
+					users.OAuth2.Providers[i].ClientSecret = p.clientSecret
+					break
+				}
+			}
+		} else {
+			// Append new provider
+			users.OAuth2.Providers = append(users.OAuth2.Providers, core.OAuth2ProviderConfig{
+				Name:         p.name,
+				ClientId:     p.clientID,
+				ClientSecret: p.clientSecret,
+			})
+		}
+		changed = true
+		log.Printf("Configured OAuth2 provider: %s", p.name)
+	}
+
+	if changed {
+		if err := app.Save(users); err != nil {
+			log.Printf("WARNING: could not save OAuth2 config: %v", err)
+		}
 	}
 }
 
