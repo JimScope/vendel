@@ -15,14 +15,13 @@ func init() {
 		}
 		users.Fields.Add(
 			&core.TextField{Name: "full_name", Max: 255},
-			&core.BoolField{Name: "is_superuser"},
 		)
 		users.AuthRule = ptrStr("")
-		users.ListRule = ptrStr("id = @request.auth.id || @request.auth.is_superuser = true")
-		users.ViewRule = ptrStr("id = @request.auth.id || @request.auth.is_superuser = true")
+		users.ListRule = ptrStr("id = @request.auth.id")
+		users.ViewRule = ptrStr("id = @request.auth.id")
 		users.UpdateRule = ptrStr("id = @request.auth.id")
 		users.DeleteRule = ptrStr("id = @request.auth.id")
-		users.CreateRule = nil // only via API or superuser
+		users.CreateRule = ptrStr("") // allow public registration
 		users.OAuth2.Enabled = true
 		users.PasswordAuth.Enabled = true
 
@@ -33,6 +32,8 @@ func init() {
 		// ── 2. user_plans ────────────────────────────────────────────
 		plans := core.NewBaseCollection("user_plans")
 		plans.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.TextField{Name: "name", Required: true, Max: 100},
 			&core.NumberField{Name: "max_sms_per_month", Required: true},
 			&core.NumberField{Name: "max_devices", Required: true},
@@ -40,11 +41,11 @@ func init() {
 			&core.NumberField{Name: "price_yearly"},
 			&core.BoolField{Name: "is_public"},
 		)
-		plans.ListRule = ptrStr("is_public = true || @request.auth.is_superuser = true")
-		plans.ViewRule = ptrStr("is_public = true || @request.auth.is_superuser = true")
-		plans.CreateRule = ptrStr("@request.auth.is_superuser = true")
-		plans.UpdateRule = ptrStr("@request.auth.is_superuser = true")
-		plans.DeleteRule = ptrStr("@request.auth.is_superuser = true")
+		plans.ListRule = ptrStr("is_public = true")
+		plans.ViewRule = ptrStr("is_public = true")
+		plans.CreateRule = nil // superuser only
+		plans.UpdateRule = nil
+		plans.DeleteRule = nil
 		plans.AddIndex("idx_user_plans_name", true, "name", "")
 
 		if err := app.Save(plans); err != nil {
@@ -54,6 +55,8 @@ func init() {
 		// ── 3. user_quotas ───────────────────────────────────────────
 		quotas := core.NewBaseCollection("user_quotas")
 		quotas.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.NumberField{Name: "sms_sent_this_month"},
 			&core.NumberField{Name: "devices_registered"},
 			&core.AutodateField{Name: "last_reset_date", OnCreate: true},
@@ -70,11 +73,11 @@ func init() {
 				MaxSelect:    1,
 			},
 		)
-		quotas.ListRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		quotas.ViewRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		quotas.CreateRule = ptrStr("@request.auth.is_superuser = true")
-		quotas.UpdateRule = ptrStr("@request.auth.is_superuser = true")
-		quotas.DeleteRule = ptrStr("@request.auth.is_superuser = true")
+		quotas.ListRule = ptrStr("user = @request.auth.id")
+		quotas.ViewRule = ptrStr("user = @request.auth.id")
+		quotas.CreateRule = nil // superuser only
+		quotas.UpdateRule = nil
+		quotas.DeleteRule = nil
 		quotas.AddIndex("idx_user_quotas_user", true, "user", "")
 
 		if err := app.Save(quotas); err != nil {
@@ -84,6 +87,8 @@ func init() {
 		// ── 4. sms_devices ───────────────────────────────────────────
 		devices := core.NewBaseCollection("sms_devices")
 		devices.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.TextField{Name: "name", Required: true, Max: 255},
 			&core.TextField{Name: "phone_number", Required: true, Max: 20},
 			&core.TextField{Name: "api_key", Max: 255, Hidden: true},
@@ -95,8 +100,8 @@ func init() {
 				MaxSelect:    1,
 			},
 		)
-		devices.ListRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		devices.ViewRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
+		devices.ListRule = ptrStr("user = @request.auth.id")
+		devices.ViewRule = ptrStr("user = @request.auth.id")
 		devices.CreateRule = ptrStr("user = @request.auth.id")
 		devices.UpdateRule = ptrStr("user = @request.auth.id")
 		devices.DeleteRule = ptrStr("user = @request.auth.id")
@@ -109,6 +114,8 @@ func init() {
 		// ── 5. sms_messages ──────────────────────────────────────────
 		messages := core.NewBaseCollection("sms_messages")
 		messages.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.TextField{Name: "to", Max: 20},
 			&core.TextField{Name: "from_number", Max: 20},
 			&core.TextField{Name: "body", Required: true, Max: 1600},
@@ -139,11 +146,11 @@ func init() {
 			&core.DateField{Name: "sent_at"},
 			&core.DateField{Name: "delivered_at"},
 		)
-		messages.ListRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		messages.ViewRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		messages.CreateRule = ptrStr("@request.auth.is_superuser = true")
-		messages.UpdateRule = ptrStr("@request.auth.is_superuser = true")
-		messages.DeleteRule = ptrStr("@request.auth.is_superuser = true")
+		messages.ListRule = ptrStr("user = @request.auth.id")
+		messages.ViewRule = ptrStr("user = @request.auth.id")
+		messages.CreateRule = nil // superuser only (created via services)
+		messages.UpdateRule = nil
+		messages.DeleteRule = nil
 		messages.AddIndex("idx_sms_messages_batch_id", false, "batch_id", "")
 
 		if err := app.Save(messages); err != nil {
@@ -153,6 +160,8 @@ func init() {
 		// ── 6. webhook_configs ───────────────────────────────────────
 		webhooks := core.NewBaseCollection("webhook_configs")
 		webhooks.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.URLField{Name: "url", Required: true},
 			&core.TextField{Name: "secret_key", Max: 255, Hidden: true},
 			&core.JSONField{Name: "events", MaxSize: 500},
@@ -164,8 +173,8 @@ func init() {
 				MaxSelect:    1,
 			},
 		)
-		webhooks.ListRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		webhooks.ViewRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
+		webhooks.ListRule = ptrStr("user = @request.auth.id")
+		webhooks.ViewRule = ptrStr("user = @request.auth.id")
 		webhooks.CreateRule = ptrStr("user = @request.auth.id")
 		webhooks.UpdateRule = ptrStr("user = @request.auth.id")
 		webhooks.DeleteRule = ptrStr("user = @request.auth.id")
@@ -177,6 +186,8 @@ func init() {
 		// ── 7. api_keys ─────────────────────────────────────────────
 		apiKeys := core.NewBaseCollection("api_keys")
 		apiKeys.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.TextField{Name: "name", Required: true, Max: 255},
 			&core.TextField{Name: "key", Max: 255, Hidden: true},
 			&core.BoolField{Name: "is_active"},
@@ -188,8 +199,8 @@ func init() {
 			},
 			&core.DateField{Name: "last_used_at"},
 		)
-		apiKeys.ListRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		apiKeys.ViewRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
+		apiKeys.ListRule = ptrStr("user = @request.auth.id")
+		apiKeys.ViewRule = ptrStr("user = @request.auth.id")
 		apiKeys.CreateRule = ptrStr("user = @request.auth.id")
 		apiKeys.UpdateRule = ptrStr("user = @request.auth.id")
 		apiKeys.DeleteRule = ptrStr("user = @request.auth.id")
@@ -202,6 +213,8 @@ func init() {
 		// ── 8. subscriptions ─────────────────────────────────────────
 		subs := core.NewBaseCollection("subscriptions")
 		subs.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.RelationField{
 				Name:         "user",
 				CollectionId: users.Id,
@@ -235,11 +248,11 @@ func init() {
 			&core.BoolField{Name: "cancel_at_period_end"},
 			&core.DateField{Name: "canceled_at"},
 		)
-		subs.ListRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		subs.ViewRule = ptrStr("user = @request.auth.id || @request.auth.is_superuser = true")
-		subs.CreateRule = ptrStr("@request.auth.is_superuser = true")
-		subs.UpdateRule = ptrStr("@request.auth.is_superuser = true")
-		subs.DeleteRule = ptrStr("@request.auth.is_superuser = true")
+		subs.ListRule = ptrStr("user = @request.auth.id")
+		subs.ViewRule = ptrStr("user = @request.auth.id")
+		subs.CreateRule = nil // superuser only (created via services)
+		subs.UpdateRule = nil
+		subs.DeleteRule = nil
 		subs.AddIndex("idx_subscriptions_user", true, "user", "")
 
 		if err := app.Save(subs); err != nil {
@@ -249,6 +262,8 @@ func init() {
 		// ── 9. payments ──────────────────────────────────────────────
 		payments := core.NewBaseCollection("payments")
 		payments.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.RelationField{
 				Name:         "subscription",
 				CollectionId: subs.Id,
@@ -270,11 +285,11 @@ func init() {
 			&core.DateField{Name: "period_end"},
 			&core.DateField{Name: "paid_at"},
 		)
-		payments.ListRule = ptrStr("subscription.user = @request.auth.id || @request.auth.is_superuser = true")
-		payments.ViewRule = ptrStr("subscription.user = @request.auth.id || @request.auth.is_superuser = true")
-		payments.CreateRule = ptrStr("@request.auth.is_superuser = true")
-		payments.UpdateRule = ptrStr("@request.auth.is_superuser = true")
-		payments.DeleteRule = ptrStr("@request.auth.is_superuser = true")
+		payments.ListRule = ptrStr("subscription.user = @request.auth.id")
+		payments.ViewRule = ptrStr("subscription.user = @request.auth.id")
+		payments.CreateRule = nil // superuser only
+		payments.UpdateRule = nil
+		payments.DeleteRule = nil
 		payments.AddIndex("idx_payments_provider_tx", true, "provider_transaction_id", "provider_transaction_id != ''")
 
 		if err := app.Save(payments); err != nil {
@@ -284,15 +299,17 @@ func init() {
 		// ── 10. system_config ────────────────────────────────────────
 		sysConfig := core.NewBaseCollection("system_config")
 		sysConfig.Fields.Add(
+			&core.AutodateField{Name: "created", OnCreate: true},
+			&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 			&core.TextField{Name: "key", Required: true, Max: 100},
 			&core.TextField{Name: "value", Max: 1000},
 			&core.TextField{Name: "description", Max: 500},
 		)
-		sysConfig.ListRule = ptrStr("@request.auth.is_superuser = true")
-		sysConfig.ViewRule = ptrStr("@request.auth.is_superuser = true")
-		sysConfig.CreateRule = ptrStr("@request.auth.is_superuser = true")
-		sysConfig.UpdateRule = ptrStr("@request.auth.is_superuser = true")
-		sysConfig.DeleteRule = ptrStr("@request.auth.is_superuser = true")
+		sysConfig.ListRule = nil // superuser only
+		sysConfig.ViewRule = nil
+		sysConfig.CreateRule = nil
+		sysConfig.UpdateRule = nil
+		sysConfig.DeleteRule = nil
 		sysConfig.AddIndex("idx_system_config_key", true, "key", "")
 
 		if err := app.Save(sysConfig); err != nil {
