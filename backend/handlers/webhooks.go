@@ -34,12 +34,8 @@ func RegisterWebhookRoutes(se *core.ServeEvent) {
 }
 
 // RegisterUtilRoutes registers utility routes.
+// Note: /api/health is provided by PocketBase out of the box.
 func RegisterUtilRoutes(se *core.ServeEvent) {
-	// GET /api/health
-	se.Router.GET("/api/health", func(e *core.RequestEvent) error {
-		return e.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
-
 	// GET /api/utils/app-settings
 	se.Router.GET("/api/utils/app-settings", func(e *core.RequestEvent) error {
 		settings := services.GetAppSettings(e.App)
