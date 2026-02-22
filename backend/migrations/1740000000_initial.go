@@ -7,8 +7,12 @@ import (
 
 func init() {
 	m.Register(func(app core.App) error {
-		// ── 1. users (auth collection) ───────────────────────────────
-		users := core.NewAuthCollection("users")
+		// ── 1. users (auth collection — already exists, just customize) ─
+		users, err := app.FindCollectionByNameOrId("users")
+		if err != nil {
+			// Fallback: create if somehow missing
+			users = core.NewAuthCollection("users")
+		}
 		users.Fields.Add(
 			&core.TextField{Name: "full_name", Max: 255},
 			&core.BoolField{Name: "is_superuser"},
