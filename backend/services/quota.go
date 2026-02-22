@@ -75,12 +75,12 @@ func CheckSMSQuota(app core.App, userId string, count int) error {
 		return &QuotaError{
 			StatusCode: 429,
 			Body: map[string]any{
-				"error":      "quota_exceeded",
-				"message":    fmt.Sprintf("You can only send %d more SMS this month", available),
-				"quota_type": "sms_monthly",
-				"limit":      limit,
-				"used":       sent,
-				"available":  available,
+				"detail":      fmt.Sprintf("You can only send %d more SMS this month", available),
+				"error":       "quota_exceeded",
+				"quota_type":  "sms_monthly",
+				"limit":       limit,
+				"used":        sent,
+				"available":   available,
 				"upgrade_url": "/api/plans/upgrade",
 			},
 		}
@@ -108,8 +108,8 @@ func CheckDeviceQuota(app core.App, userId string) error {
 		return &QuotaError{
 			StatusCode: 429,
 			Body: map[string]any{
+				"detail":      fmt.Sprintf("Device limit of %d reached", limit),
 				"error":       "quota_exceeded",
-				"message":     fmt.Sprintf("Device limit of %d reached", limit),
 				"quota_type":  "devices",
 				"limit":       limit,
 				"used":        registered,

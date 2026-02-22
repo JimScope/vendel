@@ -396,6 +396,20 @@ func CheckRenewals(app core.App) error {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
+// FindPaymentByTransactionID looks up a payment record by provider_transaction_id.
+func FindPaymentByTransactionID(app core.App, transactionID string) (*core.Record, error) {
+	records, err := app.FindRecordsByFilter(
+		"payments",
+		"provider_transaction_id = {:txId}",
+		"", 1, 0,
+		dbx.Params{"txId": transactionID},
+	)
+	if err != nil || len(records) == 0 {
+		return nil, err
+	}
+	return records[0], nil
+}
+
 func findSubscriptionByUser(app core.App, userId string) (*core.Record, error) {
 	records, err := app.FindRecordsByFilter(
 		"subscriptions",

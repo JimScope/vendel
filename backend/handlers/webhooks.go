@@ -63,6 +63,22 @@ func processWebhookPayload(e *core.RequestEvent, providerName string, payload ma
 		return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Unrecognized webhook payload"})
 	}
 
+	// Idempotency: if the payment is already completed, return success without reprocessing
+	if event.TransactionID != "" {
+		existing, _ := services.FindPaymentByTransactionID(e.App, event.TransactionID)
+		if existing != nil && existing.GetString("status") == "completed" {
+			sub, _ := e.App.FindRecordById("subscriptions", existing.GetString("subscription"))
+			subId := ""
+			if sub != nil {
+				subId = sub.Id
+			}
+			return e.JSON(http.StatusOK, map[string]any{
+				"status":          "already_processed",
+				"subscription_id": subId,
+			})
+		}
+	}
+
 	switch event.EventType {
 	case payment.EventPaymentCompleted:
 		sub, err := services.CompleteInvoicePayment(e.App, event.RemoteID, event.TransactionID)

@@ -31,12 +31,21 @@ const useAuth = () => {
       try {
         const result = await pb.collection("users").authRefresh()
         return result.record
-      } catch {
-        pb.authStore.clear()
-        return null
+      } catch (err: any) {
+        // Only clear auth on 401 (invalid token), not on network errors
+        if (err?.status === 401) {
+          pb.authStore.clear()
+        }
+        throw err
       }
     },
     enabled: isLoggedIn(),
+    retry: (failureCount, error: any) => {
+      // Don't retry auth errors (401), only transient/network failures
+      if (error?.status === 401) return false
+      return failureCount < 2
+    },
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   })
 
   const signUpMutation = useMutation({

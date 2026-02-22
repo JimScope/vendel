@@ -94,16 +94,23 @@ func DispatchMessages(app core.App, messages []*core.Record, body string) {
 		// Chunk for FCM 4KB limit
 		chunks := chunkMessagesForFCM(refs, body)
 
-		// Dispatch each chunk in a goroutine with staggered delay
+		// Dispatch each chunk in a goroutine with staggered delay and timeout
 		for i, chunk := range chunks {
 			delay := time.Duration(i*FCMChunkDelaySeconds) * time.Second
 			go func(token string, chunk []MessageRef, body string, delay time.Duration) {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second+delay)
+				defer cancel()
+
 				if delay > 0 {
-					time.Sleep(delay)
+					select {
+					case <-time.After(delay):
+					case <-ctx.Done():
+						log.Printf("ERROR: FCM dispatch timed out during delay for token %s", token[:20])
+						return
+					}
 				}
 				if err := sendFCMNotification(token, chunk, body); err != nil {
 					log.Printf("ERROR: FCM send failed for token %s: %v", token[:20], err)
-					// Mark messages as failed
 					for _, ref := range chunk {
 						markMessageFailed(app, ref.MessageID, err.Error())
 					}
