@@ -122,38 +122,47 @@ func CheckDeviceQuota(app core.App, userId string) error {
 	return nil
 }
 
-// IncrementSMSCount increases the monthly SMS counter.
+// IncrementSMSCount atomically increases the monthly SMS counter.
 func IncrementSMSCount(app core.App, userId string, count int) error {
+	// Ensure quota record exists
 	quota, err := getOrCreateQuota(app, userId)
 	if err != nil {
 		return err
 	}
-	quota.Set("sms_sent_this_month", quota.GetInt("sms_sent_this_month")+count)
-	return app.Save(quota)
+
+	_, err = app.DB().
+		NewQuery("UPDATE user_quotas SET sms_sent_this_month = sms_sent_this_month + {:count} WHERE id = {:id}").
+		Bind(dbx.Params{"count": count, "id": quota.Id}).
+		Execute()
+	return err
 }
 
-// IncrementDeviceCount increases the device counter.
+// IncrementDeviceCount atomically increases the device counter.
 func IncrementDeviceCount(app core.App, userId string) error {
 	quota, err := getOrCreateQuota(app, userId)
 	if err != nil {
 		return err
 	}
-	quota.Set("devices_registered", quota.GetInt("devices_registered")+1)
-	return app.Save(quota)
+
+	_, err = app.DB().
+		NewQuery("UPDATE user_quotas SET devices_registered = devices_registered + 1 WHERE id = {:id}").
+		Bind(dbx.Params{"id": quota.Id}).
+		Execute()
+	return err
 }
 
-// DecrementDeviceCount decreases the device counter.
+// DecrementDeviceCount atomically decreases the device counter.
 func DecrementDeviceCount(app core.App, userId string) error {
 	quota, err := getOrCreateQuota(app, userId)
 	if err != nil {
 		return err
 	}
-	current := quota.GetInt("devices_registered")
-	if current > 0 {
-		quota.Set("devices_registered", current-1)
-		return app.Save(quota)
-	}
-	return nil
+
+	_, err = app.DB().
+		NewQuery("UPDATE user_quotas SET devices_registered = MAX(devices_registered - 1, 0) WHERE id = {:id}").
+		Bind(dbx.Params{"id": quota.Id}).
+		Execute()
+	return err
 }
 
 // CreateDefaultQuota creates a quota record for a new user with the free plan.

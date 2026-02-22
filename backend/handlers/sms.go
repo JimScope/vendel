@@ -4,9 +4,12 @@ import (
 	"ender/middleware"
 	"ender/services"
 	"net/http"
+	"regexp"
 
 	"github.com/pocketbase/pocketbase/core"
 )
+
+var e164Regex = regexp.MustCompile(`^\+[1-9]\d{1,14}$`)
 
 // RegisterSMSRoutes registers custom SMS API routes.
 func RegisterSMSRoutes(se *core.ServeEvent) {
@@ -29,8 +32,16 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		if len(body.Recipients) == 0 {
 			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "At least one recipient required"})
 		}
+		for _, r := range body.Recipients {
+			if !e164Regex.MatchString(r) {
+				return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid phone number: " + r + ". Must be E.164 format (e.g. +1234567890)"})
+			}
+		}
 		if body.Body == "" {
 			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Message body required"})
+		}
+		if len(body.Body) > 1600 {
+			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Message body exceeds 1600 character limit"})
 		}
 
 		messages, err := services.SendSMS(e.App, userId, body.Recipients, body.Body, body.DeviceID)
