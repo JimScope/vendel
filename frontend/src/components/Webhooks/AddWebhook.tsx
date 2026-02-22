@@ -58,7 +58,7 @@ const AddWebhook = () => {
 
   const createWebhookMutation = useCreateWebhook()
 
-  const onSubmit = (data: Record<string, any>) => {
+  const onSubmit = (data: FormData) => {
     createWebhookMutation.mutate(data, {
       onSuccess: () => {
         form.reset()

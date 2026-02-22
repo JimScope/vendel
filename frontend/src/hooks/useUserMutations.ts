@@ -9,6 +9,7 @@ interface UserCreate {
   passwordConfirm: string
   full_name?: string
   is_superuser?: boolean
+  is_active?: boolean
 }
 
 interface UserUpdate {

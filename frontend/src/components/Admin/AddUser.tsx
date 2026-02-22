@@ -68,13 +68,23 @@ const AddUser = () => {
 
   const createUserMutation = useCreateUser()
 
-  const onSubmit = (data: Record<string, any>) => {
-    createUserMutation.mutate(data, {
-      onSuccess: () => {
-        form.reset()
-        setIsOpen(false)
+  const onSubmit = (data: FormData) => {
+    createUserMutation.mutate(
+      {
+        email: data.email,
+        password: data.password,
+        passwordConfirm: data.confirm_password,
+        full_name: data.full_name,
+        is_superuser: data.is_superuser,
+        is_active: data.is_active,
       },
-    })
+      {
+        onSuccess: () => {
+          form.reset()
+          setIsOpen(false)
+        },
+      },
+    )
   }
 
   return (

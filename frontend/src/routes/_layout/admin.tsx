@@ -26,12 +26,10 @@ function UsersTableContent() {
   const { user: currentUser } = useAuth()
   const { data: users } = useUserListSuspense()
 
-  const tableData: UserTableData[] = (users?.data ?? []).map(
-    (user: Record<string, any>) => ({
-      ...user,
-      isCurrentUser: currentUser?.id === user.id,
-    }),
-  )
+  const tableData = (users?.data ?? []).map((user) => ({
+    ...user,
+    isCurrentUser: currentUser?.id === user.id,
+  })) as unknown as UserTableData[]
 
   return <DataTable columns={columns} data={tableData} />
 }

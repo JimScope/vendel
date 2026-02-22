@@ -63,7 +63,7 @@ const AddDevice = () => {
 
   const createDeviceMutation = useCreateDevice()
 
-  const onSubmit = (data: Record<string, any>) => {
+  const onSubmit = (data: FormData) => {
     createDeviceMutation.mutate(data, {
       onSuccess: (response) => {
         setApiKey(response?.api_key ?? null)
