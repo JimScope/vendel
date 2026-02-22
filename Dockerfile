@@ -26,9 +26,15 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tzdata
 
+ADD https://github.com/benbjohnson/litestream/releases/download/v0.3.13/litestream-v0.3.13-linux-amd64.tar.gz /tmp/litestream.tar.gz
+RUN tar -xzf /tmp/litestream.tar.gz -C /usr/local/bin/ && rm /tmp/litestream.tar.gz
+
 COPY --from=go-builder /app/ender /app/ender
 COPY --from=frontend-builder /app/frontend/dist /app/pb_public
+COPY litestream.yml /app/litestream.yml
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8090
 
-CMD ["/app/ender", "serve", "--http=0.0.0.0:8090"]
+ENTRYPOINT ["/app/entrypoint.sh"]
