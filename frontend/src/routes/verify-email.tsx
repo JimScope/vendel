@@ -1,13 +1,13 @@
-import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 import { CheckCircle, Loader2, XCircle } from "lucide-react"
-import { useEffect, useState } from "react"
-import pb from "@/lib/pocketbase"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
+import pb from "@/lib/pocketbase"
 
 export const Route = createFileRoute("/verify-email")({
   component: VerifyEmail,
+  pendingComponent: VerifyEmailPending,
+  pendingMs: 0,
   validateSearch: (search: Record<string, unknown>) => ({
     token: (search.token as string) || "",
   }),
@@ -18,53 +18,48 @@ export const Route = createFileRoute("/verify-email")({
       },
     ],
   }),
+  loaderDeps: ({ search }) => ({ token: search.token }),
+  loader: async ({ deps: { token } }) => {
+    if (!token) {
+      return {
+        status: "error" as const,
+        errorMessage: "No verification token provided",
+      }
+    }
+    try {
+      await pb.collection("users").confirmVerification(token)
+      return { status: "success" as const, errorMessage: "" }
+    } catch (error: any) {
+      return {
+        status: "error" as const,
+        errorMessage:
+          error?.response?.data?.detail ||
+          "Failed to verify email. The link may be invalid or expired.",
+      }
+    }
+  },
 })
 
-function VerifyEmail() {
-  const { token } = Route.useSearch()
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading",
+function VerifyEmailPending() {
+  return (
+    <AuthLayout>
+      <div className="flex flex-col items-center gap-6 text-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <h1 className="text-2xl">Verifying your email...</h1>
+        <p className="text-muted-foreground">
+          Please wait while we verify your email address.
+        </p>
+      </div>
+    </AuthLayout>
   )
-  const [errorMessage, setErrorMessage] = useState("")
+}
 
-  const verifyMutation = useMutation({
-    mutationFn: async (token: string) => {
-      return await pb.collection("users").confirmVerification(token)
-    },
-    onSuccess: () => {
-      setStatus("success")
-    },
-    onError: (error: any) => {
-      setStatus("error")
-      setErrorMessage(
-        error?.response?.data?.detail ||
-          "Failed to verify email. The link may be invalid or expired.",
-      )
-    },
-  })
-
-  useEffect(() => {
-    if (token) {
-      verifyMutation.mutate(token)
-    } else {
-      setStatus("error")
-      setErrorMessage("No verification token provided")
-    }
-  }, [token, verifyMutation.mutate])
+function VerifyEmail() {
+  const { status, errorMessage } = Route.useLoaderData()
 
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-6 text-center">
-        {status === "loading" && (
-          <>
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-2xl">Verifying your email...</h1>
-            <p className="text-muted-foreground">
-              Please wait while we verify your email address.
-            </p>
-          </>
-        )}
-
         {status === "success" && (
           <>
             <CheckCircle className="h-16 w-16 text-green-500" />

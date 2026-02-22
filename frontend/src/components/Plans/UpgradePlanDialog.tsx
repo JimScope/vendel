@@ -1,8 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Check, ExternalLink } from "lucide-react"
 import { useState } from "react"
-
-import pb from "@/lib/pocketbase"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -25,6 +23,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { Skeleton } from "@/components/ui/skeleton"
 import useCustomToast from "@/hooks/useCustomToast"
 import { usePlanList } from "@/hooks/usePlanList"
+import pb from "@/lib/pocketbase"
 
 interface UpgradePlanDialogProps {
   currentPlan?: string
@@ -192,8 +191,8 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
           </div>
         ) : isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 py-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full" />
+            {["a", "b", "c", "d"].map((id) => (
+              <Skeleton key={id} className="h-48 w-full" />
             ))}
           </div>
         ) : (

@@ -1,8 +1,5 @@
-import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
-
-import pb from "@/lib/pocketbase"
+import { useActionState, useEffect } from "react"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 
 export const Route = createFileRoute("/oauth-callback/$provider")({
   component: OAuthCallback,
@@ -36,28 +34,28 @@ function OAuthCallback() {
   const navigate = useNavigate()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  const [password, setPassword] = useState("")
-
-  // Handle account linking
-  const linkMutation = useMutation({
-    mutationFn: async () => {
-      const response = await pb.send(`/api/oauth/${provider}/link`, {
-        method: "POST",
-        body: { email: existing_email, password },
-      })
-      return response
-    },
-    onSuccess: (response) => {
-      if (response?.access_token) {
-        localStorage.setItem("access_token", response.access_token)
-        showSuccessToast(`Your ${provider} account has been linked.`)
-        navigate({ to: "/" })
+  const [, linkAction, isLinking] = useActionState(
+    async (_prev: string | null, formData: FormData) => {
+      try {
+        const pwd = formData.get("password") as string
+        const response = await pb.send(`/api/oauth/${provider}/link`, {
+          method: "POST",
+          body: { email: existing_email, password: pwd },
+        })
+        if (response?.access_token) {
+          localStorage.setItem("access_token", response.access_token)
+          showSuccessToast(`Your ${provider} account has been linked.`)
+          navigate({ to: "/" })
+        }
+        return null
+      } catch (err: any) {
+        const msg = err.message || "Failed to link account"
+        showErrorToast(msg)
+        return msg
       }
     },
-    onError: (err: Error) => {
-      showErrorToast(err.message || "Failed to link account")
-    },
-  })
+    null,
+  )
 
   useEffect(() => {
     // Handle OAuth error
@@ -100,27 +98,20 @@ function OAuthCallback() {
             </p>
           </div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              linkMutation.mutate()
-            }}
-            className="grid gap-4"
-          >
+          <form action={linkAction} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
                 minLength={8}
               />
             </div>
 
-            <LoadingButton type="submit" loading={linkMutation.isPending}>
+            <LoadingButton type="submit" loading={isLinking}>
               Link Account
             </LoadingButton>
 
