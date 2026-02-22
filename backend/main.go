@@ -43,6 +43,9 @@ func main() {
 		// Configure SMTP from env vars
 		configureSMTP(se.App)
 
+		// Configure rate limits
+		configureRateLimits(se.App)
+
 		// ── Custom API routes ────────────────────────────────────────
 		handlers.RegisterSMSRoutes(se)
 		handlers.RegisterPlanRoutes(se)
@@ -271,6 +274,31 @@ func configureSMTP(app core.App) {
 		log.Printf("WARNING: could not save SMTP config: %v", err)
 	} else {
 		log.Printf("Configured SMTP: %s:%d", host, port)
+	}
+}
+
+// configureRateLimits enables PocketBase's built-in rate limiter with rules
+// for device API endpoints and general API access.
+func configureRateLimits(app core.App) {
+	settings := app.Settings()
+
+	if settings.RateLimits.Enabled {
+		return // already configured (e.g. via admin UI)
+	}
+
+	settings.RateLimits.Enabled = true
+	settings.RateLimits.Rules = []core.RateLimitRule{
+		{Label: "POST /api/sms/report", MaxRequests: 60, Duration: 60},
+		{Label: "POST /api/sms/incoming", MaxRequests: 60, Duration: 60},
+		{Label: "POST /api/sms/fcm-token", MaxRequests: 10, Duration: 60},
+		{Label: "POST /api/sms/send", MaxRequests: 30, Duration: 60},
+		{Label: "/api/", MaxRequests: 300, Duration: 60},
+	}
+
+	if err := app.Save(settings); err != nil {
+		log.Printf("WARNING: could not save rate limit config: %v", err)
+	} else {
+		log.Printf("Configured rate limits")
 	}
 }
 
