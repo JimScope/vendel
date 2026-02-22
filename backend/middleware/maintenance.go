@@ -20,13 +20,12 @@ func MaintenanceMiddleware(app core.App) func(e *core.RequestEvent) error {
 		}
 
 		// Check maintenance mode in system_config
-		records, err := app.FindRecordsByFilter(
+		record, err := app.FindFirstRecordByFilter(
 			"system_config",
 			"key = 'maintenance_mode'",
-			"", 1, 0,
 		)
-		if err == nil && len(records) > 0 {
-			if strings.ToLower(records[0].GetString("value")) == "true" {
+		if err == nil && record != nil {
+			if strings.ToLower(record.GetString("value")) == "true" {
 				return e.JSON(http.StatusServiceUnavailable, map[string]string{
 					"detail": "Service is under maintenance. Please try again later.",
 				})

@@ -81,13 +81,7 @@ func main() {
 		}
 
 		// Generate secure API key
-		apiKey, err := services.GenerateSecureKey("dk_", 32)
-		if err != nil {
-			// Rollback the increment
-			_ = services.DecrementDeviceCount(e.App, userId)
-			return err
-		}
-		e.Record.Set("api_key", apiKey)
+		e.Record.Set("api_key", services.GenerateSecureKey("dk_", 32))
 
 		// Unhide so the key is returned in the create response (only shown once)
 		e.Record.Unhide("api_key")
@@ -134,11 +128,7 @@ func main() {
 
 	// API Keys: generate secure key on create
 	app.OnRecordCreate("api_keys").BindFunc(func(e *core.RecordEvent) error {
-		key, err := services.GenerateSecureKey("ek_", 32)
-		if err != nil {
-			return err
-		}
-		e.Record.Set("key", key)
+		e.Record.Set("key", services.GenerateSecureKey("ek_", 32))
 
 		// Unhide so the key is returned in the create response (only shown once)
 		e.Record.Unhide("key")

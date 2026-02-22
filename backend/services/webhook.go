@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -54,9 +55,9 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 
 	// Get timeout from system config (capped at 30s)
 	timeout := 10
-	configs, err := app.FindRecordsByFilter("system_config", "key = 'webhook_timeout'", "", 1, 0)
-	if err == nil && len(configs) > 0 {
-		if t := configs[0].GetInt("value"); t > 0 {
+	config, err := app.FindFirstRecordByFilter("system_config", "key = 'webhook_timeout'")
+	if err == nil && config != nil {
+		if t := config.GetInt("value"); t > 0 {
 			timeout = t
 		}
 	}
@@ -141,16 +142,15 @@ func marshalSorted(m map[string]any) ([]byte, error) {
 
 // GetSystemConfigValue reads a value from the system_config collection.
 func GetSystemConfigValue(app core.App, key string) string {
-	records, err := app.FindRecordsByFilter(
+	record, err := app.FindFirstRecordByFilter(
 		"system_config",
 		"key = {:key}",
-		"", 1, 0,
-		map[string]any{"key": key},
+		dbx.Params{"key": key},
 	)
-	if err != nil || len(records) == 0 {
+	if err != nil || record == nil {
 		return ""
 	}
-	return records[0].GetString("value")
+	return record.GetString("value")
 }
 
 // GetAppSettings returns public app settings.

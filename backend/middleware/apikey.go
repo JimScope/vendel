@@ -17,17 +17,16 @@ func AuthenticateDevice(e *core.RequestEvent) (*core.Record, error) {
 		return nil, fmt.Errorf("missing X-API-Key header")
 	}
 
-	records, err := e.App.FindRecordsByFilter(
+	record, err := e.App.FindFirstRecordByFilter(
 		"sms_devices",
 		"api_key = {:key}",
-		"", 1, 0,
 		dbx.Params{"key": apiKey},
 	)
-	if err != nil || len(records) == 0 {
+	if err != nil {
 		return nil, fmt.Errorf("invalid device API key")
 	}
 
-	return records[0], nil
+	return record, nil
 }
 
 // AuthenticateIntegrationAPIKey validates the X-API-Key header against api_keys.
@@ -38,17 +37,14 @@ func AuthenticateIntegrationAPIKey(e *core.RequestEvent) (string, error) {
 		return "", fmt.Errorf("missing X-API-Key header")
 	}
 
-	records, err := e.App.FindRecordsByFilter(
+	record, err := e.App.FindFirstRecordByFilter(
 		"api_keys",
 		"key = {:key} && is_active = true",
-		"", 1, 0,
 		dbx.Params{"key": apiKey},
 	)
-	if err != nil || len(records) == 0 {
+	if err != nil {
 		return "", fmt.Errorf("invalid integration API key")
 	}
-
-	record := records[0]
 
 	// Update last_used_at in background
 	go func() {

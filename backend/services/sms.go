@@ -49,7 +49,7 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 	// Generate batch ID for bulk sends
 	batchId := ""
 	if count > 1 {
-		batchId = generateID()
+		batchId = core.GenerateDefaultRandomId()
 	}
 
 	// Create message records
@@ -192,8 +192,4 @@ func RetryFailedMessages(app core.App) error {
 
 	log.Printf("Retried %d failed SMS messages", retried)
 	return nil
-}
-
-func generateID() string {
-	return core.GenerateDefaultRandomId()
 }

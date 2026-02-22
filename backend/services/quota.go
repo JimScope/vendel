@@ -1,8 +1,6 @@
 package services
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,6 +9,7 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/security"
 )
 
 // QuotaError is returned when a quota limit is exceeded.
@@ -193,14 +192,13 @@ func ResetMonthlyQuotas(app core.App) error {
 
 // getOrCreateQuota finds or creates a quota record for the user.
 func getOrCreateQuota(app core.App, userId string) (*core.Record, error) {
-	records, err := app.FindRecordsByFilter(
+	record, err := app.FindFirstRecordByFilter(
 		"user_quotas",
 		"user = {:userId}",
-		"", 1, 0,
 		dbx.Params{"userId": userId},
 	)
-	if err == nil && len(records) > 0 {
-		return records[0], nil
+	if err == nil && record != nil {
+		return record, nil
 	}
 
 	// Find or create free plan
@@ -229,13 +227,12 @@ func getOrCreateQuota(app core.App, userId string) (*core.Record, error) {
 }
 
 func findFreePlan(app core.App) (*core.Record, error) {
-	records, err := app.FindRecordsByFilter(
+	record, err := app.FindFirstRecordByFilter(
 		"user_plans",
 		"name ~ 'free'",
-		"", 1, 0,
 	)
-	if err == nil && len(records) > 0 {
-		return records[0], nil
+	if err == nil && record != nil {
+		return record, nil
 	}
 
 	// Create free plan if it doesn't exist
@@ -260,13 +257,8 @@ func findFreePlan(app core.App) (*core.Record, error) {
 }
 
 // GenerateSecureKey generates a cryptographically secure random key with a prefix.
-func GenerateSecureKey(prefix string, length int) (string, error) {
-	b := make([]byte, length)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	encoded := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(b)
-	return prefix + encoded, nil
+func GenerateSecureKey(prefix string, length int) string {
+	return prefix + security.RandomString(length)
 }
 
 // containsEvent checks if a JSON array string contains a specific event.

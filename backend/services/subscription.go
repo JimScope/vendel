@@ -401,29 +401,19 @@ func CheckRenewals(app core.App) error {
 
 // FindPaymentByTransactionID looks up a payment record by provider_transaction_id.
 func FindPaymentByTransactionID(app core.App, transactionID string) (*core.Record, error) {
-	records, err := app.FindRecordsByFilter(
+	return app.FindFirstRecordByFilter(
 		"payments",
 		"provider_transaction_id = {:txId}",
-		"", 1, 0,
 		dbx.Params{"txId": transactionID},
 	)
-	if err != nil || len(records) == 0 {
-		return nil, err
-	}
-	return records[0], nil
 }
 
 func findSubscriptionByUser(app core.App, userId string) (*core.Record, error) {
-	records, err := app.FindRecordsByFilter(
+	return app.FindFirstRecordByFilter(
 		"subscriptions",
 		"user = {:userId}",
-		"", 1, 0,
 		dbx.Params{"userId": userId},
 	)
-	if err != nil || len(records) == 0 {
-		return nil, err
-	}
-	return records[0], nil
 }
 
 func createSubscriptionRecord(
@@ -478,17 +468,14 @@ func createPaymentRecord(
 }
 
 func updateUserQuota(app core.App, userId, planId string) error {
-	records, err := app.FindRecordsByFilter(
+	quota, err := app.FindFirstRecordByFilter(
 		"user_quotas",
 		"user = {:userId}",
-		"", 1, 0,
 		dbx.Params{"userId": userId},
 	)
-	if err != nil || len(records) == 0 {
+	if err != nil || quota == nil {
 		return nil
 	}
-
-	quota := records[0]
 	quota.Set("plan", planId)
 	quota.Set("sms_sent_this_month", 0)
 	quota.Set("last_reset_date", time.Now().UTC().Format(time.RFC3339))
