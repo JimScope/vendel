@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type { WebhookConfigCreate } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -59,7 +58,7 @@ const AddWebhook = () => {
 
   const createWebhookMutation = useCreateWebhook()
 
-  const onSubmit = (data: WebhookConfigCreate) => {
+  const onSubmit = (data: Record<string, any>) => {
     createWebhookMutation.mutate(data, {
       onSuccess: () => {
         form.reset()

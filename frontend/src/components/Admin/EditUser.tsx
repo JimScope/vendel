@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type { UserPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -50,7 +49,7 @@ const formSchema = z
 type FormData = z.infer<typeof formSchema>
 
 interface EditUserProps {
-  user: UserPublic
+  user: Record<string, any>
   onSuccess: () => void
 }
 

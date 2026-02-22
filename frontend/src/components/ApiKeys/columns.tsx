@@ -1,6 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
-import type { ApiKeyPublic } from "@/client"
 import { cn } from "@/lib/utils"
 import { ApiKeyActionsMenu } from "./ApiKeyActionsMenu"
 
@@ -8,7 +7,7 @@ function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString()
 }
 
-export const columns: ColumnDef<ApiKeyPublic>[] = [
+export const columns: ColumnDef<Record<string, any>>[] = [
   {
     accessorKey: "name",
     header: "Name",

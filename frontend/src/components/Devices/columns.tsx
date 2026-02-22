@@ -1,10 +1,9 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
-import type { SmsDevicePublic } from "@/client"
 import { DeviceActionsMenu } from "@/components/Devices/DeviceActionsMenu"
 import { formatDate } from "@/lib/utils"
 
-export const columns: ColumnDef<SmsDevicePublic>[] = [
+export const columns: ColumnDef<Record<string, any>>[] = [
   {
     accessorKey: "name",
     header: "Name",

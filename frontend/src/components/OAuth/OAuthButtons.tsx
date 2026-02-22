@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { FaGithub, FaGoogle } from "react-icons/fa"
 
-import { type OAuthProviderInfo, OauthService } from "@/client"
+import pb from "@/lib/pocketbase"
 import { Button } from "@/components/ui/button"
 
 interface OAuthButtonsProps {
@@ -12,28 +12,23 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
   const { data: providers, isLoading } = useQuery({
     queryKey: ["oauth-providers"],
     queryFn: async () => {
-      const response = await OauthService.oauthListProviders()
-      return response.data
+      const methods = await pb.collection("users").listAuthMethods()
+      return { providers: methods.oauth2?.providers?.map((p: any) => ({ name: p.name, enabled: true })) ?? [] }
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   })
 
   const handleOAuthLogin = async (providerName: string) => {
     try {
-      const response = await OauthService.oauthAuthorize({
-        path: { provider: providerName as "google" | "github" },
-      })
-      if (response.data?.authorization_url) {
-        // Redirect to OAuth provider
-        window.location.href = response.data.authorization_url
-      }
+      await pb.collection("users").authWithOAuth2({ provider: providerName })
+      window.location.href = "/"
     } catch (error) {
       console.error("OAuth error:", error)
     }
   }
 
   const enabledProviders =
-    providers?.providers?.filter((p: OAuthProviderInfo) => p.enabled) ?? []
+    providers?.providers?.filter((p: Record<string, any>) => p.enabled) ?? []
 
   if (isLoading || enabledProviders.length === 0) {
     return null
@@ -41,7 +36,7 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
 
   return (
     <div className="grid gap-3">
-      {enabledProviders.map((provider: OAuthProviderInfo) => (
+      {enabledProviders.map((provider: Record<string, any>) => (
         <Button
           key={provider.name}
           variant="outline"

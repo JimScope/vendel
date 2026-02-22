@@ -1,28 +1,38 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import {
-  type SmsDeviceCreate,
-  type SmsDeviceUpdate,
-  SmsService,
-} from "@/client"
-import { handleError } from "@/utils"
+import pb from "@/lib/pocketbase"
 import useCustomToast from "./useCustomToast"
+
+interface DeviceCreate {
+  name: string
+  phone_number: string
+}
+
+interface DeviceUpdate {
+  name?: string
+  phone_number?: string
+}
 
 export function useCreateDevice() {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   return useMutation({
-    mutationFn: async (data: SmsDeviceCreate) => {
-      const response = await SmsService.smsCreateDevice({ body: data })
-      return response.data
+    mutationFn: async (data: DeviceCreate) => {
+      return await pb.collection("sms_devices").create({
+        ...data,
+        user: pb.authStore.record?.id,
+      })
     },
     onSuccess: () => {
       showSuccessToast("Device created successfully")
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Failed to create device")
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["devices"] })
+      queryClient.invalidateQueries({ queryKey: ["quota"] })
     },
   })
 }
@@ -32,17 +42,15 @@ export function useUpdateDevice(deviceId: string) {
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   return useMutation({
-    mutationFn: async (data: SmsDeviceUpdate) => {
-      const response = await SmsService.smsUpdateDevice({
-        path: { device_id: deviceId },
-        body: data,
-      })
-      return response.data
+    mutationFn: async (data: DeviceUpdate) => {
+      return await pb.collection("sms_devices").update(deviceId, data)
     },
     onSuccess: () => {
       showSuccessToast("Device updated successfully")
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Failed to update device")
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["devices"] })
     },
@@ -55,17 +63,17 @@ export function useDeleteDevice() {
 
   return useMutation({
     mutationFn: async (deviceId: string) => {
-      const response = await SmsService.smsDeleteDevice({
-        path: { device_id: deviceId },
-      })
-      return response.data
+      return await pb.collection("sms_devices").delete(deviceId)
     },
     onSuccess: () => {
       showSuccessToast("The device was deleted successfully")
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Failed to delete device")
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["devices"] })
+      queryClient.invalidateQueries({ queryKey: ["quota"] })
     },
   })
 }

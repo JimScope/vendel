@@ -1,11 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table"
-import type { SmsMessagePublic } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import { Badge } from "@/components/ui/badge"
 import { SMSActionsMenu } from "./SMSActionsMenu"
 
 interface SMSTableProps {
-  data: SmsMessagePublic[]
+  data: Record<string, any>[]
 }
 
 function getStatusBadgeVariant(
@@ -32,7 +31,7 @@ function truncateText(text: string, maxLength: number): string {
   return `${text.slice(0, maxLength)}...`
 }
 
-const columns: ColumnDef<SmsMessagePublic>[] = [
+const columns: ColumnDef<Record<string, any>>[] = [
   {
     accessorKey: "to",
     header: "To",

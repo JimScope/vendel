@@ -1,12 +1,17 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
-import type { UserPublic } from "@/client"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { UserActionsMenu } from "./UserActionsMenu"
 
-export type UserTableData = UserPublic & {
+export interface UserTableData {
+  id: string
+  email: string
+  full_name?: string | null
+  is_superuser: boolean
+  is_active: boolean
   isCurrentUser: boolean
+  [key: string]: any
 }
 
 export const columns: ColumnDef<UserTableData>[] = [

@@ -1,0 +1,140 @@
+package handlers
+
+import (
+	"ender/middleware"
+	"ender/services"
+	"net/http"
+
+	"github.com/pocketbase/pocketbase/core"
+)
+
+// RegisterSMSRoutes registers custom SMS API routes.
+func RegisterSMSRoutes(se *core.ServeEvent) {
+	// POST /api/sms/send — Send SMS (auth: JWT or API key)
+	se.Router.POST("/api/sms/send", func(e *core.RequestEvent) error {
+		userId, err := middleware.ResolveAuthOrAPIKey(e)
+		if err != nil {
+			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Authentication required"})
+		}
+
+		var body struct {
+			Recipients []string `json:"recipients"`
+			Body       string   `json:"body"`
+			DeviceID   string   `json:"device_id"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+		}
+
+		if len(body.Recipients) == 0 {
+			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "At least one recipient required"})
+		}
+		if body.Body == "" {
+			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Message body required"})
+		}
+
+		messages, err := services.SendSMS(e.App, userId, body.Recipients, body.Body, body.DeviceID)
+		if err != nil {
+			if qe, ok := err.(*services.QuotaError); ok {
+				return e.JSON(qe.StatusCode, qe.Body)
+			}
+			return e.JSON(http.StatusBadRequest, map[string]string{"detail": err.Error()})
+		}
+
+		// Build response
+		ids := make([]string, len(messages))
+		for i, m := range messages {
+			ids[i] = m.Id
+		}
+
+		var batchId string
+		if len(messages) > 0 {
+			batchId = messages[0].GetString("batch_id")
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"batch_id":         batchId,
+			"message_ids":      ids,
+			"recipients_count": len(body.Recipients),
+			"status":           "accepted",
+		})
+	})
+
+	// POST /api/sms/report — Device ACK callback (auth: device API key)
+	se.Router.POST("/api/sms/report", func(e *core.RequestEvent) error {
+		device, err := middleware.AuthenticateDevice(e)
+		if err != nil {
+			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
+		}
+		_ = device // validated
+
+		var body struct {
+			MessageID    string `json:"message_id"`
+			Status       string `json:"status"`
+			ErrorMessage string `json:"error_message"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+		}
+
+		if err := services.ProcessSMSAck(e.App, body.MessageID, body.Status, body.ErrorMessage); err != nil {
+			return e.JSON(http.StatusNotFound, map[string]string{"detail": err.Error()})
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"success":    true,
+			"message_id": body.MessageID,
+			"status":     body.Status,
+		})
+	})
+
+	// POST /api/sms/incoming — Incoming SMS from device (auth: device API key)
+	se.Router.POST("/api/sms/incoming", func(e *core.RequestEvent) error {
+		device, err := middleware.AuthenticateDevice(e)
+		if err != nil {
+			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
+		}
+
+		var body struct {
+			FromNumber string `json:"from_number"`
+			Body       string `json:"body"`
+			Timestamp  string `json:"timestamp"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+		}
+
+		userId := device.GetString("user")
+		message, err := services.HandleIncomingSMS(e.App, userId, body.FromNumber, body.Body, body.Timestamp)
+		if err != nil {
+			return e.JSON(http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"success":    true,
+			"message_id": message.Id,
+		})
+	})
+
+	// POST /api/sms/fcm-token — Update device FCM token (auth: device API key)
+	se.Router.POST("/api/sms/fcm-token", func(e *core.RequestEvent) error {
+		device, err := middleware.AuthenticateDevice(e)
+		if err != nil {
+			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
+		}
+
+		var body struct {
+			FCMToken string `json:"fcm_token"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+		}
+
+		device.Set("fcm_token", body.FCMToken)
+		if err := e.App.Save(device); err != nil {
+			return e.JSON(http.StatusInternalServerError, map[string]string{"detail": "Failed to update token"})
+		}
+
+		return e.JSON(http.StatusOK, map[string]string{"status": "ok"})
+	})
+}

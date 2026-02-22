@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 
-import { OauthService } from "@/client"
+import pb from "@/lib/pocketbase"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,11 +41,11 @@ function OAuthCallback() {
   // Handle account linking
   const linkMutation = useMutation({
     mutationFn: async () => {
-      const response = await OauthService.oauthLinkOauthAccount({
-        path: { provider: provider as "google" | "github" },
+      const response = await pb.send(`/api/oauth/${provider}/link`, {
+        method: "POST",
         body: { email: existing_email, password },
       })
-      return response.data
+      return response
     },
     onSuccess: (response) => {
       if (response?.access_token) {

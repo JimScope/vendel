@@ -5,7 +5,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type { ApiKeyCreate } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -55,7 +54,7 @@ const AddApiKey = () => {
 
   const createApiKeyMutation = useCreateApiKey()
 
-  const onSubmit = (data: ApiKeyCreate) => {
+  const onSubmit = (data: Record<string, any>) => {
     createApiKeyMutation.mutate(data, {
       onSuccess: (response) => {
         setCreatedKey(response?.key ?? null)

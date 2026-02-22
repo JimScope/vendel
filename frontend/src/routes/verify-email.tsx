@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 import { CheckCircle, Loader2, XCircle } from "lucide-react"
 import { useEffect, useState } from "react"
-import { UsersService } from "@/client"
+import pb from "@/lib/pocketbase"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
 
@@ -29,10 +29,7 @@ function VerifyEmail() {
 
   const verifyMutation = useMutation({
     mutationFn: async (token: string) => {
-      const response = await UsersService.usersVerifyEmail({
-        query: { token },
-      })
-      return response.data
+      return await pb.collection("users").confirmVerification(token)
     },
     onSuccess: () => {
       setStatus("success")

@@ -1,13 +1,13 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query"
-import { ApiKeysService } from "@/client"
+import pb from "@/lib/pocketbase"
 
 export const apiKeyListQueryOptions = queryOptions({
   queryKey: ["api-keys"],
   queryFn: async () => {
-    const response = await ApiKeysService.apiKeysListApiKeys({
-      query: { skip: 0, limit: 100 },
+    const result = await pb.collection("api_keys").getList(1, 100, {
+      sort: "-created",
     })
-    return response.data
+    return { data: result.items, count: result.totalItems }
   },
   staleTime: 60_000,
 })

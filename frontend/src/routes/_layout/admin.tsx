@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Settings, Users } from "lucide-react"
 import { Suspense, useState } from "react"
 
-import type { UserPublic } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/columns"
 import SystemSettings from "@/components/Admin/SystemSettings"
@@ -28,7 +27,7 @@ function UsersTableContent() {
   const { data: users } = useUserListSuspense()
 
   const tableData: UserTableData[] = (users?.data ?? []).map(
-    (user: UserPublic) => ({
+    (user: Record<string, any>) => ({
       ...user,
       isCurrentUser: currentUser?.id === user.id,
     }),

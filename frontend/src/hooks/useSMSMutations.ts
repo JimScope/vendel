@@ -1,24 +1,34 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import { type SmsMessageCreate, SmsService } from "@/client"
-import { handleError } from "@/utils"
+import pb from "@/lib/pocketbase"
 import useCustomToast from "./useCustomToast"
+
+interface SMSMessageCreate {
+  recipients: string[]
+  body: string
+  device_id?: string
+}
 
 export function useSendSMS() {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   return useMutation({
-    mutationFn: async (data: SmsMessageCreate) => {
-      const response = await SmsService.smsSendSms({ body: data })
-      return response.data
+    mutationFn: async (data: SMSMessageCreate) => {
+      return await pb.send("/api/sms/send", {
+        method: "POST",
+        body: data,
+      })
     },
     onSuccess: () => {
       showSuccessToast("SMS sent successfully")
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Failed to send SMS")
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["sms"] })
+      queryClient.invalidateQueries({ queryKey: ["quota"] })
     },
   })
 }

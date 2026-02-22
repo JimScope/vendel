@@ -7,8 +7,7 @@ import {
   Settings2,
 } from "lucide-react"
 
-import type { SystemConfigPublic } from "@/client"
-import { SystemConfigService } from "@/client"
+import pb from "@/lib/pocketbase"
 import {
   Card,
   CardContent,
@@ -35,15 +34,15 @@ function SystemSettings() {
   const { data: configs, isLoading } = useQuery({
     queryKey: ["system-config"],
     queryFn: async () => {
-      const response = await SystemConfigService.systemConfigListConfigs()
-      return response.data
+      const response = await pb.send("/api/system-config", {})
+      return response
     },
   })
 
   const updateConfigMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      return SystemConfigService.systemConfigUpdateConfig({
-        path: { key },
+      return pb.send(`/api/system-config/${key}`, {
+        method: "PATCH",
         body: { value },
       })
     },
@@ -65,7 +64,7 @@ function SystemSettings() {
   }
 
   const getConfigValue = (key: string): string => {
-    const config = configs?.data?.find((c: SystemConfigPublic) => c.key === key)
+    const config = configs?.data?.find((c: Record<string, any>) => c.key === key)
     return config?.value ?? ""
   }
 

@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type { UserCreate } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -69,7 +68,7 @@ const AddUser = () => {
 
   const createUserMutation = useCreateUser()
 
-  const onSubmit = (data: UserCreate) => {
+  const onSubmit = (data: Record<string, any>) => {
     createUserMutation.mutate(data, {
       onSuccess: () => {
         form.reset()

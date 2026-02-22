@@ -1,12 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import {
-  type WebhookConfigCreate,
-  type WebhookConfigUpdate,
-  WebhooksService,
-} from "@/client"
-import { handleError } from "@/utils"
+import pb from "@/lib/pocketbase"
 import useCustomToast from "./useCustomToast"
+
+interface WebhookConfigCreate {
+  url: string
+  secret_key?: string
+  events?: string
+  active?: boolean
+}
+
+interface WebhookConfigUpdate {
+  url?: string
+  secret_key?: string
+  events?: string
+  active?: boolean
+}
 
 export function useCreateWebhook() {
   const queryClient = useQueryClient()
@@ -14,15 +23,17 @@ export function useCreateWebhook() {
 
   return useMutation({
     mutationFn: async (data: WebhookConfigCreate) => {
-      const response = await WebhooksService.webhooksCreateWebhook({
-        body: data,
+      return await pb.collection("webhook_configs").create({
+        ...data,
+        user: pb.authStore.record?.id,
       })
-      return response.data
     },
     onSuccess: () => {
       showSuccessToast("Webhook created successfully")
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Failed to create webhook")
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["webhooks"] })
     },
@@ -35,16 +46,14 @@ export function useUpdateWebhook(webhookId: string) {
 
   return useMutation({
     mutationFn: async (data: WebhookConfigUpdate) => {
-      const response = await WebhooksService.webhooksUpdateWebhook({
-        path: { webhook_id: webhookId },
-        body: data,
-      })
-      return response.data
+      return await pb.collection("webhook_configs").update(webhookId, data)
     },
     onSuccess: () => {
       showSuccessToast("Webhook updated successfully")
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Failed to update webhook")
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["webhooks"] })
     },
@@ -57,15 +66,14 @@ export function useDeleteWebhook() {
 
   return useMutation({
     mutationFn: async (webhookId: string) => {
-      const response = await WebhooksService.webhooksDeleteWebhook({
-        path: { webhook_id: webhookId },
-      })
-      return response.data
+      return await pb.collection("webhook_configs").delete(webhookId)
     },
     onSuccess: () => {
       showSuccessToast("The webhook was deleted successfully")
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Failed to delete webhook")
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["webhooks"] })
     },

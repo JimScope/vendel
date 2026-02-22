@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 
-import type { AppSettings } from "@/client"
-import { UtilsService } from "@/client"
+import pb from "@/lib/pocketbase"
 
 export interface AppConfig {
   appName: string
@@ -16,9 +15,8 @@ const DEFAULT_CONFIG: AppConfig = {
 export function useAppConfig() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["app-settings"],
-    queryFn: async (): Promise<AppSettings> => {
-      const response = await UtilsService.utilsGetAppSettings()
-      return response.data as AppSettings
+    queryFn: async () => {
+      return await pb.send("/api/utils/app-settings", {}) as Record<string, string>
     },
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
     retry: 1,

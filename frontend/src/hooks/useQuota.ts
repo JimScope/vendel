@@ -1,11 +1,10 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query"
-import { PlansService } from "@/client"
+import pb from "@/lib/pocketbase"
 
 export const quotaQueryOptions = queryOptions({
   queryKey: ["quota"],
   queryFn: async () => {
-    const response = await PlansService.plansGetQuota()
-    return response.data
+    return await pb.send("/api/plans/quota", {})
   },
   staleTime: 60_000,
 })

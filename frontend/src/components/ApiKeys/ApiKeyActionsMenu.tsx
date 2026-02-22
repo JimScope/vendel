@@ -1,7 +1,6 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { ApiKeyPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,7 +11,7 @@ import DeleteApiKey from "./DeleteApiKey"
 import RevokeApiKey from "./RevokeApiKey"
 
 interface ApiKeyActionsMenuProps {
-  apiKey: ApiKeyPublic
+  apiKey: Record<string, any>
 }
 
 export const ApiKeyActionsMenu = ({ apiKey }: ApiKeyActionsMenuProps) => {

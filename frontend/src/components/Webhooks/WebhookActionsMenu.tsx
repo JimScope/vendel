@@ -1,7 +1,6 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { WebhookConfigPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,7 +11,7 @@ import DeleteWebhook from "./DeleteWebhook"
 import EditWebhook from "./EditWebhook"
 
 interface WebhookActionsMenuProps {
-  webhook: WebhookConfigPublic
+  webhook: Record<string, any>
 }
 
 export const WebhookActionsMenu = ({ webhook }: WebhookActionsMenuProps) => {

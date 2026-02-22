@@ -1,24 +1,21 @@
-import { AxiosError } from "axios"
-
 function extractErrorMessage(err: unknown): string {
-  if (err instanceof AxiosError) {
-    const errDetail = err.response?.data?.detail
-
-    // Handle array of validation errors
-    if (Array.isArray(errDetail) && errDetail.length > 0) {
-      return errDetail[0].msg
+  if (err instanceof Error) {
+    // PocketBase ClientResponseError has response.data
+    const pbError = err as { response?: { data?: Record<string, unknown>; message?: string } }
+    if (pbError.response?.data) {
+      const data = pbError.response.data
+      // Handle object with message property (e.g., quota errors)
+      if (data.message && typeof data.message === "string") {
+        return data.message
+      }
+      // Handle detail field
+      if (data.detail && typeof data.detail === "string") {
+        return data.detail
+      }
     }
-
-    // Handle object with message property (e.g., quota errors)
-    if (errDetail && typeof errDetail === "object" && errDetail.message) {
-      return errDetail.message
+    if (pbError.response?.message) {
+      return pbError.response.message
     }
-
-    // Handle string detail
-    if (typeof errDetail === "string") {
-      return errDetail
-    }
-
     return err.message
   }
 

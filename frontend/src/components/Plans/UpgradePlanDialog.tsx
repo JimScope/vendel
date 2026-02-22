@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Check, ExternalLink } from "lucide-react"
 import { useState } from "react"
 
-import { PlansService, type UserPlanPublic } from "@/client"
+import pb from "@/lib/pocketbase"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -45,7 +45,7 @@ function PlanCard({
   isSelected,
   onSelect,
 }: {
-  plan: UserPlanPublic
+  plan: Record<string, any>
   isCurrentPlan: boolean
   isSelected: boolean
   onSelect: () => void
@@ -101,11 +101,12 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
 
   const mutation = useMutation({
     mutationFn: (planId: string) =>
-      PlansService.plansUpgradePlan({
-        body: { plan_id: planId }, // payment_method uses system default
+      pb.send("/api/plans/upgrade", {
+        method: "POST",
+        body: { plan_id: planId },
       }),
     onSuccess: (response) => {
-      const data = response.data as UpgradeResponse
+      const data = response as UpgradeResponse
 
       if (data.status === "activated") {
         // Free plan - activated immediately
