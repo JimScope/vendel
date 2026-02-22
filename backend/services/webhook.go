@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strings"
@@ -46,7 +46,7 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 	if secretKey != "" {
 		decrypted, err := DecryptSecret(secretKey)
 		if err != nil {
-			log.Printf("WARNING: failed to decrypt webhook secret: %v", err)
+			app.Logger().Warn("failed to decrypt webhook secret", slog.Any("error", err))
 			decrypted = secretKey // fallback to raw value
 		}
 		sig := generateHMAC(decrypted, string(payloadJSON))
@@ -89,7 +89,7 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 	// Mark message as webhook_sent
 	message.Set("webhook_sent", true)
 	if err := app.Save(message); err != nil {
-		log.Printf("WARNING: failed to update webhook_sent: %v", err)
+		app.Logger().Warn("failed to update webhook_sent", slog.Any("error", err))
 	}
 
 	return nil

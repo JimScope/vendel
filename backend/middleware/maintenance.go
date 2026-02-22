@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -26,9 +27,7 @@ func MaintenanceMiddleware(app core.App) func(e *core.RequestEvent) error {
 		)
 		if err == nil && record != nil {
 			if strings.ToLower(record.GetString("value")) == "true" {
-				return e.JSON(http.StatusServiceUnavailable, map[string]string{
-					"detail": "Service is under maintenance. Please try again later.",
-				})
+				return apis.NewApiError(http.StatusServiceUnavailable, "Service is under maintenance. Please try again later.", nil)
 			}
 		}
 

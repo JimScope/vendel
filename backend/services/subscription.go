@@ -2,7 +2,7 @@ package services
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/mail"
 	"time"
 
@@ -11,6 +11,7 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/mailer"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 // StartSubscription begins the subscription process.
@@ -69,7 +70,7 @@ func StartSubscription(
 			return nil, "", err
 		}
 		if err := updateUserQuota(app, userId, planId); err != nil {
-			log.Printf("WARNING: failed to update quota: %v", err)
+			app.Logger().Warn("failed to update quota", slog.Any("error", err))
 		}
 		return sub, "", nil
 	}
@@ -175,22 +176,31 @@ func CompleteInvoicePayment(app core.App, paymentId, transactionId string) (*cor
 		return nil, fmt.Errorf("subscription not found")
 	}
 
-	// Update payment
-	pay.Set("status", "completed")
-	pay.Set("provider_transaction_id", transactionId)
-	pay.Set("paid_at", time.Now().UTC().Format(time.RFC3339))
-	_ = app.Save(pay)
-
-	status := sub.GetString("status")
-	if status == "pending" || status == "past_due" {
-		sub.Set("status", "active")
-		sub.Set("current_period_start", pay.GetString("period_start"))
-		sub.Set("current_period_end", pay.GetString("period_end"))
-		_ = app.Save(sub)
-
-		if status == "pending" {
-			_ = updateUserQuota(app, sub.GetString("user"), sub.GetString("plan"))
+	// Update payment + subscription atomically
+	err = app.RunInTransaction(func(txApp core.App) error {
+		pay.Set("status", "completed")
+		pay.Set("provider_transaction_id", transactionId)
+		pay.Set("paid_at", types.NowDateTime())
+		if err := txApp.Save(pay); err != nil {
+			return err
 		}
+
+		status := sub.GetString("status")
+		if status == "pending" || status == "past_due" {
+			sub.Set("status", "active")
+			sub.Set("current_period_start", pay.GetString("period_start"))
+			sub.Set("current_period_end", pay.GetString("period_end"))
+			if err := txApp.Save(sub); err != nil {
+				return err
+			}
+			if status == "pending" {
+				return updateUserQuota(txApp, sub.GetString("user"), sub.GetString("plan"))
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return sub, nil
@@ -249,24 +259,36 @@ func CompleteAuthorization(app core.App, userId, providerUserUUID string) (*core
 		RemoteID:    pay.Id,
 	})
 	if err != nil {
-		pay.Set("status", "failed")
-		sub.Set("status", "expired")
-		_ = app.Save(pay)
-		_ = app.Save(sub)
+		_ = app.RunInTransaction(func(txApp core.App) error {
+			pay.Set("status", "failed")
+			sub.Set("status", "expired")
+			_ = txApp.Save(pay)
+			return txApp.Save(sub)
+		})
 		return nil, fmt.Errorf("payment failed: %w", err)
 	}
 
-	pay.Set("status", "completed")
-	pay.Set("provider_transaction_id", chargeResult.TransactionID)
-	pay.Set("paid_at", now.Format(time.RFC3339))
-	_ = app.Save(pay)
+	err = app.RunInTransaction(func(txApp core.App) error {
+		pay.Set("status", "completed")
+		pay.Set("provider_transaction_id", chargeResult.TransactionID)
+		pay.Set("paid_at", types.NowDateTime())
+		if err := txApp.Save(pay); err != nil {
+			return err
+		}
 
-	sub.Set("status", "active")
-	sub.Set("current_period_start", now.Format(time.RFC3339))
-	sub.Set("current_period_end", periodEnd.Format(time.RFC3339))
-	_ = app.Save(sub)
+		sub.Set("status", "active")
+		sub.Set("current_period_start", now)
+		sub.Set("current_period_end", periodEnd)
+		if err := txApp.Save(sub); err != nil {
+			return err
+		}
 
-	_ = updateUserQuota(app, userId, sub.GetString("plan"))
+		return updateUserQuota(txApp, userId, sub.GetString("plan"))
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return sub, nil
 }
 
@@ -324,22 +346,28 @@ func ProcessRenewal(app core.App, subscriptionId string) error {
 		RemoteID:    pay.Id,
 	})
 	if err != nil {
-		pay.Set("status", "failed")
-		sub.Set("status", "past_due")
-		_ = app.Save(pay)
-		_ = app.Save(sub)
+		_ = app.RunInTransaction(func(txApp core.App) error {
+			pay.Set("status", "failed")
+			sub.Set("status", "past_due")
+			_ = txApp.Save(pay)
+			return txApp.Save(sub)
+		})
 		notifyRenewalFailure(app, sub, plan, err)
 		return fmt.Errorf("renewal charge failed: %w", err)
 	}
 
-	pay.Set("status", "completed")
-	pay.Set("provider_transaction_id", chargeResult.TransactionID)
-	pay.Set("paid_at", time.Now().UTC().Format(time.RFC3339))
-	_ = app.Save(pay)
+	return app.RunInTransaction(func(txApp core.App) error {
+		pay.Set("status", "completed")
+		pay.Set("provider_transaction_id", chargeResult.TransactionID)
+		pay.Set("paid_at", types.NowDateTime())
+		if err := txApp.Save(pay); err != nil {
+			return err
+		}
 
-	sub.Set("current_period_start", periodStart.Format(time.RFC3339))
-	sub.Set("current_period_end", periodEnd.Format(time.RFC3339))
-	return app.Save(sub)
+		sub.Set("current_period_start", periodStart)
+		sub.Set("current_period_end", periodEnd)
+		return txApp.Save(sub)
+	})
 }
 
 // CancelSubscription cancels a subscription, optionally immediately.
@@ -353,7 +381,7 @@ func CancelSubscription(app core.App, userId string, immediate bool) (*core.Reco
 		return nil, fmt.Errorf("already canceled")
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
+	now := types.NowDateTime()
 
 	if immediate {
 		sub.Set("status", "canceled")
@@ -389,11 +417,11 @@ func CheckRenewals(app core.App) error {
 
 	for _, sub := range subs {
 		if err := ProcessRenewal(app, sub.Id); err != nil {
-			log.Printf("WARNING: renewal failed for %s: %v", sub.Id, err)
+			app.Logger().Warn("renewal failed", slog.String("subscription", sub.Id), slog.Any("error", err))
 		}
 	}
 
-	log.Printf("Processed %d subscription renewals", len(subs))
+	app.Logger().Info("Processed subscription renewals", slog.Int("count", len(subs)))
 	return nil
 }
 
@@ -432,8 +460,8 @@ func createSubscriptionRecord(
 	record.Set("billing_cycle", billingCycle)
 	record.Set("payment_method", paymentMethod)
 	record.Set("status", status)
-	record.Set("current_period_start", periodStart.Format(time.RFC3339))
-	record.Set("current_period_end", periodEnd.Format(time.RFC3339))
+	record.Set("current_period_start", periodStart)
+	record.Set("current_period_end", periodEnd)
 	record.Set("cancel_at_period_end", false)
 
 	if err := app.Save(record); err != nil {
@@ -458,8 +486,8 @@ func createPaymentRecord(
 	record.Set("currency", currency)
 	record.Set("provider", provider)
 	record.Set("status", status)
-	record.Set("period_start", periodStart.Format(time.RFC3339))
-	record.Set("period_end", periodEnd.Format(time.RFC3339))
+	record.Set("period_start", periodStart)
+	record.Set("period_end", periodEnd)
 
 	if err := app.Save(record); err != nil {
 		return nil, err
@@ -478,7 +506,7 @@ func updateUserQuota(app core.App, userId, planId string) error {
 	}
 	quota.Set("plan", planId)
 	quota.Set("sms_sent_this_month", 0)
-	quota.Set("last_reset_date", time.Now().UTC().Format(time.RFC3339))
+	quota.Set("last_reset_date", types.NowDateTime())
 	return app.Save(quota)
 }
 
@@ -493,7 +521,7 @@ func downgradeToFreePlan(app core.App, userId string) error {
 func notifyRenewalFailure(app core.App, sub, plan *core.Record, chargeErr error) {
 	user, err := app.FindRecordById("users", sub.GetString("user"))
 	if err != nil {
-		log.Printf("WARNING: could not find user for renewal failure email: %v", err)
+		app.Logger().Warn("could not find user for renewal failure email", slog.Any("error", err))
 		return
 	}
 
@@ -520,6 +548,6 @@ func notifyRenewalFailure(app core.App, sub, plan *core.Record, chargeErr error)
 	}
 
 	if err := app.NewMailClient().Send(msg); err != nil {
-		log.Printf("WARNING: failed to send renewal failure email to %s: %v", email, err)
+		app.Logger().Warn("failed to send renewal failure email", slog.String("email", email), slog.Any("error", err))
 	}
 }

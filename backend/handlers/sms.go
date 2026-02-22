@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -17,7 +18,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 	se.Router.POST("/api/sms/send", func(e *core.RequestEvent) error {
 		userId, err := middleware.ResolveAuthOrAPIKey(e)
 		if err != nil {
-			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Authentication required"})
+			return apis.NewUnauthorizedError("Authentication required", nil)
 		}
 
 		var body struct {
@@ -26,22 +27,22 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 			DeviceID   string   `json:"device_id"`
 		}
 		if err := e.BindBody(&body); err != nil {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+			return apis.NewBadRequestError("Invalid request body", nil)
 		}
 
 		if len(body.Recipients) == 0 {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "At least one recipient required"})
+			return apis.NewBadRequestError("At least one recipient required", nil)
 		}
 		for _, r := range body.Recipients {
 			if !e164Regex.MatchString(r) {
-				return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid phone number: " + r + ". Must be E.164 format (e.g. +1234567890)"})
+				return apis.NewBadRequestError("Invalid phone number: "+r+". Must be E.164 format (e.g. +1234567890)", nil)
 			}
 		}
 		if body.Body == "" {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Message body required"})
+			return apis.NewBadRequestError("Message body required", nil)
 		}
 		if len(body.Body) > 1600 {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Message body exceeds 1600 character limit"})
+			return apis.NewBadRequestError("Message body exceeds 1600 character limit", nil)
 		}
 
 		messages, err := services.SendSMS(e.App, userId, body.Recipients, body.Body, body.DeviceID)
@@ -49,7 +50,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 			if qe, ok := err.(*services.QuotaError); ok {
 				return e.JSON(qe.StatusCode, qe.Body)
 			}
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": err.Error()})
+			return apis.NewBadRequestError(err.Error(), nil)
 		}
 
 		// Build response
@@ -75,7 +76,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 	se.Router.POST("/api/sms/report", func(e *core.RequestEvent) error {
 		device, err := middleware.AuthenticateDevice(e)
 		if err != nil {
-			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
+			return apis.NewUnauthorizedError("Invalid API key", nil)
 		}
 		_ = device // validated
 
@@ -85,11 +86,11 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 			ErrorMessage string `json:"error_message"`
 		}
 		if err := e.BindBody(&body); err != nil {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+			return apis.NewBadRequestError("Invalid request body", nil)
 		}
 
 		if err := services.ProcessSMSAck(e.App, body.MessageID, body.Status, body.ErrorMessage); err != nil {
-			return e.JSON(http.StatusNotFound, map[string]string{"detail": err.Error()})
+			return apis.NewNotFoundError(err.Error(), nil)
 		}
 
 		return e.JSON(http.StatusOK, map[string]any{
@@ -103,7 +104,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 	se.Router.POST("/api/sms/incoming", func(e *core.RequestEvent) error {
 		device, err := middleware.AuthenticateDevice(e)
 		if err != nil {
-			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
+			return apis.NewUnauthorizedError("Invalid API key", nil)
 		}
 
 		var body struct {
@@ -112,13 +113,13 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 			Timestamp  string `json:"timestamp"`
 		}
 		if err := e.BindBody(&body); err != nil {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+			return apis.NewBadRequestError("Invalid request body", nil)
 		}
 
 		userId := device.GetString("user")
 		message, err := services.HandleIncomingSMS(e.App, userId, body.FromNumber, body.Body, body.Timestamp)
 		if err != nil {
-			return e.JSON(http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
 		}
 
 		return e.JSON(http.StatusOK, map[string]any{
@@ -131,19 +132,19 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 	se.Router.POST("/api/sms/fcm-token", func(e *core.RequestEvent) error {
 		device, err := middleware.AuthenticateDevice(e)
 		if err != nil {
-			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Invalid API key"})
+			return apis.NewUnauthorizedError("Invalid API key", nil)
 		}
 
 		var body struct {
 			FCMToken string `json:"fcm_token"`
 		}
 		if err := e.BindBody(&body); err != nil {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+			return apis.NewBadRequestError("Invalid request body", nil)
 		}
 
 		device.Set("fcm_token", body.FCMToken)
 		if err := e.App.Save(device); err != nil {
-			return e.JSON(http.StatusInternalServerError, map[string]string{"detail": "Failed to update token"})
+			return apis.NewApiError(http.StatusInternalServerError, "Failed to update token", nil)
 		}
 
 		return e.JSON(http.StatusOK, map[string]string{"status": "ok"})

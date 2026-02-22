@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -17,12 +18,12 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 	se.Router.GET("/api/plans/quota", func(e *core.RequestEvent) error {
 		userId, err := middleware.ResolveAuthOrAPIKey(e)
 		if err != nil {
-			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Authentication required"})
+			return apis.NewUnauthorizedError("Authentication required", nil)
 		}
 
 		quota, err := services.GetUserQuota(e.App, userId)
 		if err != nil {
-			return e.JSON(http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
 		}
 
 		return e.JSON(http.StatusOK, quota)
@@ -33,7 +34,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		info, _ := e.RequestInfo()
 		userId := info.Auth.Id
 		if userId == "" {
-			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Authentication required"})
+			return apis.NewUnauthorizedError("Authentication required", nil)
 		}
 
 		var body struct {
@@ -42,7 +43,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 			PaymentMethod string `json:"payment_method"`
 		}
 		if err := e.BindBody(&body); err != nil {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid request body"})
+			return apis.NewBadRequestError("Invalid request body", nil)
 		}
 
 		if body.BillingCycle == "" {
@@ -81,7 +82,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 			if qe, ok := err.(*services.QuotaError); ok {
 				return e.JSON(qe.StatusCode, qe.Body)
 			}
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": err.Error()})
+			return apis.NewBadRequestError(err.Error(), nil)
 		}
 
 		result := map[string]any{
@@ -103,7 +104,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		info, _ := e.RequestInfo()
 		userId := info.Auth.Id
 		if userId == "" {
-			return e.JSON(http.StatusUnauthorized, map[string]string{"detail": "Authentication required"})
+			return apis.NewUnauthorizedError("Authentication required", nil)
 		}
 
 		var body struct {
@@ -113,7 +114,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 
 		sub, err := services.CancelSubscription(e.App, userId, body.Immediate)
 		if err != nil {
-			return e.JSON(http.StatusBadRequest, map[string]string{"detail": err.Error()})
+			return apis.NewBadRequestError(err.Error(), nil)
 		}
 
 		msg := "Subscription will cancel at period end"

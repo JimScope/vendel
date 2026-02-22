@@ -2,11 +2,12 @@ package services
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 // SendSMS orchestrates the entire SMS sending process.
@@ -88,7 +89,7 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 
 	// Increment SMS count
 	if err := IncrementSMSCount(app, userId, count); err != nil {
-		log.Printf("WARNING: failed to increment SMS count: %v", err)
+		app.Logger().Warn("failed to increment SMS count", slog.Any("error", err))
 	}
 
 	// Dispatch FCM notifications in background (replaces QStash)
@@ -111,9 +112,9 @@ func ProcessSMSAck(app core.App, messageId string, status string, errorMessage s
 		record.Set("error_message", errorMessage)
 	}
 	if status == "sent" {
-		record.Set("sent_at", time.Now().UTC().Format(time.RFC3339))
+		record.Set("sent_at", types.NowDateTime())
 	} else if status == "delivered" {
-		record.Set("delivered_at", time.Now().UTC().Format(time.RFC3339))
+		record.Set("delivered_at", types.NowDateTime())
 	}
 
 	return app.Save(record)
@@ -161,7 +162,7 @@ func triggerIncomingWebhooks(app core.App, userId string, message *core.Record) 
 		if containsEvent(events, "sms_received") {
 			go func(webhook *core.Record) {
 				if err := SendWebhookForMessage(app, webhook, message); err != nil {
-					log.Printf("WARNING: webhook delivery failed: %v", err)
+					app.Logger().Warn("webhook delivery failed", slog.Any("error", err))
 				}
 			}(wh)
 		}
@@ -190,6 +191,6 @@ func RetryFailedMessages(app core.App) error {
 		}
 	}
 
-	log.Printf("Retried %d failed SMS messages", retried)
+	app.Logger().Info("Retried failed SMS messages", slog.Int("count", retried))
 	return nil
 }

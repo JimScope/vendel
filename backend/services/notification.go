@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -23,28 +24,28 @@ const (
 var fcmClient *messaging.Client
 
 // InitFCM initializes the Firebase Admin SDK from environment.
-func InitFCM() {
+func InitFCM(pbApp core.App) {
 	credJSON := os.Getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
 	if credJSON == "" {
-		log.Println("WARNING: FIREBASE_SERVICE_ACCOUNT_JSON not set. FCM will not work.")
+		pbApp.Logger().Warn("FIREBASE_SERVICE_ACCOUNT_JSON not set, FCM disabled")
 		return
 	}
 
 	ctx := context.Background()
-	app, err := firebase.NewApp(ctx, nil, option.WithCredentialsJSON([]byte(credJSON)))
+	fbApp, err := firebase.NewApp(ctx, nil, option.WithCredentialsJSON([]byte(credJSON)))
 	if err != nil {
-		log.Printf("ERROR: Failed to initialize Firebase app: %v", err)
+		pbApp.Logger().Error("failed to initialize Firebase app", slog.Any("error", err))
 		return
 	}
 
-	client, err := app.Messaging(ctx)
+	client, err := fbApp.Messaging(ctx)
 	if err != nil {
-		log.Printf("ERROR: Failed to get FCM client: %v", err)
+		pbApp.Logger().Error("failed to get FCM client", slog.Any("error", err))
 		return
 	}
 
 	fcmClient = client
-	log.Println("Firebase Admin SDK initialized successfully.")
+	pbApp.Logger().Info("Firebase Admin SDK initialized")
 }
 
 // MessageRef holds the ID and recipient for an FCM payload.
@@ -72,13 +73,13 @@ func DispatchMessages(app core.App, messages []*core.Record, body string) {
 	for deviceId, deviceMessages := range byDevice {
 		device, err := app.FindRecordById("sms_devices", deviceId)
 		if err != nil {
-			log.Printf("WARNING: Device %s not found: %v", deviceId, err)
+			app.Logger().Warn("device not found", slog.String("device", deviceId), slog.Any("error", err))
 			continue
 		}
 
 		fcmToken := device.GetString("fcm_token")
 		if fcmToken == "" {
-			log.Printf("WARNING: Device %s has no FCM token", deviceId)
+			app.Logger().Warn("device has no FCM token", slog.String("device", deviceId))
 			continue
 		}
 
@@ -105,12 +106,12 @@ func DispatchMessages(app core.App, messages []*core.Record, body string) {
 					select {
 					case <-time.After(delay):
 					case <-ctx.Done():
-						log.Printf("ERROR: FCM dispatch timed out during delay for token %s", token[:20])
+						app.Logger().Error("FCM dispatch timed out during delay", slog.String("token", token[:20]))
 						return
 					}
 				}
 				if err := sendFCMNotification(token, chunk, body); err != nil {
-					log.Printf("ERROR: FCM send failed for token %s: %v", token[:20], err)
+					app.Logger().Error("FCM send failed", slog.String("token", token[:20]), slog.Any("error", err))
 					for _, ref := range chunk {
 						markMessageFailed(app, ref.MessageID, err.Error())
 					}
@@ -146,7 +147,7 @@ func sendFCMNotification(token string, refs []MessageRef, body string) error {
 		return err
 	}
 
-	log.Printf("FCM message sent: %s", resp)
+	log.Printf("FCM message sent: %s", resp) // no app context available here
 	return nil
 }
 

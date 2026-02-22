@@ -3,9 +3,10 @@ package handlers
 import (
 	"ender/services"
 	"ender/services/payment"
-	"log"
+	"log/slog"
 	"net/http"
 
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -46,7 +47,7 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 func handlePaymentWebhook(e *core.RequestEvent, providerName string) error {
 	var payload map[string]any
 	if err := e.BindBody(&payload); err != nil {
-		return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Invalid payload"})
+		return apis.NewBadRequestError("Invalid payload", nil)
 	}
 
 	return processWebhookPayload(e, providerName, payload)
@@ -55,12 +56,12 @@ func handlePaymentWebhook(e *core.RequestEvent, providerName string) error {
 func processWebhookPayload(e *core.RequestEvent, providerName string, payload map[string]any) error {
 	provider := payment.GetProvider()
 	if provider == nil || provider.Name() != providerName {
-		return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Unknown payment provider"})
+		return apis.NewBadRequestError("Unknown payment provider", nil)
 	}
 
 	event := provider.ParseWebhook(payload)
 	if event == nil {
-		return e.JSON(http.StatusBadRequest, map[string]string{"detail": "Unrecognized webhook payload"})
+		return apis.NewBadRequestError("Unrecognized webhook payload", nil)
 	}
 
 	// Idempotency: if the payment is already completed, return success without reprocessing
@@ -83,8 +84,8 @@ func processWebhookPayload(e *core.RequestEvent, providerName string, payload ma
 	case payment.EventPaymentCompleted:
 		sub, err := services.CompleteInvoicePayment(e.App, event.RemoteID, event.TransactionID)
 		if err != nil {
-			log.Printf("ERROR: CompleteInvoicePayment failed: %v", err)
-			return e.JSON(http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+			e.App.Logger().Error("CompleteInvoicePayment failed", slog.Any("error", err))
+			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
 		}
 		return e.JSON(http.StatusOK, map[string]any{
 			"status":          "ok",
@@ -94,8 +95,8 @@ func processWebhookPayload(e *core.RequestEvent, providerName string, payload ma
 	case payment.EventAuthorizationCompleted:
 		sub, err := services.CompleteAuthorization(e.App, event.RemoteID, event.UserUUID)
 		if err != nil {
-			log.Printf("ERROR: CompleteAuthorization failed: %v", err)
-			return e.JSON(http.StatusInternalServerError, map[string]string{"detail": err.Error()})
+			e.App.Logger().Error("CompleteAuthorization failed", slog.Any("error", err))
+			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
 		}
 		return e.JSON(http.StatusOK, map[string]any{
 			"status":          "ok",

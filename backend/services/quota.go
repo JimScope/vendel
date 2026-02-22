@@ -3,13 +3,14 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/security"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 // QuotaError is returned when a quota limit is exceeded.
@@ -180,13 +181,13 @@ func ResetMonthlyQuotas(app core.App) error {
 	resetCount := 0
 	for _, q := range records {
 		q.Set("sms_sent_this_month", 0)
-		q.Set("last_reset_date", time.Now().UTC().Format(time.RFC3339))
+		q.Set("last_reset_date", types.NowDateTime())
 		if err := app.Save(q); err == nil {
 			resetCount++
 		}
 	}
 
-	log.Printf("Reset monthly quotas for %d users", resetCount)
+	app.Logger().Info("Reset monthly quotas", slog.Int("count", resetCount))
 	return nil
 }
 
@@ -217,7 +218,7 @@ func getOrCreateQuota(app core.App, userId string) (*core.Record, error) {
 	quota.Set("plan", freePlan.Id)
 	quota.Set("sms_sent_this_month", 0)
 	quota.Set("devices_registered", 0)
-	quota.Set("last_reset_date", time.Now().UTC().Format(time.RFC3339))
+	quota.Set("last_reset_date", types.NowDateTime())
 
 	if err := app.Save(quota); err != nil {
 		return nil, err

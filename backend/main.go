@@ -5,6 +5,7 @@ import (
 	"ender/middleware"
 	"ender/services"
 	"log"
+	"log/slog"
 	"os"
 	"strconv"
 
@@ -32,7 +33,7 @@ func main() {
 	// ── Bootstrap services on serve ──────────────────────────────────
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// Initialize FCM
-		services.InitFCM()
+		services.InitFCM(se.App)
 
 		// Seed first superuser from env vars
 		seedSuperuser(se.App)
@@ -139,19 +140,19 @@ func main() {
 	// ── Cron jobs ────────────────────────────────────────────────────
 	app.Cron().MustAdd("monthly-quota-reset", "0 0 1 * *", func() {
 		if err := services.ResetMonthlyQuotas(app); err != nil {
-			log.Printf("ERROR: monthly quota reset failed: %v", err)
+			app.Logger().Error("monthly quota reset failed", slog.Any("error", err))
 		}
 	})
 
 	app.Cron().MustAdd("daily-renewal-check", "0 8 * * *", func() {
 		if err := services.CheckRenewals(app); err != nil {
-			log.Printf("ERROR: renewal check failed: %v", err)
+			app.Logger().Error("renewal check failed", slog.Any("error", err))
 		}
 	})
 
 	app.Cron().MustAdd("retry-failed-sms", "0 */6 * * *", func() {
 		if err := services.RetryFailedMessages(app); err != nil {
-			log.Printf("ERROR: retry failed SMS failed: %v", err)
+			app.Logger().Error("retry failed SMS", slog.Any("error", err))
 		}
 	})
 
@@ -208,12 +209,12 @@ func configureOAuth(app core.App) {
 			})
 		}
 		changed = true
-		log.Printf("Configured OAuth2 provider: %s", p.name)
+		app.Logger().Info("Configured OAuth2 provider", slog.String("provider", p.name))
 	}
 
 	if changed {
 		if err := app.Save(users); err != nil {
-			log.Printf("WARNING: could not save OAuth2 config: %v", err)
+			app.Logger().Warn("could not save OAuth2 config", slog.Any("error", err))
 		}
 	}
 }
@@ -261,9 +262,9 @@ func configureSMTP(app core.App) {
 	}
 
 	if err := app.Save(settings); err != nil {
-		log.Printf("WARNING: could not save SMTP config: %v", err)
+		app.Logger().Warn("could not save SMTP config", slog.Any("error", err))
 	} else {
-		log.Printf("Configured SMTP: %s:%d", host, port)
+		app.Logger().Info("Configured SMTP", slog.String("host", host), slog.Int("port", port))
 	}
 }
 
@@ -286,9 +287,9 @@ func configureRateLimits(app core.App) {
 	}
 
 	if err := app.Save(settings); err != nil {
-		log.Printf("WARNING: could not save rate limit config: %v", err)
+		app.Logger().Warn("could not save rate limit config", slog.Any("error", err))
 	} else {
-		log.Printf("Configured rate limits")
+		app.Logger().Info("Configured rate limits")
 	}
 }
 
@@ -302,7 +303,7 @@ func seedSuperuser(app core.App) {
 
 	superusers, err := app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
 	if err != nil {
-		log.Printf("WARNING: could not find superusers collection: %v", err)
+		app.Logger().Warn("could not find superusers collection", slog.Any("error", err))
 		return
 	}
 
@@ -317,8 +318,8 @@ func seedSuperuser(app core.App) {
 	record.SetPassword(password)
 
 	if err := app.Save(record); err != nil {
-		log.Printf("WARNING: could not create superuser: %v", err)
+		app.Logger().Warn("could not create superuser", slog.Any("error", err))
 	} else {
-		log.Printf("Created superuser: %s", email)
+		app.Logger().Info("Created superuser", slog.String("email", email))
 	}
 }

@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"fmt"
-	"log"
-	"time"
+	"log/slog"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 // AuthenticateDevice validates the X-API-Key header against sms_devices.
@@ -47,10 +47,11 @@ func AuthenticateIntegrationAPIKey(e *core.RequestEvent) (string, error) {
 	}
 
 	// Update last_used_at in background
+	app := e.App
 	go func() {
-		record.Set("last_used_at", time.Now().UTC().Format(time.RFC3339))
-		if err := e.App.Save(record); err != nil {
-			log.Printf("WARNING: failed to update api_key last_used_at: %v", err)
+		record.Set("last_used_at", types.NowDateTime())
+		if err := app.Save(record); err != nil {
+			app.Logger().Warn("failed to update api_key last_used_at", slog.Any("error", err))
 		}
 	}()
 
