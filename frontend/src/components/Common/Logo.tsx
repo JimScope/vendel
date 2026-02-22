@@ -1,11 +1,7 @@
 import { Link } from "@tanstack/react-router"
 
-import { useTheme } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
-import icon from "/assets/images/fastapi-icon.svg"
-import iconLight from "/assets/images/fastapi-icon-light.svg"
-import logo from "/assets/images/fastapi-logo.svg"
-import logoLight from "/assets/images/fastapi-logo-light.svg"
+import icon from "/assets/images/ender-icon.svg"
 
 interface LogoProps {
   variant?: "full" | "icon" | "responsive"
@@ -13,31 +9,38 @@ interface LogoProps {
   asLink?: boolean
 }
 
+function EnderWordmark({ className }: { className?: string }) {
+  return (
+    <span className={cn("flex items-baseline", className)}>
+      <span className="text-[#2dd4a8] text-2xl font-bold relative -top-[0.15em]">
+        :
+      </span>
+      <span className="font-serif font-bold text-2xl tracking-tight uppercase">
+        Ender
+      </span>
+      <span className="text-[#2dd4a8] text-2xl font-bold relative -top-[0.15em]">
+        :
+      </span>
+    </span>
+  )
+}
+
 export function Logo({
   variant = "full",
   className,
   asLink = true,
 }: LogoProps) {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-
-  const fullLogo = isDark ? logoLight : logo
-  const iconLogo = isDark ? iconLight : icon
-
   const content =
-    variant === "responsive" ? (
+    variant === "icon" ? (
+      <img src={icon} alt="Ender" className={cn("size-5", className)} />
+    ) : variant === "responsive" ? (
       <>
-        <img
-          src={fullLogo}
-          alt="FastAPI"
-          className={cn(
-            "h-6 w-auto group-data-[collapsible=icon]:hidden",
-            className,
-          )}
+        <EnderWordmark
+          className={cn("group-data-[collapsible=icon]:hidden", className)}
         />
         <img
-          src={iconLogo}
-          alt="FastAPI"
+          src={icon}
+          alt="Ender"
           className={cn(
             "size-5 hidden group-data-[collapsible=icon]:block",
             className,
@@ -45,11 +48,7 @@ export function Logo({
         />
       </>
     ) : (
-      <img
-        src={variant === "full" ? fullLogo : iconLogo}
-        alt="FastAPI"
-        className={cn(variant === "full" ? "h-6 w-auto" : "size-5", className)}
-      />
+      <EnderWordmark className={className} />
     )
 
   if (!asLink) {

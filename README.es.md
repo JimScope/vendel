@@ -55,7 +55,7 @@ Ender es una plataforma full-stack para gestión y envío de SMS a través de di
 - Payloads firmados con HMAC-SHA256
 
 ### Pagos
-- Abstracción de proveedores de pago (QvaPay, Tropipay)
+- Abstracción de proveedores de pago (QvaPay)
 - Gestión de ciclo de vida de suscripciones
 - Flujos de pago por factura y autorización
 
@@ -73,7 +73,7 @@ ender/
 │   ├── go.mod / go.sum
 │   ├── handlers/               # Rutas API custom (sms, planes, webhooks)
 │   ├── services/               # Lógica de negocio (SMS, FCM, cuota, suscripciones)
-│   │   └── payment/            # Proveedores de pago (QvaPay, Tropipay)
+│   │   └── payment/            # Proveedor de pago (QvaPay)
 │   ├── middleware/              # Auth por API key, modo mantenimiento
 │   └── migrations/             # Definiciones de colecciones + datos semilla
 ├── frontend/                   # App React
@@ -85,6 +85,8 @@ ender/
 │   └── tests/                  # Tests Playwright
 ├── Dockerfile                  # Multi-stage (node + go + alpine)
 ├── docker-compose.yml
+├── litestream.yml              # Config de replicación Litestream (opt-in)
+├── entrypoint.sh               # Startup condicional (con/sin Litestream)
 └── .env                        # Variables de entorno
 ```
 
@@ -164,13 +166,23 @@ GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 
-# Proveedores de Pago
-PAYMENT_PROVIDER=qvapay
+# Pago (QvaPay)
 QVAPAY_APP_ID=
 QVAPAY_APP_SECRET=
-TROPIPAY_CLIENT_ID=
-TROPIPAY_CLIENT_SECRET=
-TROPIPAY_ENVIRONMENT=sandbox
+
+# Seguridad
+WEBHOOK_ENCRYPTION_KEY=         # Clave AES para secretos de webhooks
+
+# SMTP (por defecto localhost:1025 para mailcatcher en dev)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USERNAME=
+SMTP_PASSWORD=
+
+# Backup (Litestream - opcional)
+LITESTREAM_REPLICA_URL=         # ej. s3://my-bucket/ender/data
+LITESTREAM_ACCESS_KEY_ID=
+LITESTREAM_SECRET_ACCESS_KEY=
 
 # URLs
 SERVER_BASE_URL=http://localhost:8090
@@ -196,7 +208,6 @@ Ver [deployment.md](./deployment.md) para instrucciones detalladas de despliegue
 
 - [Desarrollo](./development.md) - Guía de desarrollo local
 - [Despliegue](./deployment.md) - Instrucciones de producción
-- [Release Notes](./release-notes.md) - Historial de versiones
 
 ## Licencia
 

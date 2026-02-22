@@ -55,7 +55,7 @@ Ender is a full-stack platform for SMS management and delivery through connected
 - HMAC-SHA256 signed payloads
 
 ### Payments
-- Payment provider abstraction (QvaPay, Tropipay)
+- Payment provider abstraction (QvaPay)
 - Subscription lifecycle management
 - Invoice and authorized payment flows
 
@@ -73,7 +73,7 @@ ender/
 │   ├── go.mod / go.sum
 │   ├── handlers/               # Custom API routes (sms, plans, webhooks)
 │   ├── services/               # Business logic (SMS, FCM, quota, subscriptions)
-│   │   └── payment/            # Payment providers (QvaPay, Tropipay)
+│   │   └── payment/            # Payment provider (QvaPay)
 │   ├── middleware/              # API key auth, maintenance mode
 │   └── migrations/             # PocketBase collection definitions + seed data
 ├── frontend/                   # React App
@@ -85,6 +85,8 @@ ender/
 │   └── tests/                  # Playwright tests
 ├── Dockerfile                  # Multi-stage (node + go + alpine)
 ├── docker-compose.yml
+├── litestream.yml              # Litestream replication config (opt-in)
+├── entrypoint.sh               # Conditional startup (with/without Litestream)
 └── .env                        # Environment variables
 ```
 
@@ -164,13 +166,23 @@ GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 
-# Payment Providers
-PAYMENT_PROVIDER=qvapay
+# Payment (QvaPay)
 QVAPAY_APP_ID=
 QVAPAY_APP_SECRET=
-TROPIPAY_CLIENT_ID=
-TROPIPAY_CLIENT_SECRET=
-TROPIPAY_ENVIRONMENT=sandbox
+
+# Security
+WEBHOOK_ENCRYPTION_KEY=         # AES key for webhook secrets
+
+# SMTP (defaults to localhost:1025 for mailcatcher in dev)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USERNAME=
+SMTP_PASSWORD=
+
+# Backup (Litestream - optional)
+LITESTREAM_REPLICA_URL=         # e.g. s3://my-bucket/ender/data
+LITESTREAM_ACCESS_KEY_ID=
+LITESTREAM_SECRET_ACCESS_KEY=
 
 # URLs
 SERVER_BASE_URL=http://localhost:8090
@@ -196,7 +208,6 @@ See [deployment.md](./deployment.md) for detailed production deployment instruct
 
 - [Development](./development.md) - Local development guide
 - [Deployment](./deployment.md) - Production instructions
-- [Release Notes](./release-notes.md) - Version history
 
 ## License
 

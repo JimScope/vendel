@@ -45,7 +45,7 @@ npx playwright test --ui      # Interactive UI mode
 - **Key directories**:
   - `handlers/` - Custom API routes (sms, plans, webhooks)
   - `services/` - Business logic (SMS orchestration, FCM, quota, subscriptions, webhooks)
-  - `services/payment/` - Payment provider abstraction (QvaPay, Tropipay)
+  - `services/payment/` - Payment provider abstraction (QvaPay)
   - `middleware/` - API key auth, maintenance mode
   - `migrations/` - PocketBase collection definitions + seed data
   - `main.go` - PocketBase init, record hooks, cron jobs, route registration
@@ -62,7 +62,7 @@ npx playwright test --ui      # Interactive UI mode
 
 ### Services Integration
 - **FCM**: Firebase Cloud Messaging for push notifications to devices (via goroutines)
-- **Payments**: QvaPay / Tropipay for subscription billing
+- **Payments**: QvaPay for subscription billing
 - **Email**: PocketBase built-in SMTP, Mailcatcher for local dev at localhost:1080
 
 ## Code Quality Standards

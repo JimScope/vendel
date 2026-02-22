@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_layout/settings")({
   head: () => ({
     meta: [
       {
-        title: "Settings - FastAPI Cloud",
+        title: "Settings - Ender",
       },
     ],
   }),

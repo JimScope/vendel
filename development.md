@@ -88,7 +88,12 @@ Variables principales:
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | JSON de Firebase para FCM | - |
 | `GOOGLE_CLIENT_ID` | OAuth Google | - |
 | `GITHUB_CLIENT_ID` | OAuth GitHub | - |
-| `PAYMENT_PROVIDER` | Proveedor de pago | `qvapay` |
+| `QVAPAY_APP_ID` | App ID de QvaPay | - |
+| `QVAPAY_APP_SECRET` | App Secret de QvaPay | - |
+| `WEBHOOK_ENCRYPTION_KEY` | Clave AES para secretos de webhooks | - |
+| `SMTP_HOST` | Host SMTP | `localhost` |
+| `SMTP_PORT` | Puerto SMTP | `1025` |
+| `LITESTREAM_REPLICA_URL` | URL S3 para backup (opcional) | - |
 | `SERVER_BASE_URL` | URL del backend | `http://localhost:8090` |
 | `FRONTEND_HOST` | URL del frontend | `http://localhost:5173` |
 

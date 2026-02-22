@@ -26,9 +26,11 @@ Variables principales:
 * `FIREBASE_SERVICE_ACCOUNT_JSON`: JSON de cuenta de servicio de Firebase para FCM.
 * `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Credenciales OAuth de Google.
 * `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`: Credenciales OAuth de GitHub.
-* `PAYMENT_PROVIDER`: Proveedor de pago (`qvapay` o `tropipay`).
 * `QVAPAY_APP_ID` / `QVAPAY_APP_SECRET`: Credenciales de QvaPay.
-* `TROPIPAY_CLIENT_ID` / `TROPIPAY_CLIENT_SECRET`: Credenciales de Tropipay.
+* `WEBHOOK_ENCRYPTION_KEY`: Clave AES para encriptar secretos de webhooks.
+* `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD`: Configuración SMTP.
+* `LITESTREAM_REPLICA_URL`: URL de réplica S3 para backup continuo (opcional).
+* `LITESTREAM_ACCESS_KEY_ID` / `LITESTREAM_SECRET_ACCESS_KEY`: Credenciales S3 para Litestream.
 * `SERVER_BASE_URL`: URL pública del backend (ej. `https://api.example.com`).
 * `FRONTEND_HOST`: URL del frontend (ej. `https://app.example.com`).
 
@@ -90,7 +92,10 @@ En tu repositorio, configura secrets para las variables de entorno. Los workflow
 * `FIRST_SUPERUSER`
 * `FIRST_SUPERUSER_PASSWORD`
 * `FIREBASE_SERVICE_ACCOUNT_JSON`
-* `PAYMENT_PROVIDER`
+* `QVAPAY_APP_ID` / `QVAPAY_APP_SECRET`
+* `WEBHOOK_ENCRYPTION_KEY`
+* SMTP credentials (if using email)
+* Litestream credentials (if using backup)
 
 ## URLs
 
