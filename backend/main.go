@@ -6,6 +6,7 @@ import (
 	"ender/services"
 	"log"
 	"os"
+	"strconv"
 
 	_ "ender/migrations"
 
@@ -38,6 +39,9 @@ func main() {
 
 		// Configure OAuth2 providers from env vars
 		configureOAuth(se.App)
+
+		// Configure SMTP from env vars
+		configureSMTP(se.App)
 
 		// ── Custom API routes ────────────────────────────────────────
 		handlers.RegisterSMSRoutes(se)
@@ -181,6 +185,55 @@ func configureOAuth(app core.App) {
 		if err := app.Save(users); err != nil {
 			log.Printf("WARNING: could not save OAuth2 config: %v", err)
 		}
+	}
+}
+
+// configureSMTP sets up SMTP mail settings from environment variables.
+func configureSMTP(app core.App) {
+	host := os.Getenv("SMTP_HOST")
+	if host == "" {
+		if os.Getenv("ENVIRONMENT") != "production" {
+			// Default to mailcatcher in dev
+			host = "localhost"
+		} else {
+			return
+		}
+	}
+
+	port := 1025
+	if p := os.Getenv("SMTP_PORT"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil {
+			port = v
+		}
+	}
+
+	settings := app.Settings()
+	settings.SMTP.Host = host
+	settings.SMTP.Port = port
+	settings.SMTP.Enabled = true
+
+	if user := os.Getenv("SMTP_USERNAME"); user != "" {
+		settings.SMTP.Username = user
+	}
+	if pass := os.Getenv("SMTP_PASSWORD"); pass != "" {
+		settings.SMTP.Password = pass
+	}
+
+	// Sender defaults
+	if settings.Meta.SenderName == "" || settings.Meta.SenderName == "Support" {
+		settings.Meta.SenderName = "Ender"
+	}
+	if settings.Meta.SenderAddress == "" || settings.Meta.SenderAddress == "support@example.com" {
+		settings.Meta.SenderAddress = os.Getenv("FIRST_SUPERUSER")
+		if settings.Meta.SenderAddress == "" {
+			settings.Meta.SenderAddress = "noreply@ender.app"
+		}
+	}
+
+	if err := app.Save(settings); err != nil {
+		log.Printf("WARNING: could not save SMTP config: %v", err)
+	} else {
+		log.Printf("Configured SMTP: %s:%d", host, port)
 	}
 }
 
