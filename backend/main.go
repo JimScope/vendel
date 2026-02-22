@@ -9,12 +9,17 @@ import (
 
 	_ "ender/migrations"
 
+	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
 
 func main() {
+	// Load .env file (from cwd or parent dir)
+	_ = godotenv.Load()
+	_ = godotenv.Load("../.env")
+
 	app := pocketbase.New()
 
 	// Enable auto-migration in dev mode
