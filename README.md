@@ -7,15 +7,12 @@ Ender is a full-stack platform for SMS management and delivery through connected
 ## Tech Stack
 
 ### Backend
-- **Framework**: FastAPI (Python 3.13+)
-- **Database**: PostgreSQL 17 with SQLModel ORM
-- **Authentication**: JWT (JSON Web Tokens)
-- **Migrations**: Alembic
+- **Framework**: [PocketBase](https://pocketbase.io/) (Go)
+- **Database**: SQLite (embedded)
+- **Authentication**: JWT (built-in), OAuth2 (Google, GitHub)
 - **Push Notifications**: Firebase Cloud Messaging (FCM)
-- **Message Queue**: QStash (Upstash)
-- **Email**: Provider-agnostic (Maileroo, SMTP) with Mailcatcher for local dev
-- **Tests**: Pytest with coverage
-- **Code Quality**: Ruff, MyPy, pre-commit hooks
+- **Email**: Built-in SMTP support, Mailcatcher for local dev
+- **Admin**: PocketBase dashboard at `/_/`
 
 ### Frontend
 - **Framework**: React 19 with TypeScript
@@ -23,12 +20,13 @@ Ender is a full-stack platform for SMS management and delivery through connected
 - **State**: TanStack Query + TanStack Router
 - **Styling**: Tailwind CSS + shadcn/ui
 - **Forms**: React Hook Form + Zod
-- **API Client**: Auto-generated from OpenAPI
+- **API Client**: PocketBase JS SDK
 - **E2E Tests**: Playwright
 
 ### Infrastructure
 - **Containers**: Docker & Docker Compose
 - **CI/CD**: GitHub Actions
+- **Deployment**: Single binary (~50MB Docker image)
 
 ## Main Features
 
@@ -49,11 +47,17 @@ Ender is a full-stack platform for SMS management and delivery through connected
 - Multiple subscription plans
 - Monthly SMS quota tracking
 - Device limits per plan
-- Configurable automatic quota reset
+- Automatic monthly quota reset (cron)
 
 ### Webhooks
 - Webhook configuration for status updates
 - Automatic delivery on SMS events
+- HMAC-SHA256 signed payloads
+
+### Payments
+- Payment provider abstraction (QvaPay, Tropipay)
+- Subscription lifecycle management
+- Invoice and authorized payment flows
 
 ### Integrations
 - Multiple API keys per user
@@ -64,24 +68,23 @@ Ender is a full-stack platform for SMS management and delivery through connected
 
 ```
 ender/
-├── backend/                    # FastAPI API
-│   ├── app/
-│   │   ├── api/routes/         # Endpoints (login, users, sms, webhooks, etc.)
-│   │   ├── services/           # Business logic (SMS, FCM, Queue, Quota)
-│   │   ├── core/               # Config, DB, Security
-│   │   ├── models.py           # SQLModel models
-│   │   └── crud.py             # Database operations
-│   ├── tests/
-│   └── scripts/
+├── backend/                    # Go + PocketBase API
+│   ├── main.go                 # PocketBase setup, hooks, cron, routes
+│   ├── go.mod / go.sum
+│   ├── handlers/               # Custom API routes (sms, plans, webhooks)
+│   ├── services/               # Business logic (SMS, FCM, quota, subscriptions)
+│   │   └── payment/            # Payment providers (QvaPay, Tropipay)
+│   ├── middleware/              # API key auth, maintenance mode
+│   └── migrations/             # PocketBase collection definitions + seed data
 ├── frontend/                   # React App
 │   ├── src/
 │   │   ├── routes/             # Pages (TanStack Router)
 │   │   ├── components/         # React components
-│   │   ├── client/             # Auto-generated API client
-│   │   └── hooks/
+│   │   ├── hooks/              # Custom React hooks (PocketBase SDK)
+│   │   └── lib/pocketbase.ts   # PocketBase client
 │   └── tests/                  # Playwright tests
+├── Dockerfile                  # Multi-stage (node + go + alpine)
 ├── docker-compose.yml
-├── docker-compose.override.yml # Development overrides
 └── .env                        # Environment variables
 ```
 
@@ -89,27 +92,24 @@ ender/
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js (see `.nvmrc`)
-- Python 3.13+
-- uv (Python package manager)
+- Go 1.23+ (for local backend dev)
+- Node.js 24+ (for local frontend dev)
 
 ### Development with Docker Compose (Recommended)
 
 ```bash
-# Start full stack with hot reload
-docker compose watch
+# Start the app
+docker compose up -d
 
-# Or without watching
-docker compose up -d --wait
+# View logs
+docker compose logs -f app
 ```
 
 **Available services:**
 | Service | URL |
 |---------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| API Docs (Swagger) | http://localhost:8000/docs |
-| Adminer (DB UI) | http://localhost:8080 |
+| App (API + Frontend) | http://localhost:8090 |
+| PocketBase Admin | http://localhost:8090/_/ |
 | Mailcatcher | http://localhost:1080 |
 
 ### Manual Development
@@ -118,27 +118,17 @@ docker compose up -d --wait
 ```bash
 cd backend
 
-# Install dependencies
-uv sync
-
-# Activate virtual environment
-source .venv/bin/activate
-
 # Run development server
-fastapi dev app/main.py
+go run . serve --http=0.0.0.0:8090
 
-# Run tests
-pytest
-# or
-bash ./scripts/test.sh
+# Build binary
+go build -o ender .
+./ender serve --http=0.0.0.0:8090
 ```
 
 #### Frontend
 ```bash
 cd frontend
-
-# Install Node version
-fnm use  # or nvm use
 
 # Install dependencies
 npm install
@@ -146,8 +136,8 @@ npm install
 # Development server
 npm run dev
 
-# Generate API client from OpenAPI
-npm run generate-client
+# Build
+npm run build
 
 # E2E tests
 npx playwright test
@@ -155,74 +145,39 @@ npx playwright test
 
 ## Configuration
 
-### Required Environment Variables
+### Environment Variables
 
 Create a `.env` file in the project root:
 
 ```env
-# Database
-POSTGRES_SERVER=localhost
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<your-password>
-POSTGRES_DB=ender
-POSTGRES_PORT=5432
-
-# Application
-PROJECT_NAME=ender
+# Core
 ENVIRONMENT=local
-SECRET_KEY=<generate-with-command-below>
-FIRST_SUPERUSER=admin@example.com
-FIRST_SUPERUSER_PASSWORD=<your-password>
+FIRST_SUPERUSER=admin@ender.app
+FIRST_SUPERUSER_PASSWORD=changethis
 
-# Frontend
-FRONTEND_HOST=http://localhost:5173
-BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173
-
-# Plans
-DEFAULT_PLAN=free
-QUOTA_RESET_DAY=1
-
-# Firebase (for push notifications)
+# Firebase (push notifications)
 FIREBASE_SERVICE_ACCOUNT_JSON=<firebase-json>
 
-# QStash (message queue)
-QSTASH_TOKEN=<your-token>
-QSTASH_URL=http://localhost:8080
-QSTASH_CURRENT_SIGNING_KEY=<signing-key>
-QSTASH_NEXT_SIGNING_KEY=<next-signing-key>
-SERVER_BASE_URL=http://localhost:8000
+# OAuth (optional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
 
-# Email Provider (smtp or maileroo)
-EMAIL_PROVIDER=smtp
-EMAILS_FROM_EMAIL=noreply@yourdomain.com
-EMAILS_FROM_NAME=Ender
+# Payment Providers
+PAYMENT_PROVIDER=qvapay
+QVAPAY_APP_ID=
+QVAPAY_APP_SECRET=
+TROPIPAY_CLIENT_ID=
+TROPIPAY_CLIENT_SECRET=
+TROPIPAY_ENVIRONMENT=sandbox
 
-# For SMTP (local dev with Mailcatcher)
-SMTP_HOST=localhost
-SMTP_PORT=1025
-SMTP_TLS=false
-
-# For Maileroo (production)
-# EMAIL_PROVIDER=maileroo
-# MAILEROO_API_KEY=<your-maileroo-api-key>
-```
-
-### Generate Secret Key
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+# URLs
+SERVER_BASE_URL=http://localhost:8090
+FRONTEND_HOST=http://localhost:5173
 ```
 
 ## Testing
-
-### Backend
-```bash
-# Run all tests
-docker compose exec backend pytest
-
-# With coverage
-docker compose exec backend bash scripts/tests-start.sh
-```
 
 ### Frontend
 ```bash
@@ -233,16 +188,6 @@ npx playwright test
 npx playwright test --ui
 ```
 
-## Database Migrations
-
-```bash
-# Create new migration
-docker compose exec backend alembic revision --autogenerate -m "Description"
-
-# Apply migrations
-docker compose exec backend alembic upgrade head
-```
-
 ## Deployment
 
 See [deployment.md](./deployment.md) for detailed production deployment instructions.
@@ -251,8 +196,6 @@ See [deployment.md](./deployment.md) for detailed production deployment instruct
 
 - [Development](./development.md) - Local development guide
 - [Deployment](./deployment.md) - Production instructions
-- [Backend](./backend/README.md) - Backend documentation
-- [Frontend](./frontend/README.md) - Frontend documentation
 - [Release Notes](./release-notes.md) - Version history
 
 ## License

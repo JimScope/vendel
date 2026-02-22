@@ -12,60 +12,41 @@ Puedes desplegar el proyecto usando Docker Compose en un servidor remoto.
 
 Necesitas configurar algunas variables de entorno.
 
-Configura el `ENVIRONMENT`, por defecto `local` (para desarrollo), pero al desplegar en un servidor pondrías algo como `staging` o `production`:
+Configura el `ENVIRONMENT`, por defecto `local` (para desarrollo), pero al desplegar en un servidor pondrías `production`:
 
 ```bash
 export ENVIRONMENT=production
 ```
 
-Puedes configurar varias variables, como:
+Variables principales:
 
-* `PROJECT_NAME`: El nombre del proyecto, usado en la API para la documentación y emails.
-* `BACKEND_CORS_ORIGINS`: Lista de orígenes CORS permitidos separados por comas.
-* `SECRET_KEY`: La clave secreta para el proyecto FastAPI, usada para firmar tokens.
+* `ENVIRONMENT`: Entorno de ejecución (`local`, `staging`, `production`).
 * `FIRST_SUPERUSER`: El email del primer superusuario.
 * `FIRST_SUPERUSER_PASSWORD`: La contraseña del primer superusuario.
-* `SMTP_HOST`: El host del servidor SMTP para enviar emails.
-* `SMTP_USER`: El usuario del servidor SMTP.
-* `SMTP_PASSWORD`: La contraseña del servidor SMTP.
-* `EMAILS_FROM_EMAIL`: La cuenta de email desde la cual se envían los correos.
-* `POSTGRES_SERVER`: El hostname del servidor PostgreSQL. Puedes dejar el valor por defecto `db`.
-* `POSTGRES_PORT`: El puerto de PostgreSQL. Puedes dejar el valor por defecto.
-* `POSTGRES_PASSWORD`: La contraseña de Postgres.
-* `POSTGRES_USER`: El usuario de Postgres.
-* `POSTGRES_DB`: El nombre de la base de datos.
-* `SENTRY_DSN`: El DSN para Sentry, si lo estás usando.
-* `VITE_API_URL`: La URL del backend para el frontend.
-
-### Generar Claves Secretas
-
-Algunas variables de entorno en el archivo `.env` tienen un valor por defecto de `changethis`.
-
-Debes cambiarlas con una clave secreta. Para generar claves secretas puedes ejecutar:
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-Copia el contenido y úsalo como contraseña / clave secreta. Ejecuta el comando nuevamente para generar otra clave.
+* `FIREBASE_SERVICE_ACCOUNT_JSON`: JSON de cuenta de servicio de Firebase para FCM.
+* `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Credenciales OAuth de Google.
+* `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`: Credenciales OAuth de GitHub.
+* `PAYMENT_PROVIDER`: Proveedor de pago (`qvapay` o `tropipay`).
+* `QVAPAY_APP_ID` / `QVAPAY_APP_SECRET`: Credenciales de QvaPay.
+* `TROPIPAY_CLIENT_ID` / `TROPIPAY_CLIENT_SECRET`: Credenciales de Tropipay.
+* `SERVER_BASE_URL`: URL pública del backend (ej. `https://api.example.com`).
+* `FRONTEND_HOST`: URL del frontend (ej. `https://app.example.com`).
 
 ## Desplegar con Docker Compose
 
 Con las variables de entorno configuradas, puedes desplegar con Docker Compose:
 
 ```bash
-docker compose -f docker-compose.yml up -d
+docker compose up -d
 ```
 
-Para producción no querrías tener los overrides en `docker-compose.override.yml`, por eso especificamos explícitamente `docker-compose.yml` como el archivo a usar.
+La imagen Docker usa un build multi-stage que compila el frontend y el backend Go en un binario único sobre Alpine (~50MB). No requiere base de datos externa — SQLite está embebido en PocketBase.
+
+El volumen `pb_data` persiste la base de datos SQLite entre reinicios.
 
 ## Despliegue Continuo (CD)
 
 Puedes usar GitHub Actions para desplegar tu proyecto automáticamente.
-
-Puedes tener múltiples entornos de despliegue.
-
-Ya hay dos entornos configurados, `staging` y `production`.
 
 ### Instalar GitHub Actions Runner
 
@@ -87,60 +68,29 @@ sudo usermod -aG docker github
 sudo su - github
 ```
 
-* Ve al directorio home del usuario `github`:
-
-```bash
-cd
-```
-
 * [Instala un GitHub Action self-hosted runner siguiendo la guía oficial](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners#adding-a-self-hosted-runner-to-a-repository).
 
 * Cuando te pregunte por labels, agrega un label para el entorno, ej. `production`.
 
-Después de instalar, la guía te dirá que ejecutes un comando para iniciar el runner. Sin embargo, se detendrá una vez que termines ese proceso.
-
-Para asegurarte de que corra al inicio y continúe ejecutándose, puedes instalarlo como servicio:
+* Instálalo como servicio:
 
 ```bash
 exit
-```
-
-* Como usuario `root`, ve al directorio `actions-runner`:
-
-```bash
 sudo su
 cd /home/github/actions-runner
-```
-
-* Instala el self-hosted runner como servicio:
-
-```bash
 ./svc.sh install github
-```
-
-* Inicia el servicio:
-
-```bash
 ./svc.sh start
-```
-
-* Verifica el estado:
-
-```bash
 ./svc.sh status
 ```
 
 ### Configurar Secrets
 
-En tu repositorio, configura secrets para las variables de entorno que necesitas. Sigue la [guía oficial de GitHub](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository).
+En tu repositorio, configura secrets para las variables de entorno. Los workflows esperan estos secrets:
 
-Los workflows actuales de GitHub Actions esperan estos secrets:
-
-* `EMAILS_FROM_EMAIL`
 * `FIRST_SUPERUSER`
 * `FIRST_SUPERUSER_PASSWORD`
-* `POSTGRES_PASSWORD`
-* `SECRET_KEY`
+* `FIREBASE_SERVICE_ACCOUNT_JSON`
+* `PAYMENT_PROVIDER`
 
 ## URLs
 
@@ -148,16 +98,12 @@ Reemplaza `example.com` con tu dominio.
 
 ### Producción
 
-Frontend: `https://example.com`
+App: `https://example.com`
 
-Backend API docs: `https://api.example.com/docs`
+PocketBase Admin: `https://example.com/_/`
 
-Backend API base URL: `https://api.example.com`
+API base URL: `https://example.com/api/`
 
-### Staging
+### Frontend independiente
 
-Frontend: `https://staging.example.com`
-
-Backend API docs: `https://api.staging.example.com/docs`
-
-Backend API base URL: `https://api.staging.example.com`
+El frontend también puede desplegarse por separado (ej. Vercel) apuntando `VITE_API_URL` al backend.
