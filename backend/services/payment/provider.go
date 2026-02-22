@@ -1,10 +1,5 @@
 package payment
 
-import (
-	"os"
-	"strings"
-)
-
 // InvoiceRequest represents a request to create a payment invoice.
 type InvoiceRequest struct {
 	Amount      float64
@@ -81,20 +76,9 @@ type Provider interface {
 
 // GetProvider returns the configured payment provider.
 func GetProvider() Provider {
-	providerName := strings.ToLower(os.Getenv("PAYMENT_PROVIDER"))
-
-	switch providerName {
-	case "tropipay":
-		p := NewTropipayProvider()
-		if p.IsConfigured() {
-			return p
-		}
-	default:
-		p := NewQvaPayProvider()
-		if p.IsConfigured() {
-			return p
-		}
+	p := NewQvaPayProvider()
+	if p.IsConfigured() {
+		return p
 	}
-
 	return nil
 }

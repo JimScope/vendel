@@ -3,6 +3,7 @@ package handlers
 import (
 	"ender/middleware"
 	"ender/services"
+	"ender/services/payment"
 	"fmt"
 	"net/http"
 	"os"
@@ -59,12 +60,12 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		if baseURL == "" {
 			baseURL = "http://localhost:8090"
 		}
-		provider := os.Getenv("PAYMENT_PROVIDER")
-		if provider == "" {
-			provider = "qvapay"
+		providerName := "qvapay"
+		if p := payment.GetProvider(); p != nil {
+			providerName = p.Name()
 		}
 
-		webhookURL := fmt.Sprintf("%s/api/webhooks/%s", baseURL, provider)
+		webhookURL := fmt.Sprintf("%s/api/webhooks/%s", baseURL, providerName)
 		frontendHost := os.Getenv("FRONTEND_HOST")
 		if frontendHost == "" {
 			frontendHost = "http://localhost:5173"

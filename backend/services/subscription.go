@@ -3,12 +3,14 @@ package services
 import (
 	"fmt"
 	"log"
+	"net/mail"
 	"time"
 
 	"ender/services/payment"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/mailer"
 )
 
 // StartSubscription begins the subscription process.
@@ -326,7 +328,8 @@ func ProcessRenewal(app core.App, subscriptionId string) error {
 		sub.Set("status", "past_due")
 		_ = app.Save(pay)
 		_ = app.Save(sub)
-		return nil
+		notifyRenewalFailure(app, sub, plan, err)
+		return fmt.Errorf("renewal charge failed: %w", err)
 	}
 
 	pay.Set("status", "completed")
@@ -498,4 +501,38 @@ func downgradeToFreePlan(app core.App, userId string) error {
 		return err
 	}
 	return updateUserQuota(app, userId, plan.Id)
+}
+
+func notifyRenewalFailure(app core.App, sub, plan *core.Record, chargeErr error) {
+	user, err := app.FindRecordById("users", sub.GetString("user"))
+	if err != nil {
+		log.Printf("WARNING: could not find user for renewal failure email: %v", err)
+		return
+	}
+
+	email := user.GetString("email")
+	if email == "" {
+		return
+	}
+
+	planName := plan.GetString("name")
+	msg := &mailer.Message{
+		From: mail.Address{
+			Address: app.Settings().Meta.SenderAddress,
+			Name:    app.Settings().Meta.SenderName,
+		},
+		To:      []mail.Address{{Address: email}},
+		Subject: "Subscription renewal failed",
+		HTML: fmt.Sprintf(
+			`<p>Hi,</p>
+<p>We were unable to renew your <strong>%s</strong> subscription. Your account has been marked as past due.</p>
+<p>Please update your payment method to avoid service interruption.</p>
+<p>Error: %s</p>`,
+			planName, chargeErr.Error(),
+		),
+	}
+
+	if err := app.NewMailClient().Send(msg); err != nil {
+		log.Printf("WARNING: failed to send renewal failure email to %s: %v", email, err)
+	}
 }
