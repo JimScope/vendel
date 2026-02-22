@@ -7,8 +7,8 @@ services:
       - pb_data:/app/pb_data
     environment:
       - ENVIRONMENT=production
-      - FIRST_SUPERUSER=${FIRST_SUPERUSER:-admin@ender.app}
-      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:-changethis}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER:?FIRST_SUPERUSER is required}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:?FIRST_SUPERUSER_PASSWORD is required}
       - FIREBASE_SERVICE_ACCOUNT_JSON=${FIREBASE_SERVICE_ACCOUNT_JSON:-}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
@@ -23,6 +23,12 @@ services:
       - SERVER_BASE_URL=${SERVER_BASE_URL:-http://localhost:8090}
       - FRONTEND_HOST=${FRONTEND_HOST:-http://localhost:5173}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   mailcatcher:
     image: schickling/mailcatcher

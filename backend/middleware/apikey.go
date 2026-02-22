@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/pocketbase/dbx"
@@ -52,7 +53,9 @@ func AuthenticateIntegrationAPIKey(e *core.RequestEvent) (string, error) {
 	// Update last_used_at in background
 	go func() {
 		record.Set("last_used_at", time.Now().UTC().Format(time.RFC3339))
-		_ = e.App.Save(record)
+		if err := e.App.Save(record); err != nil {
+			log.Printf("WARNING: failed to update api_key last_used_at: %v", err)
+		}
 	}()
 
 	return record.GetString("user"), nil

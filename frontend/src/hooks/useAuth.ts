@@ -77,6 +77,7 @@ const useAuth = () => {
 
   const logout = () => {
     pb.authStore.clear()
+    localStorage.removeItem("access_token")
     queryClient.clear()
     navigate({ to: "/login" })
   }

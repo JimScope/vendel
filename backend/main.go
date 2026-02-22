@@ -72,9 +72,16 @@ func main() {
 			return err
 		}
 
+		// Increment device count before persisting so quota stays consistent
+		if err := services.IncrementDeviceCount(e.App, userId); err != nil {
+			return err
+		}
+
 		// Generate secure API key
 		apiKey, err := services.GenerateSecureKey("dk_", 32)
 		if err != nil {
+			// Rollback the increment
+			_ = services.DecrementDeviceCount(e.App, userId)
 			return err
 		}
 		e.Record.Set("api_key", apiKey)
@@ -83,11 +90,12 @@ func main() {
 		e.Record.Unhide("api_key")
 
 		if err := e.Next(); err != nil {
+			// Rollback the increment if record creation fails
+			_ = services.DecrementDeviceCount(e.App, userId)
 			return err
 		}
 
-		// Increment device count after successful creation
-		return services.IncrementDeviceCount(e.App, userId)
+		return nil
 	})
 
 	// SMS Devices: decrement count on delete

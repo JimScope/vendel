@@ -3,12 +3,14 @@ import { FaGithub, FaGoogle } from "react-icons/fa"
 
 import pb from "@/lib/pocketbase"
 import { Button } from "@/components/ui/button"
+import useCustomToast from "@/hooks/useCustomToast"
 
 interface OAuthButtonsProps {
   disabled?: boolean
 }
 
 export function OAuthButtons({ disabled }: OAuthButtonsProps) {
+  const { showErrorToast } = useCustomToast()
   const { data: providers, isLoading } = useQuery({
     queryKey: ["oauth-providers"],
     queryFn: async () => {
@@ -22,8 +24,8 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
     try {
       await pb.collection("users").authWithOAuth2({ provider: providerName })
       window.location.href = "/"
-    } catch (error) {
-      console.error("OAuth error:", error)
+    } catch (error: any) {
+      showErrorToast(error?.message || "OAuth authentication failed")
     }
   }
 

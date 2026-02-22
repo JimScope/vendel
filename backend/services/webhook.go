@@ -47,13 +47,16 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 		headers["X-Webhook-Signature"] = sig
 	}
 
-	// Get timeout from system config
+	// Get timeout from system config (capped at 30s)
 	timeout := 10
 	configs, err := app.FindRecordsByFilter("system_config", "key = 'webhook_timeout'", "", 1, 0)
 	if err == nil && len(configs) > 0 {
 		if t := configs[0].GetInt("value"); t > 0 {
 			timeout = t
 		}
+	}
+	if timeout > 30 {
+		timeout = 30
 	}
 
 	client := &http.Client{Timeout: time.Duration(timeout) * time.Second}
