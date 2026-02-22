@@ -1,5 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import pb from "@/lib/pocketbase"
+import { useRealtimeQuery } from "./useRealtimeQuery"
 
 export const apiKeyListQueryOptions = queryOptions({
   queryKey: ["api-keys"],
@@ -13,9 +14,11 @@ export const apiKeyListQueryOptions = queryOptions({
 })
 
 export function useApiKeyList() {
+  useRealtimeQuery("api_keys", [["api-keys"]])
   return useQuery(apiKeyListQueryOptions)
 }
 
 export function useApiKeyListSuspense() {
+  useRealtimeQuery("api_keys", [["api-keys"]])
   return useSuspenseQuery(apiKeyListQueryOptions)
 }

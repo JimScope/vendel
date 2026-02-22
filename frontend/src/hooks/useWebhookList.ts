@@ -1,5 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import pb from "@/lib/pocketbase"
+import { useRealtimeQuery } from "./useRealtimeQuery"
 
 export const webhookListQueryOptions = queryOptions({
   queryKey: ["webhooks"],
@@ -13,9 +14,11 @@ export const webhookListQueryOptions = queryOptions({
 })
 
 export function useWebhookList() {
+  useRealtimeQuery("webhook_configs", [["webhooks"]])
   return useQuery(webhookListQueryOptions)
 }
 
 export function useWebhookListSuspense() {
+  useRealtimeQuery("webhook_configs", [["webhooks"]])
   return useSuspenseQuery(webhookListQueryOptions)
 }

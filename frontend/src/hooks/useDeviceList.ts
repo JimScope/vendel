@@ -1,5 +1,6 @@
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import pb from "@/lib/pocketbase"
+import { useRealtimeQuery } from "./useRealtimeQuery"
 
 export const deviceListQueryOptions = queryOptions({
   queryKey: ["devices"],
@@ -13,9 +14,11 @@ export const deviceListQueryOptions = queryOptions({
 })
 
 export function useDeviceList() {
+  useRealtimeQuery("sms_devices", [["devices"], ["quota"]])
   return useQuery(deviceListQueryOptions)
 }
 
 export function useDeviceListSuspense() {
+  useRealtimeQuery("sms_devices", [["devices"], ["quota"]])
   return useSuspenseQuery(deviceListQueryOptions)
 }
