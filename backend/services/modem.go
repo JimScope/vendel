@@ -45,6 +45,47 @@ func NotifyModemAgent(app core.App, deviceId string, record *core.Record) {
 	}
 }
 
+// BroadcastModemStatus pushes the current online/offline state of all modem devices
+// to frontend clients subscribed to the "modem-status" topic.
+func BroadcastModemStatus(app core.App) {
+	devices, err := app.FindRecordsByFilter(
+		"sms_devices",
+		"device_type = 'modem'",
+		"", 0, 0,
+	)
+	if err != nil || len(devices) == 0 {
+		return
+	}
+
+	online := make(map[string]bool, len(devices))
+	for _, d := range devices {
+		topic := "modem/" + d.Id
+		connected := false
+		for _, client := range app.SubscriptionsBroker().Clients() {
+			if client.HasSubscription(topic) {
+				connected = true
+				break
+			}
+		}
+		online[d.Id] = connected
+	}
+
+	data, err := json.Marshal(online)
+	if err != nil {
+		return
+	}
+
+	msg := subscriptions.Message{
+		Name: "modem-status",
+		Data: data,
+	}
+	for _, client := range app.SubscriptionsBroker().Clients() {
+		if client.HasSubscription("modem-status") {
+			client.Send(msg)
+		}
+	}
+}
+
 // ClaimPendingMessages atomically marks assigned messages as "sending" for a device.
 // Used on agent startup to recover any messages assigned while the agent was offline.
 func ClaimPendingMessages(app core.App, deviceId string) ([]*core.Record, error) {

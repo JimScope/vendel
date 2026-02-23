@@ -166,10 +166,12 @@ func main() {
 
 	// Realtime: guard modem/* subscriptions with device API key auth
 	app.OnRealtimeSubscribeRequest().BindFunc(func(e *core.RealtimeSubscribeRequestEvent) error {
+		hasModemSub := false
 		for _, sub := range e.Subscriptions {
 			if !strings.HasPrefix(sub, "modem/") {
 				continue
 			}
+			hasModemSub = true
 			deviceId := strings.TrimPrefix(sub, "modem/")
 			apiKey := e.Request.Header.Get("X-API-Key")
 			if apiKey == "" {
@@ -184,7 +186,25 @@ func main() {
 				return fmt.Errorf("unauthorized modem subscription")
 			}
 		}
-		return e.Next()
+		if err := e.Next(); err != nil {
+			return err
+		}
+		// After successful modem subscription, broadcast updated status to frontends
+		if hasModemSub {
+			go services.BroadcastModemStatus(e.App)
+		}
+		return nil
+	})
+
+	// Realtime: broadcast modem status when any SSE client disconnects
+	app.OnRealtimeConnectRequest().BindFunc(func(e *core.RealtimeConnectRequestEvent) error {
+		// e.Next() blocks until the client disconnects
+		if err := e.Next(); err != nil {
+			return err
+		}
+		// Client disconnected — broadcast updated modem status
+		go services.BroadcastModemStatus(e.App)
+		return nil
 	})
 
 	// ── Cron jobs ────────────────────────────────────────────────────

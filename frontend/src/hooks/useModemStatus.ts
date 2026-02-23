@@ -1,4 +1,5 @@
-import { queryOptions, useQuery } from "@tanstack/react-query"
+import { useEffect, useRef } from "react"
+import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query"
 import pb from "@/lib/pocketbase"
 
 export const modemStatusQueryOptions = queryOptions({
@@ -10,10 +11,28 @@ export const modemStatusQueryOptions = queryOptions({
     )
     return response.online
   },
-  staleTime: 30_000,
-  refetchInterval: 30_000,
+  staleTime: Infinity,
 })
 
 export function useModemStatus() {
+  const queryClient = useQueryClient()
+  const unsubRef = useRef<(() => Promise<void>) | null>(null)
+
+  useEffect(() => {
+    if (!pb.authStore.isValid) return
+
+    pb.realtime
+      .subscribe("modem-status", (data) => {
+        queryClient.setQueryData(["modem-status"], data)
+      })
+      .then((unsub) => {
+        unsubRef.current = unsub
+      })
+
+    return () => {
+      unsubRef.current?.()
+    }
+  }, [queryClient])
+
   return useQuery(modemStatusQueryOptions)
 }
