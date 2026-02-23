@@ -29,6 +29,20 @@ services:
       retries: 3
       start_period: 10s
 
+  modem-agent:
+    build: ./modem-agent
+    environment:
+      - ENDER_URL=http://app:8090
+      - MODEMS=${MODEMS:?MODEMS is required}
+    devices:
+      - "${MODEM_DEVICE_0:-/dev/ttyUSB0}:/dev/ttyUSB0"
+    depends_on:
+      app:
+        condition: service_healthy
+    profiles:
+      - modem
+    restart: unless-stopped
+
   mailcatcher:
     image: schickling/mailcatcher
     ports:

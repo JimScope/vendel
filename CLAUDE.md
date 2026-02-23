@@ -15,6 +15,19 @@ docker compose logs -f app        # View logs
 docker compose down -v            # Clean up with volumes
 ```
 
+### Modem Agent (Docker)
+```bash
+docker compose --profile modem up -d                    # Start with modem agent
+docker compose --profile modem logs -f modem-agent      # View modem logs
+```
+
+### Modem Agent (Local)
+```bash
+cd modem-agent
+cp .env.example .env    # Edit with your device API key + serial ports
+go run .
+```
+
 ### Backend
 ```bash
 cd backend
