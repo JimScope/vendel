@@ -1,18 +1,6 @@
 import { useEffect, useRef } from "react"
-import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import pb from "@/lib/pocketbase"
-
-export const modemStatusQueryOptions = queryOptions({
-  queryKey: ["modem-status"],
-  queryFn: async () => {
-    const response = await pb.send<{ online: Record<string, boolean> }>(
-      "/api/sms/devices/status",
-      { method: "GET" },
-    )
-    return response.online
-  },
-  staleTime: Infinity,
-})
 
 export function useModemStatus() {
   const queryClient = useQueryClient()
@@ -34,5 +22,9 @@ export function useModemStatus() {
     }
   }, [queryClient])
 
-  return useQuery(modemStatusQueryOptions)
+  return useQuery<Record<string, boolean>>({
+    queryKey: ["modem-status"],
+    queryFn: () => ({}),
+    staleTime: Infinity,
+  })
 }

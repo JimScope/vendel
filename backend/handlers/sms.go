@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -163,39 +162,6 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		return e.JSON(http.StatusOK, map[string]any{
 			"messages": msgs,
 		})
-	})
-
-	// GET /api/sms/devices/status — Online status for modem devices (auth: JWT or API key)
-	se.Router.GET("/api/sms/devices/status", func(e *core.RequestEvent) error {
-		userId, err := middleware.ResolveAuthOrAPIKey(e)
-		if err != nil {
-			return apis.NewUnauthorizedError("Authentication required", nil)
-		}
-
-		devices, err := e.App.FindRecordsByFilter(
-			"sms_devices",
-			"user = {:userId} && device_type = 'modem'",
-			"", 0, 0,
-			dbx.Params{"userId": userId},
-		)
-		if err != nil {
-			return e.JSON(http.StatusOK, map[string]any{"online": map[string]bool{}})
-		}
-
-		online := make(map[string]bool, len(devices))
-		for _, d := range devices {
-			topic := "modem/" + d.Id
-			connected := false
-			for _, client := range e.App.SubscriptionsBroker().Clients() {
-				if client.HasSubscription(topic) {
-					connected = true
-					break
-				}
-			}
-			online[d.Id] = connected
-		}
-
-		return e.JSON(http.StatusOK, map[string]any{"online": online})
 	})
 
 	// POST /api/sms/fcm-token — Update device FCM token (auth: device API key)

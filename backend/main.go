@@ -164,10 +164,15 @@ func main() {
 	app.OnRecordAfterCreateSuccess("sms_messages").BindFunc(notifyModemIfAssigned)
 	app.OnRecordAfterUpdateSuccess("sms_messages").BindFunc(notifyModemIfAssigned)
 
-	// Realtime: guard modem/* subscriptions with device API key auth
+	// Realtime: guard modem/* subscriptions and broadcast status on relevant subscriptions
 	app.OnRealtimeSubscribeRequest().BindFunc(func(e *core.RealtimeSubscribeRequestEvent) error {
 		hasModemSub := false
+		hasStatusSub := false
 		for _, sub := range e.Subscriptions {
+			if sub == "modem-status" {
+				hasStatusSub = true
+				continue
+			}
 			if !strings.HasPrefix(sub, "modem/") {
 				continue
 			}
@@ -189,8 +194,8 @@ func main() {
 		if err := e.Next(); err != nil {
 			return err
 		}
-		// After successful modem subscription, broadcast updated status to frontends
-		if hasModemSub {
+		// Broadcast modem status when an agent connects or a frontend subscribes
+		if hasModemSub || hasStatusSub {
 			go services.BroadcastModemStatus(e.App)
 		}
 		return nil
