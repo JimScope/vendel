@@ -16,7 +16,10 @@ export function useAppConfig() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["app-settings"],
     queryFn: async () => {
-      return await pb.send("/api/utils/app-settings", {}) as Record<string, string>
+      return (await pb.send("/api/utils/app-settings", {})) as Record<
+        string,
+        string
+      >
     },
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
     retry: 1,

@@ -1,11 +1,8 @@
-import { useEffect, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { useEffect, useRef } from "react"
 import pb from "@/lib/pocketbase"
 
-export function useRealtimeQuery(
-  collection: string,
-  queryKeys: string[][],
-) {
+export function useRealtimeQuery(collection: string, queryKeys: string[][]) {
   const queryClient = useQueryClient()
   const queryKeysRef = useRef(queryKeys)
   queryKeysRef.current = queryKeys
@@ -15,12 +12,18 @@ export function useRealtimeQuery(
 
     let unsubFn: (() => Promise<void>) | null = null
 
-    pb.collection(collection).subscribe("*", () => {
-      for (const key of queryKeysRef.current) {
-        queryClient.invalidateQueries({ queryKey: key })
-      }
-    }).then((fn) => { unsubFn = fn })
+    pb.collection(collection)
+      .subscribe("*", () => {
+        for (const key of queryKeysRef.current) {
+          queryClient.invalidateQueries({ queryKey: key })
+        }
+      })
+      .then((fn) => {
+        unsubFn = fn
+      })
 
-    return () => { unsubFn?.() }
+    return () => {
+      unsubFn?.()
+    }
   }, [collection, queryClient])
 }

@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useEffect, useRef } from "react"
 import pb from "@/lib/pocketbase"
 
 export function useModemStatus() {

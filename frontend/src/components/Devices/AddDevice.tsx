@@ -175,7 +175,9 @@ const AddDevice = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="android">Android Phone</SelectItem>
+                            <SelectItem value="android">
+                              Android Phone
+                            </SelectItem>
                             <SelectItem value="modem">USB Modem</SelectItem>
                           </SelectContent>
                         </Select>

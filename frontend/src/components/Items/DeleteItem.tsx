@@ -2,8 +2,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-
-import pb from "@/lib/pocketbase"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,6 +15,7 @@ import {
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 import { handleError } from "@/utils"
 
 interface DeleteItemProps {

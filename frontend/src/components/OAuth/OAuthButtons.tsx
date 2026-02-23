@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { FaGithub, FaGoogle } from "react-icons/fa"
-
-import pb from "@/lib/pocketbase"
 import { Button } from "@/components/ui/button"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 
 interface OAuthButtonsProps {
   disabled?: boolean
@@ -15,7 +14,13 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
     queryKey: ["oauth-providers"],
     queryFn: async () => {
       const methods = await pb.collection("users").listAuthMethods()
-      return { providers: methods.oauth2?.providers?.map((p: any) => ({ name: p.name, enabled: true })) ?? [] }
+      return {
+        providers:
+          methods.oauth2?.providers?.map((p: any) => ({
+            name: p.name,
+            enabled: true,
+          })) ?? [],
+      }
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   })

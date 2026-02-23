@@ -8,8 +8,6 @@ import {
 } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-import pb from "@/lib/pocketbase"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -23,6 +21,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 import { handleError } from "@/utils"
 
 const searchSchema = z.object({
@@ -83,7 +82,9 @@ function ResetPassword() {
 
   const mutation = useMutation({
     mutationFn: (data: { new_password: string; token: string }) =>
-      pb.collection("users").confirmPasswordReset(data.token, data.new_password, data.new_password),
+      pb
+        .collection("users")
+        .confirmPasswordReset(data.token, data.new_password, data.new_password),
     onSuccess: () => {
       showSuccessToast("Password updated successfully")
       form.reset()

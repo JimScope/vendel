@@ -2,8 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-import pb from "@/lib/pocketbase"
 import {
   Form,
   FormControl,
@@ -15,6 +13,7 @@ import {
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 import { handleError } from "@/utils"
 
 const formSchema = z
@@ -52,7 +51,11 @@ const ChangePassword = () => {
   })
 
   const mutation = useMutation({
-    mutationFn: (data: { current_password: string; new_password: string; confirm_password: string }) => {
+    mutationFn: (data: {
+      current_password: string
+      new_password: string
+      confirm_password: string
+    }) => {
       const userId = pb.authStore.record?.id
       if (!userId) throw new Error("Not authenticated")
       return pb.collection("users").update(userId, {

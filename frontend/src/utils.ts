@@ -1,7 +1,9 @@
 function extractErrorMessage(err: unknown): string {
   if (err instanceof Error) {
     // PocketBase ClientResponseError has response.data
-    const pbError = err as { response?: { data?: Record<string, unknown>; message?: string } }
+    const pbError = err as {
+      response?: { data?: Record<string, unknown>; message?: string }
+    }
     if (pbError.response?.data) {
       const data = pbError.response.data
       // Handle object with message property (e.g., quota errors)

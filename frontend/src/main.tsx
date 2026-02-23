@@ -7,9 +7,9 @@ import {
 import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
-import pb from "./lib/pocketbase"
 import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
+import pb from "./lib/pocketbase"
 import "./index.css"
 import { routeTree } from "./routeTree.gen"
 

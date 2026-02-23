@@ -8,7 +8,8 @@ export const smsListQueryOptions = (messageType: SMSMessageType = "all") =>
   queryOptions({
     queryKey: ["sms", messageType],
     queryFn: async () => {
-      const filter = messageType === "all" ? "" : `message_type = '${messageType}'`
+      const filter =
+        messageType === "all" ? "" : `message_type = '${messageType}'`
       const result = await pb.collection("sms_messages").getList(1, 100, {
         sort: "-created",
         filter,

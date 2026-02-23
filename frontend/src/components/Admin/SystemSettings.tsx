@@ -6,8 +6,6 @@ import {
   MessageSquare,
   Settings2,
 } from "lucide-react"
-
-import pb from "@/lib/pocketbase"
 import {
   Card,
   CardContent,
@@ -26,6 +24,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 
 function SystemSettings() {
   const queryClient = useQueryClient()
@@ -64,7 +63,9 @@ function SystemSettings() {
   }
 
   const getConfigValue = (key: string): string => {
-    const config = configs?.data?.find((c: Record<string, any>) => c.key === key)
+    const config = configs?.data?.find(
+      (c: Record<string, any>) => c.key === key,
+    )
     return config?.value ?? ""
   }
 
