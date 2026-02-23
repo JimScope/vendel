@@ -101,10 +101,15 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 }
 
 // ProcessSMSAck handles device acknowledgment for a sent SMS.
-func ProcessSMSAck(app core.App, messageId string, status string, errorMessage string) error {
+// The deviceId must match the message's assigned device (prevents cross-device manipulation).
+func ProcessSMSAck(app core.App, deviceId string, messageId string, status string, errorMessage string) error {
 	record, err := app.FindRecordById("sms_messages", messageId)
 	if err != nil {
 		return fmt.Errorf("message not found: %w", err)
+	}
+
+	if record.GetString("device") != deviceId {
+		return fmt.Errorf("message does not belong to this device")
 	}
 
 	record.Set("status", status)

@@ -78,7 +78,6 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		if err != nil {
 			return apis.NewUnauthorizedError("Invalid API key", nil)
 		}
-		_ = device // validated
 
 		var body struct {
 			MessageID    string `json:"message_id"`
@@ -89,7 +88,13 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 			return apis.NewBadRequestError("Invalid request body", nil)
 		}
 
-		if err := services.ProcessSMSAck(e.App, body.MessageID, body.Status, body.ErrorMessage); err != nil {
+		// Only allow terminal statuses from device reports
+		validStatuses := map[string]bool{"sent": true, "delivered": true, "failed": true}
+		if !validStatuses[body.Status] {
+			return apis.NewBadRequestError("Invalid status: must be sent, delivered, or failed", nil)
+		}
+
+		if err := services.ProcessSMSAck(e.App, device.Id, body.MessageID, body.Status, body.ErrorMessage); err != nil {
 			return apis.NewNotFoundError(err.Error(), nil)
 		}
 

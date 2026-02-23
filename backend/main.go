@@ -4,13 +4,16 @@ import (
 	"ender/handlers"
 	"ender/middleware"
 	"ender/services"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 
 	_ "ender/migrations"
 
+	"github.com/pocketbase/dbx"
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -160,6 +163,29 @@ func main() {
 	}
 	app.OnRecordAfterCreateSuccess("sms_messages").BindFunc(notifyModemIfAssigned)
 	app.OnRecordAfterUpdateSuccess("sms_messages").BindFunc(notifyModemIfAssigned)
+
+	// Realtime: guard modem/* subscriptions with device API key auth
+	app.OnRealtimeSubscribeRequest().BindFunc(func(e *core.RealtimeSubscribeRequestEvent) error {
+		for _, sub := range e.Subscriptions {
+			if !strings.HasPrefix(sub, "modem/") {
+				continue
+			}
+			deviceId := strings.TrimPrefix(sub, "modem/")
+			apiKey := e.Request.Header.Get("X-API-Key")
+			if apiKey == "" {
+				return fmt.Errorf("authentication required for modem subscriptions")
+			}
+			_, err := e.App.FindFirstRecordByFilter(
+				"sms_devices",
+				"id = {:id} && api_key = {:key}",
+				dbx.Params{"id": deviceId, "key": apiKey},
+			)
+			if err != nil {
+				return fmt.Errorf("unauthorized modem subscription")
+			}
+		}
+		return e.Next()
+	})
 
 	// ── Cron jobs ────────────────────────────────────────────────────
 	app.Cron().MustAdd("monthly-quota-reset", "0 0 1 * *", func() {

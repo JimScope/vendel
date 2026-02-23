@@ -154,6 +154,7 @@ func (c *EnderClient) runSSE(onMessage func(PendingMessage)) error {
 		return fmt.Errorf("create SSE request: %w", err)
 	}
 	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("X-API-Key", c.apiKey)
 
 	resp, err := sseClient.Do(req)
 	if err != nil {
@@ -237,6 +238,7 @@ func (c *EnderClient) subscribe(clientID string) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", c.apiKey)
 
 	resp, err := c.http.Do(req)
 	if err != nil {
