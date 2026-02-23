@@ -37,7 +37,7 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 	} else {
 		records, err := app.FindRecordsByFilter(
 			"sms_devices",
-			"user = {:userId} && fcm_token != ''",
+			"user = {:userId} && (fcm_token != '' || device_type = 'modem')",
 			"-created",
 			0, 0,
 			dbx.Params{"userId": userId},

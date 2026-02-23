@@ -26,11 +26,19 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
 import { useCreateDevice } from "@/hooks/useDeviceMutations"
 
 const formSchema = z.object({
+  device_type: z.enum(["android", "modem"]),
   name: z
     .string()
     .min(1, { message: "Name is required" })
@@ -56,6 +64,7 @@ const AddDevice = () => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
+      device_type: "android",
       name: "",
       phone_number: "",
     },
@@ -150,6 +159,31 @@ const AddDevice = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="grid gap-4 py-4">
+                  <FormField
+                    control={form.control}
+                    name="device_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Device Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select device type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="android">Android Phone</SelectItem>
+                            <SelectItem value="modem">USB Modem</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="name"

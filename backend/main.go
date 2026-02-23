@@ -69,7 +69,7 @@ func main() {
 		return services.CreateDefaultQuota(e.App, e.Record.Id)
 	})
 
-	// SMS Devices: check quota + generate API key on create
+	// SMS Devices: check quota + generate API key + default device_type on create
 	app.OnRecordCreate("sms_devices").BindFunc(func(e *core.RecordEvent) error {
 		userId := e.Record.GetString("user")
 		if err := services.CheckDeviceQuota(e.App, userId); err != nil {
@@ -83,6 +83,11 @@ func main() {
 
 		// Generate secure API key
 		e.Record.Set("api_key", services.GenerateSecureKey("dk_", 32))
+
+		// Default device_type to "android" if not set
+		if e.Record.GetString("device_type") == "" {
+			e.Record.Set("device_type", "android")
+		}
 
 		// Unhide so the key is returned in the create response (only shown once)
 		e.Record.Unhide("api_key")
@@ -136,6 +141,25 @@ func main() {
 
 		return e.Next()
 	})
+
+	// SMS Messages: notify modem agents via SSE when messages are assigned
+	notifyModemIfAssigned := func(e *core.RecordEvent) error {
+		if e.Record.GetString("status") != "assigned" {
+			return e.Next()
+		}
+		deviceId := e.Record.GetString("device")
+		if deviceId == "" {
+			return e.Next()
+		}
+		device, err := e.App.FindRecordById("sms_devices", deviceId)
+		if err != nil || device.GetString("device_type") != "modem" {
+			return e.Next()
+		}
+		go services.NotifyModemAgent(e.App, deviceId, e.Record)
+		return e.Next()
+	}
+	app.OnRecordAfterCreateSuccess("sms_messages").BindFunc(notifyModemIfAssigned)
+	app.OnRecordAfterUpdateSuccess("sms_messages").BindFunc(notifyModemIfAssigned)
 
 	// ── Cron jobs ────────────────────────────────────────────────────
 	app.Cron().MustAdd("monthly-quota-reset", "0 0 1 * *", func() {
@@ -283,6 +307,7 @@ func configureRateLimits(app core.App) {
 		{Label: "POST /api/sms/incoming", MaxRequests: 60, Duration: 60},
 		{Label: "POST /api/sms/fcm-token", MaxRequests: 10, Duration: 60},
 		{Label: "POST /api/sms/send", MaxRequests: 30, Duration: 60},
+		{Label: "GET /api/sms/pending", MaxRequests: 12, Duration: 60},
 		{Label: "/api/", MaxRequests: 300, Duration: 60},
 	}
 

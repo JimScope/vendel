@@ -128,6 +128,37 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		})
 	})
 
+	// GET /api/sms/pending — Pending messages for modem agent startup recovery (auth: device API key)
+	se.Router.GET("/api/sms/pending", func(e *core.RequestEvent) error {
+		device, err := middleware.AuthenticateDevice(e)
+		if err != nil {
+			return apis.NewUnauthorizedError("Invalid API key", nil)
+		}
+
+		claimed, err := services.ClaimPendingMessages(e.App, device.Id)
+		if err != nil {
+			return apis.NewApiError(http.StatusInternalServerError, "Failed to claim messages", nil)
+		}
+
+		type pendingMsg struct {
+			MessageID string `json:"message_id"`
+			Recipient string `json:"recipient"`
+			Body      string `json:"body"`
+		}
+		msgs := make([]pendingMsg, 0, len(claimed))
+		for _, r := range claimed {
+			msgs = append(msgs, pendingMsg{
+				MessageID: r.Id,
+				Recipient: r.GetString("to"),
+				Body:      r.GetString("body"),
+			})
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"messages": msgs,
+		})
+	})
+
 	// POST /api/sms/fcm-token — Update device FCM token (auth: device API key)
 	se.Router.POST("/api/sms/fcm-token", func(e *core.RequestEvent) error {
 		device, err := middleware.AuthenticateDevice(e)

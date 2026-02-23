@@ -77,6 +77,11 @@ func DispatchMessages(app core.App, messages []*core.Record, body string) {
 			continue
 		}
 
+		// Modem devices receive messages via SSE, not FCM
+		if device.GetString("device_type") == "modem" {
+			continue
+		}
+
 		fcmToken := device.GetString("fcm_token")
 		if fcmToken == "" {
 			app.Logger().Warn("device has no FCM token", slog.String("device", deviceId))

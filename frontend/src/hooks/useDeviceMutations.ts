@@ -4,6 +4,7 @@ import pb from "@/lib/pocketbase"
 import useCustomToast from "./useCustomToast"
 
 interface DeviceCreate {
+  device_type: "android" | "modem"
   name: string
   phone_number: string
 }
