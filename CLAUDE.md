@@ -65,6 +65,18 @@ npx playwright test --ui      # Interactive UI mode
 - **Payments**: QvaPay for subscription billing
 - **Email**: PocketBase built-in SMTP, Mailcatcher for local dev at localhost:1080
 
+## Design System
+
+The Ender design system is defined in the **ender-homepage** repo (`../ender-homepage/src/pages/design-system.astro`) and documented at `/design-system` on the homepage site. It is the **single source of truth** for colors, typography, components, and patterns.
+
+- **Reference**: `../ender-homepage/src/styles/global.css` — all CSS custom properties (colors, fonts, neutrals, code syntax)
+- **Dashboard mapping**: `frontend/src/index.css` maps the same palette to shadcn/ui semantic variables
+- **Fonts**: Inter (sans/body), Libre Baskerville (serif/headings), JetBrains Mono (mono/code) — loaded via Google Fonts in `frontend/index.html`
+- **Accent**: `#2dd4a8` (mint/teal) — used consistently across both projects
+- **Neutrals**: Mint-tinted gray scale (50–950), not standard Tailwind grays
+
+When changing visual styles (colors, fonts, spacing, component patterns), update the design system page in ender-homepage **first**, then propagate changes to the dashboard's `frontend/src/index.css`.
+
 ## Code Quality Standards
 
 ### Backend
@@ -75,6 +87,7 @@ npx playwright test --ui      # Interactive UI mode
 - Biome for linting and formatting
 - TypeScript strict mode
 - PocketBase JS SDK for all API calls (no auto-generated client)
+- All visual styles must follow the design system (see above)
 
 ## Development URLs
 | Service | URL |
