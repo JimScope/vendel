@@ -232,6 +232,12 @@ func main() {
 		}
 	})
 
+	app.Cron().MustAdd("retry-failed-webhooks", "*/1 * * * *", func() {
+		if err := services.RetryFailedWebhooks(app); err != nil {
+			app.Logger().Error("retry failed webhooks", slog.Any("error", err))
+		}
+	})
+
 	// ── Start ────────────────────────────────────────────────────────
 	if err := app.Start(); err != nil {
 		log.Fatal(err)

@@ -1,7 +1,8 @@
-import { ChevronDown, ChevronRight, FileText } from "lucide-react"
+import { ChevronDown, ChevronRight, FileText, RefreshCw } from "lucide-react"
 import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import {
   Sheet,
@@ -11,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { useWebhookLogs } from "@/hooks/useWebhookLogs"
+import { useWebhookRetryMutation } from "@/hooks/useWebhookRetryMutation"
 import { cn } from "@/lib/utils"
 
 interface WebhookLogsProps {
@@ -22,9 +24,67 @@ function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString()
 }
 
-function LogEntry({ log }: { log: Record<string, any> }) {
+function formatTimeUntil(dateString: string): string | null {
+  const target = new Date(dateString).getTime()
+  const now = Date.now()
+  const diffMs = target - now
+  if (diffMs <= 0) return null
+  const minutes = Math.ceil(diffMs / 60000)
+  return `${minutes}min`
+}
+
+function RetryStatus({ log }: { log: Record<string, any> }) {
+  const retryCount = log.retry_count ?? 0
+  const nextRetryAt = log.next_retry_at
+
+  if (log.delivery_status !== "failed") return null
+
+  const maxRetries = 3
+  if (retryCount >= maxRetries) {
+    return (
+      <span className="text-xs text-muted-foreground">
+        Max retries reached ({retryCount}/{maxRetries})
+      </span>
+    )
+  }
+
+  if (nextRetryAt) {
+    const timeUntil = formatTimeUntil(nextRetryAt)
+    if (timeUntil) {
+      return (
+        <span className="text-xs text-muted-foreground">
+          Retry {retryCount}/{maxRetries} — next in {timeUntil}
+        </span>
+      )
+    }
+    return (
+      <span className="text-xs text-muted-foreground">
+        Retry {retryCount}/{maxRetries} — retrying soon
+      </span>
+    )
+  }
+
+  if (retryCount > 0) {
+    return (
+      <span className="text-xs text-muted-foreground">
+        Retry {retryCount}/{maxRetries}
+      </span>
+    )
+  }
+
+  return null
+}
+
+function LogEntry({
+  log,
+  webhookId,
+}: {
+  log: Record<string, any>
+  webhookId: string
+}) {
   const [expanded, setExpanded] = useState(false)
   const isSuccess = log.delivery_status === "success"
+  const retryMutation = useWebhookRetryMutation(webhookId)
 
   return (
     <div className="border-b last:border-b-0">
@@ -70,6 +130,23 @@ function LogEntry({ log }: { log: Record<string, any> }) {
                 {log.error_message}
               </p>
             </div>
+          )}
+          <RetryStatus log={log} />
+          {!isSuccess && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => retryMutation.mutate(log.id)}
+              disabled={retryMutation.isPending}
+            >
+              <RefreshCw
+                className={cn(
+                  "size-3 mr-1",
+                  retryMutation.isPending && "animate-spin",
+                )}
+              />
+              {retryMutation.isPending ? "Retrying..." : "Retry"}
+            </Button>
           )}
           <div>
             <p className="text-xs font-medium mb-1">Request Body</p>
@@ -133,7 +210,7 @@ const WebhookLogs = ({ webhook, onSuccess }: WebhookLogsProps) => {
             ) : (
               <div className="border rounded-md">
                 {data.data.map((log) => (
-                  <LogEntry key={log.id} log={log} />
+                  <LogEntry key={log.id} log={log} webhookId={webhook.id} />
                 ))}
               </div>
             )}

@@ -7,7 +7,7 @@ export const webhookLogsQueryOptions = (webhookId: string) =>
     queryFn: async () => {
       const result = await pb
         .collection("webhook_delivery_logs")
-        .getList(1, 20, {
+        .getList(1, 50, {
           filter: `webhook = "${webhookId}"`,
           sort: "-created",
         })

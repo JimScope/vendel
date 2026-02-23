@@ -203,6 +203,52 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		return e.JSON(http.StatusOK, resp)
 	})
 
+	// POST /api/webhooks/retry — Retry a failed webhook delivery (auth: JWT)
+	se.Router.POST("/api/webhooks/retry", func(e *core.RequestEvent) error {
+		info, _ := e.RequestInfo()
+		if info == nil || info.Auth == nil || info.Auth.Id == "" {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+		userId := info.Auth.Id
+
+		var body struct {
+			LogID string `json:"log_id"`
+		}
+		if err := e.BindBody(&body); err != nil || body.LogID == "" {
+			return apis.NewBadRequestError("log_id is required", nil)
+		}
+
+		// Validate the log belongs to the user via its webhook config
+		logRecord, err := e.App.FindRecordById("webhook_delivery_logs", body.LogID)
+		if err != nil {
+			return apis.NewNotFoundError("Delivery log not found", nil)
+		}
+		webhook, err := e.App.FindRecordById("webhook_configs", logRecord.GetString("webhook"))
+		if err != nil {
+			return apis.NewNotFoundError("Webhook not found", nil)
+		}
+		if webhook.GetString("user") != userId {
+			return apis.NewForbiddenError("Not your webhook", nil)
+		}
+
+		result, err := services.RetryWebhookDelivery(e.App, body.LogID)
+		if err != nil {
+			return apis.NewBadRequestError(err.Error(), nil)
+		}
+
+		resp := map[string]any{
+			"delivery_status": result.DeliveryStatus,
+			"response_status": result.ResponseStatus,
+			"duration_ms":     result.DurationMs,
+			"error_message":   result.ErrorMessage,
+		}
+		if result.LogRecord != nil {
+			resp["log_id"] = result.LogRecord.Id
+		}
+
+		return e.JSON(http.StatusOK, resp)
+	})
+
 	// POST /api/sms/fcm-token — Update device FCM token (auth: device API key)
 	se.Router.POST("/api/sms/fcm-token", func(e *core.RequestEvent) error {
 		device, err := middleware.AuthenticateDevice(e)
