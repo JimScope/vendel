@@ -18,6 +18,15 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+// WebhookDeliveryResult holds the outcome of a webhook delivery attempt.
+type WebhookDeliveryResult struct {
+	LogRecord      *core.Record
+	DeliveryStatus string
+	ResponseStatus int
+	DurationMs     int
+	ErrorMessage   string
+}
+
 // SendWebhookForMessage delivers a webhook HTTP POST for an SMS message.
 func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Record, event string) error {
 	if !webhook.GetBool("active") {
@@ -48,9 +57,43 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 		}
 	}
 
+	result := deliverWebhook(app, webhook, payload, event)
+
+	// Mark message as webhook_sent on success
+	if result.DeliveryStatus == "success" {
+		message.Set("webhook_sent", true)
+		if err := app.Save(message); err != nil {
+			app.Logger().Warn("failed to update webhook_sent", slog.Any("error", err))
+		}
+	}
+
+	if result.DeliveryStatus == "failed" {
+		return fmt.Errorf("webhook delivery failed: %s", result.ErrorMessage)
+	}
+
+	return nil
+}
+
+// SendTestWebhook sends a synthetic test payload to the webhook and returns the delivery result.
+func SendTestWebhook(app core.App, webhook *core.Record) *WebhookDeliveryResult {
+	payload := map[string]any{
+		"event":      "test",
+		"message_id": "test_" + GenerateSecureKey("", 12),
+		"body":       "Test webhook from Ender",
+		"from":       "+1234567890",
+		"timestamp":  time.Now().UTC().Format(time.RFC3339),
+	}
+
+	return deliverWebhook(app, webhook, payload, "test")
+}
+
+// deliverWebhook performs the HTTP request, measures timing, and logs the delivery.
+func deliverWebhook(app core.App, webhook *core.Record, payload map[string]any, event string) *WebhookDeliveryResult {
+	url := webhook.GetString("url")
+
 	payloadJSON, err := marshalSorted(payload)
 	if err != nil {
-		return fmt.Errorf("marshal payload: %w", err)
+		return logDelivery(app, webhook, event, url, payload, 0, "", "failed", fmt.Sprintf("marshal payload: %v", err), 0)
 	}
 
 	headers := map[string]string{
@@ -82,33 +125,73 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 	}
 
 	client := &http.Client{Timeout: time.Duration(timeout) * time.Second}
-	req, err := http.NewRequest("POST", webhook.GetString("url"), bytes.NewReader(payloadJSON))
+	req, err := http.NewRequest("POST", url, bytes.NewReader(payloadJSON))
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return logDelivery(app, webhook, event, url, payload, 0, "", "failed", fmt.Sprintf("create request: %v", err), 0)
 	}
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
+	start := time.Now()
 	resp, err := client.Do(req)
+	durationMs := int(time.Since(start).Milliseconds())
+
 	if err != nil {
-		return fmt.Errorf("webhook request failed: %w", err)
+		return logDelivery(app, webhook, event, url, payload, 0, "", "failed", fmt.Sprintf("request failed: %v", err), durationMs)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+	respBodyStr := string(respBody)
+	if len(respBodyStr) > 2000 {
+		respBodyStr = respBodyStr[:2000]
+	}
+
+	status := "success"
+	errMsg := ""
 	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return fmt.Errorf("webhook returned %d: %s", resp.StatusCode, string(body))
+		status = "failed"
+		errMsg = fmt.Sprintf("HTTP %d", resp.StatusCode)
 	}
 
-	// Mark message as webhook_sent
-	message.Set("webhook_sent", true)
-	if err := app.Save(message); err != nil {
-		app.Logger().Warn("failed to update webhook_sent", slog.Any("error", err))
+	return logDelivery(app, webhook, event, url, payload, resp.StatusCode, respBodyStr, status, errMsg, durationMs)
+}
+
+// logDelivery creates a webhook_delivery_logs record and returns the result.
+func logDelivery(app core.App, webhook *core.Record, event, url string, payload map[string]any, responseStatus int, responseBody, deliveryStatus, errMsg string, durationMs int) *WebhookDeliveryResult {
+	result := &WebhookDeliveryResult{
+		DeliveryStatus: deliveryStatus,
+		ResponseStatus: responseStatus,
+		DurationMs:     durationMs,
+		ErrorMessage:   errMsg,
 	}
 
-	return nil
+	col, err := app.FindCollectionByNameOrId("webhook_delivery_logs")
+	if err != nil {
+		app.Logger().Warn("webhook_delivery_logs collection not found", slog.Any("error", err))
+		return result
+	}
+
+	record := core.NewRecord(col)
+	record.Set("webhook", webhook.Id)
+	record.Set("event", event)
+	record.Set("url", url)
+	record.Set("request_body", payload)
+	record.Set("response_status", responseStatus)
+	record.Set("response_body", responseBody)
+	record.Set("delivery_status", deliveryStatus)
+	record.Set("error_message", errMsg)
+	record.Set("duration_ms", durationMs)
+
+	if err := app.Save(record); err != nil {
+		app.Logger().Warn("failed to save webhook delivery log", slog.Any("error", err))
+	} else {
+		result.LogRecord = record
+	}
+
+	return result
 }
 
 // VerifyWebhookSignature verifies an HMAC-SHA256 signature.

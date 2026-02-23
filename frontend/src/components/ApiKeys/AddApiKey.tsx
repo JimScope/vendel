@@ -32,6 +32,7 @@ import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
+  expires_at: z.string().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -49,13 +50,18 @@ const AddApiKey = () => {
     criteriaMode: "all",
     defaultValues: {
       name: "",
+      expires_at: "",
     },
   })
 
   const createApiKeyMutation = useCreateApiKey()
 
   const onSubmit = (data: FormData) => {
-    createApiKeyMutation.mutate(data, {
+    const payload = {
+      name: data.name,
+      ...(data.expires_at ? { expires_at: data.expires_at } : {}),
+    }
+    createApiKeyMutation.mutate(payload, {
       onSuccess: (response) => {
         setCreatedKey(response?.key ?? null)
       },
@@ -164,6 +170,26 @@ const AddApiKey = () => {
                         </FormControl>
                         <FormDescription>
                           A descriptive name to identify this API key
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expires_at"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Expiration</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            min={new Date().toISOString().split("T")[0]}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Optional. Leave empty for a key that never expires.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

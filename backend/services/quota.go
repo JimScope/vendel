@@ -262,6 +262,14 @@ func GenerateSecureKey(prefix string, length int) string {
 	return prefix + security.RandomString(length)
 }
 
+// GenerateKeyPrefix returns the first 10 characters of a key followed by "...".
+func GenerateKeyPrefix(key string) string {
+	if len(key) <= 10 {
+		return key
+	}
+	return key[:10] + "..."
+}
+
 // containsEvent checks if a JSON array string contains a specific event.
 func containsEvent(eventsJSON string, event string) bool {
 	if eventsJSON == "" {

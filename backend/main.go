@@ -54,6 +54,7 @@ func main() {
 		handlers.RegisterSMSRoutes(se)
 		handlers.RegisterPlanRoutes(se)
 		handlers.RegisterWebhookRoutes(se)
+		handlers.RegisterApiKeyRoutes(se)
 		handlers.RegisterUtilRoutes(se)
 
 		// ── Maintenance mode middleware ───────────────────────────────

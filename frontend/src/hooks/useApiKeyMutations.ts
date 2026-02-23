@@ -5,6 +5,22 @@ import useCustomToast from "./useCustomToast"
 
 interface ApiKeyCreate {
   name: string
+  expires_at?: string
+}
+
+interface RotateApiKeyParams {
+  id: string
+  expires_at?: string
+}
+
+interface RotatedKeyResult {
+  id: string
+  name: string
+  key: string
+  key_prefix: string
+  is_active: boolean
+  expires_at: string
+  created: string
 }
 
 export function useCreateApiKey() {
@@ -42,6 +58,32 @@ export function useDeleteApiKey() {
     },
     onError: (error: Error) => {
       showErrorToast(error.message || "Failed to delete API key")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] })
+    },
+  })
+}
+
+export function useRotateApiKey() {
+  const queryClient = useQueryClient()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  return useMutation({
+    mutationFn: async (
+      params: RotateApiKeyParams,
+    ): Promise<RotatedKeyResult> => {
+      const response = await pb.send(`/api/api-keys/${params.id}/rotate`, {
+        method: "POST",
+        body: { expires_at: params.expires_at },
+      })
+      return response as RotatedKeyResult
+    },
+    onSuccess: () => {
+      showSuccessToast("API key rotated successfully")
+    },
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Failed to rotate API key")
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["api-keys"] })

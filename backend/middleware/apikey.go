@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -44,6 +45,12 @@ func AuthenticateIntegrationAPIKey(e *core.RequestEvent) (string, error) {
 	)
 	if err != nil {
 		return "", fmt.Errorf("invalid integration API key")
+	}
+
+	// Check expiration
+	expiresAt := record.GetDateTime("expires_at")
+	if !expiresAt.IsZero() && expiresAt.Time().Before(time.Now()) {
+		return "", fmt.Errorf("API key expired")
 	}
 
 	// Update last_used_at in background

@@ -165,6 +165,44 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		})
 	})
 
+	// POST /api/webhooks/test — Test a webhook endpoint (auth: JWT)
+	se.Router.POST("/api/webhooks/test", func(e *core.RequestEvent) error {
+		info, _ := e.RequestInfo()
+		if info == nil || info.Auth == nil || info.Auth.Id == "" {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+		userId := info.Auth.Id
+
+		var body struct {
+			WebhookID string `json:"webhook_id"`
+		}
+		if err := e.BindBody(&body); err != nil || body.WebhookID == "" {
+			return apis.NewBadRequestError("webhook_id is required", nil)
+		}
+
+		webhook, err := e.App.FindRecordById("webhook_configs", body.WebhookID)
+		if err != nil {
+			return apis.NewNotFoundError("Webhook not found", nil)
+		}
+		if webhook.GetString("user") != userId {
+			return apis.NewForbiddenError("Not your webhook", nil)
+		}
+
+		result := services.SendTestWebhook(e.App, webhook)
+
+		resp := map[string]any{
+			"delivery_status": result.DeliveryStatus,
+			"response_status": result.ResponseStatus,
+			"duration_ms":     result.DurationMs,
+			"error_message":   result.ErrorMessage,
+		}
+		if result.LogRecord != nil {
+			resp["log_id"] = result.LogRecord.Id
+		}
+
+		return e.JSON(http.StatusOK, resp)
+	})
+
 	// POST /api/sms/fcm-token — Update device FCM token (auth: device API key)
 	se.Router.POST("/api/sms/fcm-token", func(e *core.RequestEvent) error {
 		device, err := middleware.AuthenticateDevice(e)

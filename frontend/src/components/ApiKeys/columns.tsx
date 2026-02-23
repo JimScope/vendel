@@ -1,10 +1,35 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { ApiKeyActionsMenu } from "./ApiKeyActionsMenu"
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString()
+}
+
+function formatRelativeDate(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = date.getTime() - now.getTime()
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) return `${Math.abs(diffDays)}d ago`
+  if (diffDays === 0) return "Today"
+  if (diffDays === 1) return "Tomorrow"
+  if (diffDays < 30) return `${diffDays}d`
+  return date.toLocaleDateString()
+}
+
+function isExpired(dateString: string): boolean {
+  return new Date(dateString) < new Date()
+}
+
+function isExpiringSoon(dateString: string): boolean {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffDays = (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  return diffDays > 0 && diffDays <= 7
 }
 
 export const columns: ColumnDef<Record<string, any>>[] = [
@@ -52,6 +77,38 @@ export const columns: ColumnDef<Record<string, any>>[] = [
           : "Never"}
       </span>
     ),
+  },
+  {
+    accessorKey: "expires_at",
+    header: "Expires",
+    cell: ({ row }) => {
+      const expiresAt = row.original.expires_at
+      if (!expiresAt) {
+        return <span className="text-muted-foreground">Never</span>
+      }
+      if (isExpired(expiresAt)) {
+        return (
+          <Badge variant="destructive" className="text-[10px]">
+            Expired {formatRelativeDate(expiresAt)}
+          </Badge>
+        )
+      }
+      if (isExpiringSoon(expiresAt)) {
+        return (
+          <Badge
+            variant="outline"
+            className="text-[10px] border-yellow-500 text-yellow-600"
+          >
+            {formatRelativeDate(expiresAt)}
+          </Badge>
+        )
+      }
+      return (
+        <span className="text-muted-foreground">
+          {formatRelativeDate(expiresAt)}
+        </span>
+      )
+    },
   },
   {
     accessorKey: "created_at",
