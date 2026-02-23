@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ender-sdk"
+version = "0.1.0"
+description = "Official Python SDK for the Ender SMS gateway API"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+dependencies = ["requests>=2.28"]
+
+[project.urls]
+Homepage = "https://github.com/JimScope/ender"
+Documentation = "https://ender.jimscope.me/docs/api/sdks"
