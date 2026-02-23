@@ -249,6 +249,53 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		return e.JSON(http.StatusOK, resp)
 	})
 
+	// POST /api/sms/validate-cron — Validate a cron expression (auth: JWT)
+	se.Router.POST("/api/sms/validate-cron", func(e *core.RequestEvent) error {
+		info, _ := e.RequestInfo()
+		if info == nil || info.Auth == nil || info.Auth.Id == "" {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+
+		var body struct {
+			Expression string `json:"expression"`
+			Timezone   string `json:"timezone"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return apis.NewBadRequestError("Invalid request body", nil)
+		}
+
+		if body.Expression == "" {
+			return e.JSON(http.StatusOK, map[string]any{
+				"valid": false,
+				"error": "Expression is required",
+			})
+		}
+
+		if body.Timezone == "" {
+			body.Timezone = "UTC"
+		}
+
+		if err := services.ValidateCronExpression(body.Expression); err != nil {
+			return e.JSON(http.StatusOK, map[string]any{
+				"valid": false,
+				"error": err.Error(),
+			})
+		}
+
+		nextRun, err := services.ComputeNextRun(body.Expression, body.Timezone)
+		if err != nil {
+			return e.JSON(http.StatusOK, map[string]any{
+				"valid": false,
+				"error": err.Error(),
+			})
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"valid":    true,
+			"next_run": nextRun,
+		})
+	})
+
 	// POST /api/sms/fcm-token — Update device FCM token (auth: device API key)
 	se.Router.POST("/api/sms/fcm-token", func(e *core.RequestEvent) error {
 		device, err := middleware.AuthenticateDevice(e)

@@ -1,4 +1,6 @@
 import {
+  Clock,
+  FileText,
   Home,
   Key,
   MessageSquare,
@@ -22,6 +24,8 @@ import { User } from "./User"
 const baseItems: Item[] = [
   { icon: Home, title: "Dashboard", path: "/" },
   { icon: MessageSquare, title: "SMS", path: "/sms" },
+  { icon: FileText, title: "Templates", path: "/templates" },
+  { icon: Clock, title: "Scheduled", path: "/scheduled" },
   { icon: Smartphone, title: "Devices", path: "/devices" },
   { icon: Webhook, title: "Webhooks", path: "/webhooks" },
   { icon: Key, title: "Integrations", path: "/integrations" },

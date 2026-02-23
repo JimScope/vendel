@@ -146,6 +146,53 @@ func main() {
 		return e.Next()
 	})
 
+	// Scheduled SMS: compute next_run_at on create
+	app.OnRecordCreate("scheduled_sms").BindFunc(func(e *core.RecordEvent) error {
+		if e.Record.GetString("timezone") == "" {
+			e.Record.Set("timezone", "UTC")
+		}
+		if e.Record.GetString("status") == "" {
+			e.Record.Set("status", "active")
+		}
+
+		scheduleType := e.Record.GetString("schedule_type")
+		if scheduleType == "one_time" {
+			e.Record.Set("next_run_at", e.Record.GetString("scheduled_at"))
+		} else if scheduleType == "recurring" {
+			cronExpr := e.Record.GetString("cron_expression")
+			tz := e.Record.GetString("timezone")
+			nextRun, err := services.ComputeNextRun(cronExpr, tz)
+			if err != nil {
+				return fmt.Errorf("invalid cron expression: %w", err)
+			}
+			e.Record.Set("next_run_at", nextRun)
+		}
+
+		return e.Next()
+	})
+
+	// Scheduled SMS: recompute next_run_at on update
+	app.OnRecordUpdate("scheduled_sms").BindFunc(func(e *core.RecordEvent) error {
+		if e.Record.GetString("timezone") == "" {
+			e.Record.Set("timezone", "UTC")
+		}
+
+		scheduleType := e.Record.GetString("schedule_type")
+		if scheduleType == "one_time" {
+			e.Record.Set("next_run_at", e.Record.GetString("scheduled_at"))
+		} else if scheduleType == "recurring" {
+			cronExpr := e.Record.GetString("cron_expression")
+			tz := e.Record.GetString("timezone")
+			nextRun, err := services.ComputeNextRun(cronExpr, tz)
+			if err != nil {
+				return fmt.Errorf("invalid cron expression: %w", err)
+			}
+			e.Record.Set("next_run_at", nextRun)
+		}
+
+		return e.Next()
+	})
+
 	// SMS Messages: notify modem agents via SSE when messages are assigned
 	notifyModemIfAssigned := func(e *core.RecordEvent) error {
 		if e.Record.GetString("status") != "assigned" {
@@ -235,6 +282,12 @@ func main() {
 	app.Cron().MustAdd("retry-failed-webhooks", "*/1 * * * *", func() {
 		if err := services.RetryFailedWebhooks(app); err != nil {
 			app.Logger().Error("retry failed webhooks", slog.Any("error", err))
+		}
+	})
+
+	app.Cron().MustAdd("process-scheduled-sms", "*/1 * * * *", func() {
+		if err := services.ProcessDueSchedules(app); err != nil {
+			app.Logger().Error("process scheduled SMS", slog.Any("error", err))
 		}
 	})
 

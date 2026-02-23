@@ -23,8 +23,10 @@ import { Route as SubscriptionSuccessRouteImport } from './routes/subscription.s
 import { Route as SubscriptionErrorRouteImport } from './routes/subscription.error'
 import { Route as OauthCallbackProviderRouteImport } from './routes/oauth-callback.$provider'
 import { Route as LayoutWebhooksRouteImport } from './routes/_layout/webhooks'
+import { Route as LayoutTemplatesRouteImport } from './routes/_layout/templates'
 import { Route as LayoutSmsRouteImport } from './routes/_layout/sms'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutScheduledRouteImport } from './routes/_layout/scheduled'
 import { Route as LayoutIntegrationsRouteImport } from './routes/_layout/integrations'
 import { Route as LayoutDevicesRouteImport } from './routes/_layout/devices'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
@@ -98,6 +100,11 @@ const LayoutWebhooksRoute = LayoutWebhooksRouteImport.update({
   path: '/webhooks',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutTemplatesRoute = LayoutTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutSmsRoute = LayoutSmsRouteImport.update({
   id: '/sms',
   path: '/sms',
@@ -106,6 +113,11 @@ const LayoutSmsRoute = LayoutSmsRouteImport.update({
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutScheduledRoute = LayoutScheduledRouteImport.update({
+  id: '/scheduled',
+  path: '/scheduled',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutIntegrationsRoute = LayoutIntegrationsRouteImport.update({
@@ -136,8 +148,10 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/devices': typeof LayoutDevicesRoute
   '/integrations': typeof LayoutIntegrationsRoute
+  '/scheduled': typeof LayoutScheduledRoute
   '/settings': typeof LayoutSettingsRoute
   '/sms': typeof LayoutSmsRoute
+  '/templates': typeof LayoutTemplatesRoute
   '/webhooks': typeof LayoutWebhooksRoute
   '/oauth-callback/$provider': typeof OauthCallbackProviderRoute
   '/subscription/error': typeof SubscriptionErrorRoute
@@ -156,8 +170,10 @@ export interface FileRoutesByTo {
   '/admin': typeof LayoutAdminRoute
   '/devices': typeof LayoutDevicesRoute
   '/integrations': typeof LayoutIntegrationsRoute
+  '/scheduled': typeof LayoutScheduledRoute
   '/settings': typeof LayoutSettingsRoute
   '/sms': typeof LayoutSmsRoute
+  '/templates': typeof LayoutTemplatesRoute
   '/webhooks': typeof LayoutWebhooksRoute
   '/oauth-callback/$provider': typeof OauthCallbackProviderRoute
   '/subscription/error': typeof SubscriptionErrorRoute
@@ -178,8 +194,10 @@ export interface FileRoutesById {
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/devices': typeof LayoutDevicesRoute
   '/_layout/integrations': typeof LayoutIntegrationsRoute
+  '/_layout/scheduled': typeof LayoutScheduledRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/sms': typeof LayoutSmsRoute
+  '/_layout/templates': typeof LayoutTemplatesRoute
   '/_layout/webhooks': typeof LayoutWebhooksRoute
   '/oauth-callback/$provider': typeof OauthCallbackProviderRoute
   '/subscription/error': typeof SubscriptionErrorRoute
@@ -200,8 +218,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/devices'
     | '/integrations'
+    | '/scheduled'
     | '/settings'
     | '/sms'
+    | '/templates'
     | '/webhooks'
     | '/oauth-callback/$provider'
     | '/subscription/error'
@@ -220,8 +240,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/devices'
     | '/integrations'
+    | '/scheduled'
     | '/settings'
     | '/sms'
+    | '/templates'
     | '/webhooks'
     | '/oauth-callback/$provider'
     | '/subscription/error'
@@ -241,8 +263,10 @@ export interface FileRouteTypes {
     | '/_layout/admin'
     | '/_layout/devices'
     | '/_layout/integrations'
+    | '/_layout/scheduled'
     | '/_layout/settings'
     | '/_layout/sms'
+    | '/_layout/templates'
     | '/_layout/webhooks'
     | '/oauth-callback/$provider'
     | '/subscription/error'
@@ -365,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutWebhooksRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/templates': {
+      id: '/_layout/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof LayoutTemplatesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/sms': {
       id: '/_layout/sms'
       path: '/sms'
@@ -377,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof LayoutSettingsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/scheduled': {
+      id: '/_layout/scheduled'
+      path: '/scheduled'
+      fullPath: '/scheduled'
+      preLoaderRoute: typeof LayoutScheduledRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/integrations': {
@@ -407,8 +445,10 @@ interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutDevicesRoute: typeof LayoutDevicesRoute
   LayoutIntegrationsRoute: typeof LayoutIntegrationsRoute
+  LayoutScheduledRoute: typeof LayoutScheduledRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSmsRoute: typeof LayoutSmsRoute
+  LayoutTemplatesRoute: typeof LayoutTemplatesRoute
   LayoutWebhooksRoute: typeof LayoutWebhooksRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
@@ -417,8 +457,10 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutDevicesRoute: LayoutDevicesRoute,
   LayoutIntegrationsRoute: LayoutIntegrationsRoute,
+  LayoutScheduledRoute: LayoutScheduledRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSmsRoute: LayoutSmsRoute,
+  LayoutTemplatesRoute: LayoutTemplatesRoute,
   LayoutWebhooksRoute: LayoutWebhooksRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
