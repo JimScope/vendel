@@ -22,6 +22,7 @@ const (
 )
 
 var fcmClient *messaging.Client
+var fcmBreaker = NewCircuitBreaker("fcm", 5, 60*time.Second)
 
 // InitFCM initializes the Firebase Admin SDK from environment.
 func InitFCM(pbApp core.App) {
@@ -115,11 +116,19 @@ func DispatchMessages(app core.App, messages []*core.Record, body string) {
 						return
 					}
 				}
+				if !fcmBreaker.Allow() {
+					app.Logger().Warn("FCM circuit breaker open, skipping dispatch",
+						slog.String("token", token[:20]))
+					return // messages stay "assigned", retry cron picks them up
+				}
 				if err := sendFCMNotification(token, chunk, body); err != nil {
+					fcmBreaker.RecordFailure()
 					app.Logger().Error("FCM send failed", slog.String("token", token[:20]), slog.Any("error", err))
 					for _, ref := range chunk {
 						markMessageFailed(app, ref.MessageID, err.Error())
 					}
+				} else {
+					fcmBreaker.RecordSuccess()
 				}
 			}(fcmToken, chunk, body, delay)
 		}

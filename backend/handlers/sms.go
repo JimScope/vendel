@@ -122,7 +122,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		}
 
 		userId := device.GetString("user")
-		message, err := services.HandleIncomingSMS(e.App, userId, body.FromNumber, body.Body, body.Timestamp)
+		message, err := services.HandleIncomingSMS(e.App, userId, device.Id, body.FromNumber, body.Body, body.Timestamp)
 		if err != nil {
 			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
 		}

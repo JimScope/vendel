@@ -225,7 +225,7 @@ func main() {
 		}
 	})
 
-	app.Cron().MustAdd("retry-failed-sms", "0 */6 * * *", func() {
+	app.Cron().MustAdd("retry-failed-sms", "*/15 * * * *", func() {
 		if err := services.RetryFailedMessages(app); err != nil {
 			app.Logger().Error("retry failed SMS", slog.Any("error", err))
 		}
