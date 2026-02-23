@@ -2,14 +2,21 @@ import { useQuery } from "@tanstack/react-query"
 
 import pb from "@/lib/pocketbase"
 
+export interface PaymentProvider {
+  name: string
+  display_name: string
+}
+
 export interface AppConfig {
   appName: string
   supportEmail: string
+  paymentProviders: PaymentProvider[]
 }
 
 const DEFAULT_CONFIG: AppConfig = {
   appName: "Ender",
   supportEmail: "support@example.com",
+  paymentProviders: [],
 }
 
 export function useAppConfig() {
@@ -18,7 +25,7 @@ export function useAppConfig() {
     queryFn: async () => {
       return (await pb.send("/api/utils/app-settings", {})) as Record<
         string,
-        string
+        any
       >
     },
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
@@ -28,6 +35,8 @@ export function useAppConfig() {
   const config: AppConfig = {
     appName: data?.app_name ?? DEFAULT_CONFIG.appName,
     supportEmail: data?.support_email ?? DEFAULT_CONFIG.supportEmail,
+    paymentProviders:
+      data?.payment_providers ?? DEFAULT_CONFIG.paymentProviders,
   }
 
   return {

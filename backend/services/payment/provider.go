@@ -54,6 +54,13 @@ const (
 	EventPaymentFailed          WebhookEventType = "payment_failed"
 )
 
+// WebhookRequest carries the raw HTTP data needed by providers for webhook parsing.
+type WebhookRequest struct {
+	RawBody []byte
+	Headers map[string]string
+	Payload map[string]any // pre-parsed JSON, used by QvaPay
+}
+
 // WebhookEvent is a parsed webhook event from a payment provider.
 type WebhookEvent struct {
 	EventType     WebhookEventType
@@ -67,18 +74,44 @@ type WebhookEvent struct {
 // Provider is the interface all payment providers must implement.
 type Provider interface {
 	Name() string
+	DisplayName() string
 	IsConfigured() bool
 	CreateInvoice(req InvoiceRequest) (*InvoiceResult, error)
 	GetAuthorizationURL(req AuthorizationRequest) (*AuthorizationResult, error)
 	ChargeAuthorizedUser(req ChargeRequest) (*ChargeResult, error)
-	ParseWebhook(payload map[string]any) *WebhookEvent
+	ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 }
 
-// GetProvider returns the configured payment provider.
-func GetProvider() Provider {
-	p := NewQvaPayProvider()
-	if p.IsConfigured() {
-		return p
+// GetProviders returns all configured payment providers.
+func GetProviders() []Provider {
+	all := []Provider{
+		NewQvaPayProvider(),
+		NewStripeProvider(),
+	}
+	var configured []Provider
+	for _, p := range all {
+		if p.IsConfigured() {
+			configured = append(configured, p)
+		}
+	}
+	return configured
+}
+
+// GetProvider returns a configured provider by name, or nil if not found/configured.
+func GetProvider(name string) Provider {
+	for _, p := range GetProviders() {
+		if p.Name() == name {
+			return p
+		}
+	}
+	return nil
+}
+
+// GetDefaultProvider returns the first configured provider (backwards compat).
+func GetDefaultProvider() Provider {
+	providers := GetProviders()
+	if len(providers) > 0 {
+		return providers[0]
 	}
 	return nil
 }

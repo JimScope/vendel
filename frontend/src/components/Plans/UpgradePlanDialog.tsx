@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Skeleton } from "@/components/ui/skeleton"
+import useAppConfig from "@/hooks/useAppConfig"
 import useCustomToast from "@/hooks/useCustomToast"
 import { usePlanList } from "@/hooks/usePlanList"
 import pb from "@/lib/pocketbase"
@@ -90,19 +91,31 @@ function PlanCard({
 function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
   const [pendingPayment, setPendingPayment] = useState<{
     url: string
     plan: string
+    providerDisplayName: string
   } | null>(null)
   const { data: plansData, isLoading } = usePlanList()
+  const { config } = useAppConfig()
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast, showInfoToast } = useCustomToast()
+
+  const providers = config.paymentProviders
+  const selectedPlan = plansData?.data?.find((p) => p.id === selectedPlanId)
+  const isPaidPlan = selectedPlan && (selectedPlan.price ?? 0) > 0
+  const needsProviderSelection = isPaidPlan && providers.length > 1
+
+  // Auto-select provider if only one available
+  const effectiveProvider =
+    providers.length === 1 ? providers[0].name : selectedProvider
 
   const mutation = useMutation({
     mutationFn: (planId: string) =>
       pb.send("/api/plans/upgrade", {
         method: "POST",
-        body: { plan_id: planId },
+        body: { plan_id: planId, provider: effectiveProvider },
       }),
     onSuccess: (response) => {
       const data = response as UpgradeResponse
@@ -113,9 +126,15 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
         showSuccessToast("Plan activated successfully")
         setIsOpen(false)
         setSelectedPlanId(null)
+        setSelectedProvider(null)
       } else if (data.status === "pending_payment" && data.payment_url) {
         // Paid plan - show payment link
-        setPendingPayment({ url: data.payment_url, plan: data.plan })
+        const providerInfo = providers.find((p) => p.name === effectiveProvider)
+        setPendingPayment({
+          url: data.payment_url,
+          plan: data.plan,
+          providerDisplayName: providerInfo?.display_name ?? "Payment Provider",
+        })
         showInfoToast("Please complete payment to activate your plan")
       } else if (
         data.status === "pending_authorization" &&
@@ -140,6 +159,7 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
     setIsOpen(open)
     if (!open) {
       setSelectedPlanId(null)
+      setSelectedProvider(null)
       setPendingPayment(null)
     }
   }
@@ -150,9 +170,13 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
     }
   }
 
-  const selectedPlan = plansData?.data?.find((p) => p.id === selectedPlanId)
   const isCurrentPlanSelected =
     selectedPlan?.name.toLowerCase() === currentPlan?.toLowerCase()
+
+  const canSubmit =
+    selectedPlanId &&
+    !isCurrentPlanSelected &&
+    (!isPaidPlan || effectiveProvider)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -178,15 +202,17 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
               <ExternalLink className="h-8 w-8 text-primary" />
             </div>
             <p className="text-muted-foreground">
-              Click the button below to complete your payment on QvaPay. Once
-              payment is confirmed, your plan will be activated automatically.
+              Click the button below to complete your payment on{" "}
+              {pendingPayment.providerDisplayName}. Once payment is confirmed,
+              your plan will be activated automatically.
             </p>
             <Button onClick={handlePaymentRedirect} size="lg" className="gap-2">
               <ExternalLink className="h-4 w-4" />
-              Pay with QvaPay
+              Pay with {pendingPayment.providerDisplayName}
             </Button>
             <p className="text-xs text-muted-foreground">
-              You will be redirected to QvaPay to complete the payment securely.
+              You will be redirected to {pendingPayment.providerDisplayName} to
+              complete the payment securely.
             </p>
           </div>
         ) : isLoading ? (
@@ -196,18 +222,45 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
             ))}
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 py-4">
-            {plansData?.data?.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                isCurrentPlan={
-                  plan.name.toLowerCase() === currentPlan?.toLowerCase()
-                }
-                isSelected={selectedPlanId === plan.id}
-                onSelect={() => setSelectedPlanId(plan.id)}
-              />
-            ))}
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 py-4">
+              {plansData?.data?.map((plan) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  isCurrentPlan={
+                    plan.name.toLowerCase() === currentPlan?.toLowerCase()
+                  }
+                  isSelected={selectedPlanId === plan.id}
+                  onSelect={() => {
+                    setSelectedPlanId(plan.id)
+                    setSelectedProvider(null)
+                  }}
+                />
+              ))}
+            </div>
+
+            {needsProviderSelection && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Payment method</p>
+                <div className="flex gap-2">
+                  {providers.map((provider) => (
+                    <Button
+                      key={provider.name}
+                      variant={
+                        selectedProvider === provider.name
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setSelectedProvider(provider.name)}
+                    >
+                      {provider.display_name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -226,7 +279,7 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
               <LoadingButton
                 onClick={handleSubmit}
                 loading={mutation.isPending}
-                disabled={!selectedPlanId || isCurrentPlanSelected}
+                disabled={!canSubmit}
               >
                 {isCurrentPlanSelected ? "Current Plan" : "Confirm Upgrade"}
               </LoadingButton>

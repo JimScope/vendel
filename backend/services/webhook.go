@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"ender/services/payment"
 	"fmt"
 	"io"
 	"log/slog"
@@ -418,9 +419,9 @@ func GetSystemConfigValue(app core.App, key string) string {
 }
 
 // GetAppSettings returns public app settings.
-func GetAppSettings(app core.App) map[string]string {
+func GetAppSettings(app core.App) map[string]any {
 	keys := []string{"app_name", "support_email"}
-	result := make(map[string]string)
+	result := make(map[string]any)
 	for _, k := range keys {
 		result[k] = GetSystemConfigValue(app, k)
 	}
@@ -434,5 +435,14 @@ func GetAppSettings(app core.App) map[string]string {
 	} else {
 		result["maintenance_mode"] = "false"
 	}
+	// Add configured payment providers
+	var providers []map[string]string
+	for _, p := range payment.GetProviders() {
+		providers = append(providers, map[string]string{
+			"name":         p.Name(),
+			"display_name": p.DisplayName(),
+		})
+	}
+	result["payment_providers"] = providers
 	return result
 }

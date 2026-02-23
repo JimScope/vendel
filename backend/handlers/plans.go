@@ -41,6 +41,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 			PlanID        string `json:"plan_id"`
 			BillingCycle  string `json:"billing_cycle"`
 			PaymentMethod string `json:"payment_method"`
+			Provider      string `json:"provider"`
 		}
 		if err := e.BindBody(&body); err != nil {
 			return apis.NewBadRequestError("Invalid request body", nil)
@@ -56,14 +57,22 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 			}
 		}
 
+		// Resolve payment provider
+		var providerName string
+		if body.Provider != "" {
+			if p := payment.GetProvider(body.Provider); p != nil {
+				providerName = p.Name()
+			} else {
+				return apis.NewBadRequestError("Unknown payment provider: "+body.Provider, nil)
+			}
+		} else if p := payment.GetDefaultProvider(); p != nil {
+			providerName = p.Name()
+		}
+
 		// Build callback URLs
 		baseURL := os.Getenv("APP_URL")
 		if baseURL == "" {
 			baseURL = "http://localhost:8090"
-		}
-		providerName := "qvapay"
-		if p := payment.GetProvider(); p != nil {
-			providerName = p.Name()
 		}
 
 		webhookURL := fmt.Sprintf("%s/api/webhooks/%s", baseURL, providerName)
@@ -76,7 +85,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 
 		sub, redirectURL, err := services.StartSubscription(
 			e.App, userId, body.PlanID, body.BillingCycle, body.PaymentMethod,
-			webhookURL, successURL, errorURL,
+			providerName, webhookURL, successURL, errorURL,
 		)
 		if err != nil {
 			if qe, ok := err.(*services.QuotaError); ok {

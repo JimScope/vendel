@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"ender/services"
 	"ender/services/payment"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -30,7 +32,9 @@ func RegisterWebhookRoutes(se *core.ServeEvent) {
 			}
 		}
 
-		return processWebhookPayload(e, providerName, payload)
+		return processWebhookPayload(e, providerName, payment.WebhookRequest{
+			Payload: payload,
+		})
 	})
 }
 
@@ -45,22 +49,40 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 }
 
 func handlePaymentWebhook(e *core.RequestEvent, providerName string) error {
-	var payload map[string]any
-	if err := e.BindBody(&payload); err != nil {
-		return apis.NewBadRequestError("Invalid payload", nil)
+	// Read raw body for signature verification
+	rawBody, err := io.ReadAll(e.Request.Body)
+	if err != nil {
+		return apis.NewBadRequestError("Failed to read request body", nil)
 	}
 
-	return processWebhookPayload(e, providerName, payload)
+	// Parse JSON payload
+	var payload map[string]any
+	if err := json.Unmarshal(rawBody, &payload); err != nil {
+		return apis.NewBadRequestError("Invalid JSON payload", nil)
+	}
+
+	// Extract headers
+	headers := make(map[string]string)
+	for key := range e.Request.Header {
+		headers[key] = e.Request.Header.Get(key)
+	}
+
+	return processWebhookPayload(e, providerName, payment.WebhookRequest{
+		RawBody: rawBody,
+		Headers: headers,
+		Payload: payload,
+	})
 }
 
-func processWebhookPayload(e *core.RequestEvent, providerName string, payload map[string]any) error {
-	provider := payment.GetProvider()
-	if provider == nil || provider.Name() != providerName {
+func processWebhookPayload(e *core.RequestEvent, providerName string, webhookReq payment.WebhookRequest) error {
+	provider := payment.GetProvider(providerName)
+	if provider == nil {
 		return apis.NewBadRequestError("Unknown payment provider", nil)
 	}
 
-	event := provider.ParseWebhook(payload)
-	if event == nil {
+	event, err := provider.ParseWebhook(webhookReq)
+	if err != nil {
+		e.App.Logger().Warn("webhook parse error", slog.String("provider", providerName), slog.Any("error", err))
 		return apis.NewBadRequestError("Unrecognized webhook payload", nil)
 	}
 
@@ -102,6 +124,10 @@ func processWebhookPayload(e *core.RequestEvent, providerName string, payload ma
 			"status":          "ok",
 			"subscription_id": sub.Id,
 		})
+
+	case payment.EventPaymentFailed:
+		e.App.Logger().Warn("payment failed webhook", slog.String("remote_id", event.RemoteID))
+		return e.JSON(http.StatusOK, map[string]string{"status": "noted"})
 
 	default:
 		return e.JSON(http.StatusOK, map[string]string{"status": "ignored"})

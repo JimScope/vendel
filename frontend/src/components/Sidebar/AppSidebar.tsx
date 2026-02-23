@@ -1,5 +1,6 @@
 import {
   Clock,
+  CreditCard,
   FileText,
   Home,
   Key,
@@ -29,6 +30,7 @@ const baseItems: Item[] = [
   { icon: Smartphone, title: "Devices", path: "/devices" },
   { icon: Webhook, title: "Webhooks", path: "/webhooks" },
   { icon: Key, title: "Integrations", path: "/integrations" },
+  { icon: CreditCard, title: "Billing", path: "/billing" },
 ]
 
 export function AppSidebar() {

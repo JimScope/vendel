@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -29,7 +28,8 @@ func NewQvaPayProvider() *QvaPayProvider {
 	}
 }
 
-func (p *QvaPayProvider) Name() string       { return "qvapay" }
+func (p *QvaPayProvider) Name() string        { return "qvapay" }
+func (p *QvaPayProvider) DisplayName() string { return "QvaPay" }
 func (p *QvaPayProvider) IsConfigured() bool  { return p.AppID != "" && p.AppSecret != "" }
 
 func (p *QvaPayProvider) headers() map[string]string {
@@ -123,16 +123,18 @@ func (p *QvaPayProvider) ChargeAuthorizedUser(req ChargeRequest) (*ChargeResult,
 	}, nil
 }
 
-func (p *QvaPayProvider) ParseWebhook(payload map[string]any) *WebhookEvent {
+func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error) {
+	payload := req.Payload
+
 	// Authorization callback: has user_uuid + remote_id
 	if userUUID, ok := payload["user_uuid"]; ok {
 		remoteID, _ := payload["remote_id"]
 		return &WebhookEvent{
-			EventType: EventAuthorizationCompleted,
-			RemoteID:  fmt.Sprintf("%v", remoteID),
-			UserUUID:  fmt.Sprintf("%v", userUUID),
+			EventType:  EventAuthorizationCompleted,
+			RemoteID:   fmt.Sprintf("%v", remoteID),
+			UserUUID:   fmt.Sprintf("%v", userUUID),
 			RawPayload: payload,
-		}
+		}, nil
 	}
 
 	// Invoice payment webhook: has transaction_uuid
@@ -140,8 +142,7 @@ func (p *QvaPayProvider) ParseWebhook(payload map[string]any) *WebhookEvent {
 	if txUUID != "" {
 		remoteID, _ := payload["remote_id"]
 		if remoteID == nil {
-			log.Println("WARNING: QvaPay webhook missing remote_id")
-			return nil
+			return nil, fmt.Errorf("QvaPay webhook missing remote_id")
 		}
 
 		var amount float64
@@ -160,11 +161,10 @@ func (p *QvaPayProvider) ParseWebhook(payload map[string]any) *WebhookEvent {
 			TransactionID: txUUID,
 			Amount:        amount,
 			RawPayload:    payload,
-		}
+		}, nil
 	}
 
-	log.Printf("WARNING: Unrecognized QvaPay webhook payload: %v", payload)
-	return nil
+	return nil, fmt.Errorf("unrecognized QvaPay webhook payload")
 }
 
 // ── HTTP helpers ─────────────────────────────────────────────────────

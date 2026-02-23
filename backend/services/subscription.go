@@ -20,6 +20,7 @@ func StartSubscription(
 	app core.App,
 	userId, planId string,
 	billingCycle, paymentMethod string,
+	providerName string,
 	webhookURL, successURL, errorURL string,
 ) (*core.Record, string, error) {
 	// Check for existing subscription
@@ -65,7 +66,7 @@ func StartSubscription(
 
 	// Free plan — activate immediately
 	if amount <= 0 {
-		sub, err := createSubscriptionRecord(app, userId, planId, billingCycle, paymentMethod, "active", now, periodEnd)
+		sub, err := createSubscriptionRecord(app, userId, planId, billingCycle, paymentMethod, providerName, "active", now, periodEnd)
 		if err != nil {
 			return nil, "", err
 		}
@@ -81,12 +82,15 @@ func StartSubscription(
 	}
 
 	// Create pending subscription
-	sub, err := createSubscriptionRecord(app, userId, planId, billingCycle, paymentMethod, "pending", now, now)
+	sub, err := createSubscriptionRecord(app, userId, planId, billingCycle, paymentMethod, providerName, "pending", now, now)
 	if err != nil {
 		return nil, "", err
 	}
 
-	provider := payment.GetProvider()
+	provider := payment.GetProvider(providerName)
+	if provider == nil {
+		provider = payment.GetDefaultProvider()
+	}
 	if provider == nil {
 		return nil, "", fmt.Errorf("no payment provider configured")
 	}
@@ -244,13 +248,23 @@ func CompleteAuthorization(app core.App, userId, providerUserUUID string) (*core
 	now := time.Now().UTC()
 	periodEnd := now.Add(time.Duration(periodDays) * 24 * time.Hour)
 
+	providerName := sub.GetString("provider")
+	if providerName == "" {
+		providerName = "qvapay"
+	}
 	pay, err := createPaymentRecord(app, sub.Id, amount, "USD",
-		payment.GetProvider().Name(), now, periodEnd, "pending")
+		providerName, now, periodEnd, "pending")
 	if err != nil {
 		return nil, err
 	}
 
-	provider := payment.GetProvider()
+	provider := payment.GetProvider(providerName)
+	if provider == nil {
+		provider = payment.GetDefaultProvider()
+	}
+	if provider == nil {
+		return nil, fmt.Errorf("no payment provider configured")
+	}
 	chargeResult, err := provider.ChargeAuthorizedUser(payment.ChargeRequest{
 		UserUUID:    providerUserUUID,
 		Amount:      amount,
@@ -331,9 +345,19 @@ func ProcessRenewal(app core.App, subscriptionId string) error {
 		periodEnd = periodStart.Add(365 * 24 * time.Hour)
 	}
 
-	provider := payment.GetProvider()
+	providerName := sub.GetString("provider")
+	if providerName == "" {
+		providerName = "qvapay"
+	}
+	provider := payment.GetProvider(providerName)
+	if provider == nil {
+		provider = payment.GetDefaultProvider()
+	}
+	if provider == nil {
+		return fmt.Errorf("no payment provider configured")
+	}
 	pay, err := createPaymentRecord(app, sub.Id, amount, "USD",
-		provider.Name(), periodStart, periodEnd, "pending")
+		providerName, periodStart, periodEnd, "pending")
 	if err != nil {
 		return err
 	}
@@ -446,7 +470,7 @@ func findSubscriptionByUser(app core.App, userId string) (*core.Record, error) {
 
 func createSubscriptionRecord(
 	app core.App,
-	userId, planId, billingCycle, paymentMethod, status string,
+	userId, planId, billingCycle, paymentMethod, provider, status string,
 	periodStart, periodEnd time.Time,
 ) (*core.Record, error) {
 	collection, err := app.FindCollectionByNameOrId("subscriptions")
@@ -459,6 +483,7 @@ func createSubscriptionRecord(
 	record.Set("plan", planId)
 	record.Set("billing_cycle", billingCycle)
 	record.Set("payment_method", paymentMethod)
+	record.Set("provider", provider)
 	record.Set("status", status)
 	record.Set("current_period_start", periodStart)
 	record.Set("current_period_end", periodEnd)
