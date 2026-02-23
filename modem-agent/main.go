@@ -17,7 +17,6 @@ import (
 // ModemConfig holds the configuration for a single modem.
 type ModemConfig struct {
 	APIKey      string
-	DeviceID    string // derived from API key (set after startup recovery)
 	CommandPort string
 	NotifyPort  string
 }
@@ -114,17 +113,21 @@ func runModem(cfg ModemConfig, enderURL string) {
 	}
 	log.Printf("%s modem initialized", logPrefix)
 
-	// Use the command port path as a temporary device ID for logging.
-	// The real device ID comes from the backend via the API key,
-	// but we use the API key directly for SSE topic subscription.
-	// The backend maps dk_ keys to device records.
-	client := NewEnderClient(enderURL, cfg.APIKey, cfg.CommandPort)
+	client := NewEnderClient(enderURL, cfg.APIKey)
 
-	// Recover any pending messages from before agent started
+	// Recover any pending messages and resolve the device record ID
 	pending, err := client.FetchPending()
 	if err != nil {
 		log.Printf("%s failed to fetch pending messages: %v", logPrefix, err)
-	} else if len(pending) > 0 {
+		return
+	}
+	if client.deviceID == "" {
+		log.Printf("%s failed to resolve device ID from backend", logPrefix)
+		return
+	}
+	log.Printf("%s resolved device ID: %s", logPrefix, client.deviceID)
+
+	if len(pending) > 0 {
 		log.Printf("%s processing %d pending message(s)", logPrefix, len(pending))
 		for _, msg := range pending {
 			sendAndReport(dev, client, msg, logPrefix)

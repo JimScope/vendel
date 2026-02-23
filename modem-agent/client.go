@@ -23,16 +23,16 @@ type PendingMessage struct {
 type EnderClient struct {
 	baseURL  string
 	apiKey   string
-	deviceID string
+	deviceID string // resolved from backend via FetchPending
 	http     *http.Client
 }
 
 // NewEnderClient creates a new Ender API client.
-func NewEnderClient(baseURL, apiKey, deviceID string) *EnderClient {
+// The deviceID is resolved from the backend on the first call to FetchPending.
+func NewEnderClient(baseURL, apiKey string) *EnderClient {
 	return &EnderClient{
-		baseURL:  strings.TrimRight(baseURL, "/"),
-		apiKey:   apiKey,
-		deviceID: deviceID,
+		baseURL: strings.TrimRight(baseURL, "/"),
+		apiKey:  apiKey,
 		http: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -40,6 +40,7 @@ func NewEnderClient(baseURL, apiKey, deviceID string) *EnderClient {
 }
 
 // FetchPending recovers messages assigned while the agent was offline.
+// It also resolves the device record ID from the backend (stored in c.deviceID).
 func (c *EnderClient) FetchPending() ([]PendingMessage, error) {
 	req, err := http.NewRequest("GET", c.baseURL+"/api/sms/pending", nil)
 	if err != nil {
@@ -59,11 +60,17 @@ func (c *EnderClient) FetchPending() ([]PendingMessage, error) {
 	}
 
 	var result struct {
+		DeviceID string           `json:"device_id"`
 		Messages []PendingMessage `json:"messages"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decode pending response: %w", err)
 	}
+
+	if result.DeviceID != "" {
+		c.deviceID = result.DeviceID
+	}
+
 	return result.Messages, nil
 }
 

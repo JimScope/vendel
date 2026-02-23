@@ -160,7 +160,8 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		}
 
 		return e.JSON(http.StatusOK, map[string]any{
-			"messages": msgs,
+			"device_id": device.Id,
+			"messages":  msgs,
 		})
 	})
 
