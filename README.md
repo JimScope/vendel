@@ -50,9 +50,9 @@ Ender is a full-stack platform for SMS management and delivery through connected
 - Automatic monthly quota reset (cron)
 
 ### Webhooks
-- Webhook configuration for status updates
-- Automatic delivery on SMS events
-- HMAC-SHA256 signed payloads
+- Configurable webhook subscriptions per event type
+- Supported events: `sms_received`, `sms_sent`, `sms_delivered`, `sms_failed`
+- HMAC-SHA256 signed payloads with sorted-key JSON
 
 ### Payments
 - Payment provider abstraction (QvaPay)

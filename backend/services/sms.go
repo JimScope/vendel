@@ -117,7 +117,17 @@ func ProcessSMSAck(app core.App, messageId string, status string, errorMessage s
 		record.Set("delivered_at", types.NowDateTime())
 	}
 
-	return app.Save(record)
+	if err := app.Save(record); err != nil {
+		return err
+	}
+
+	// Trigger webhooks for status transitions
+	eventMap := map[string]string{"sent": "sms_sent", "delivered": "sms_delivered", "failed": "sms_failed"}
+	if event, ok := eventMap[status]; ok {
+		go TriggerWebhooks(app, record.GetString("user"), record, event)
+	}
+
+	return nil
 }
 
 // HandleIncomingSMS processes an incoming SMS from a device and triggers webhooks.
@@ -141,12 +151,13 @@ func HandleIncomingSMS(app core.App, userId string, fromNumber string, body stri
 	}
 
 	// Trigger webhooks in background
-	go triggerIncomingWebhooks(app, userId, record)
+	go TriggerWebhooks(app, userId, record, "sms_received")
 
 	return record, nil
 }
 
-func triggerIncomingWebhooks(app core.App, userId string, message *core.Record) {
+// TriggerWebhooks finds active webhook configs for a user and fires matching webhooks.
+func TriggerWebhooks(app core.App, userId string, message *core.Record, event string) {
 	webhooks, err := app.FindRecordsByFilter(
 		"webhook_configs",
 		"user = {:userId} && active = true",
@@ -159,9 +170,9 @@ func triggerIncomingWebhooks(app core.App, userId string, message *core.Record) 
 
 	for _, wh := range webhooks {
 		events := wh.GetString("events")
-		if containsEvent(events, "sms_received") {
+		if containsEvent(events, event) {
 			go func(webhook *core.Record) {
-				if err := SendWebhookForMessage(app, webhook, message); err != nil {
+				if err := SendWebhookForMessage(app, webhook, message, event); err != nil {
 					app.Logger().Warn("webhook delivery failed", slog.Any("error", err))
 				}
 			}(wh)

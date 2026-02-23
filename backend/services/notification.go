@@ -158,7 +158,11 @@ func markMessageFailed(app core.App, messageId, errMsg string) {
 	}
 	record.Set("status", "failed")
 	record.Set("error_message", errMsg)
-	_ = app.Save(record)
+	if err := app.Save(record); err != nil {
+		app.Logger().Warn("failed to save failed message", slog.Any("error", err))
+		return
+	}
+	go TriggerWebhooks(app, record.GetString("user"), record, "sms_failed")
 }
 
 // chunkMessagesForFCM splits messages into chunks fitting within FCM's 4KB payload limit.

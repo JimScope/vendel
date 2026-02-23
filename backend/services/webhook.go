@@ -19,17 +19,33 @@ import (
 )
 
 // SendWebhookForMessage delivers a webhook HTTP POST for an SMS message.
-func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Record) error {
+func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Record, event string) error {
 	if !webhook.GetBool("active") {
 		return fmt.Errorf("webhook inactive")
 	}
 
 	payload := map[string]any{
-		"event":      "sms_received",
-		"from":       message.GetString("from_number"),
+		"event":      event,
 		"body":       message.GetString("body"),
-		"timestamp":  message.GetString("created"),
 		"message_id": message.Id,
+		"timestamp":  message.GetString("created"),
+	}
+
+	switch event {
+	case "sms_received":
+		payload["from"] = message.GetString("from_number")
+	case "sms_sent", "sms_delivered", "sms_failed":
+		payload["to"] = message.GetString("to")
+		payload["status"] = message.GetString("status")
+		if v := message.GetString("error_message"); v != "" {
+			payload["error_message"] = v
+		}
+		if v := message.GetString("sent_at"); v != "" {
+			payload["sent_at"] = v
+		}
+		if v := message.GetString("delivered_at"); v != "" {
+			payload["delivered_at"] = v
+		}
 	}
 
 	payloadJSON, err := marshalSorted(payload)

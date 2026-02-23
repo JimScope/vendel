@@ -50,9 +50,9 @@ Ender es una plataforma full-stack para gestión y envío de SMS a través de di
 - Reset automático mensual de cuota (cron)
 
 ### Webhooks
-- Configuración de webhooks para actualizaciones de estado
-- Entrega automática en eventos de SMS
-- Payloads firmados con HMAC-SHA256
+- Suscripciones de webhooks configurables por tipo de evento
+- Eventos soportados: `sms_received`, `sms_sent`, `sms_delivered`, `sms_failed`
+- Payloads firmados con HMAC-SHA256 y JSON con claves ordenadas
 
 ### Pagos
 - Abstracción de proveedores de pago (QvaPay)
