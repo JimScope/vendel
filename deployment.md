@@ -31,8 +31,8 @@ Variables principales:
 * `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD`: Configuración SMTP.
 * `LITESTREAM_REPLICA_URL`: URL de réplica S3 para backup continuo (opcional).
 * `LITESTREAM_ACCESS_KEY_ID` / `LITESTREAM_SECRET_ACCESS_KEY`: Credenciales S3 para Litestream.
-* `SERVER_BASE_URL`: URL pública del backend (ej. `https://api.example.com`).
-* `FRONTEND_HOST`: URL del frontend (ej. `https://app.example.com`).
+* `APP_URL`: URL pública de la app (ej. `https://example.com`).
+* `FRONTEND_URL`: URL del frontend (ej. `https://example.com` o separado si aplica).
 
 ## Desplegar con Docker Compose
 
@@ -89,13 +89,16 @@ cd /home/github/actions-runner
 
 En tu repositorio, configura secrets para las variables de entorno. Los workflows esperan estos secrets:
 
-* `FIRST_SUPERUSER`
-* `FIRST_SUPERUSER_PASSWORD`
+* `DOMAIN_PRODUCTION` / `DOMAIN_STAGING`, `STACK_NAME_PRODUCTION` / `STACK_NAME_STAGING`
+* `FIRST_SUPERUSER`, `FIRST_SUPERUSER_PASSWORD`
+* `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`
+* `APP_URL_PRODUCTION` / `APP_URL_STAGING`, `FRONTEND_URL_PRODUCTION` / `FRONTEND_URL_STAGING`
 * `FIREBASE_SERVICE_ACCOUNT_JSON`
-* `QVAPAY_APP_ID` / `QVAPAY_APP_SECRET`
+* `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+* `GH_OAUTH_CLIENT_ID`, `GH_OAUTH_CLIENT_SECRET`
+* `QVAPAY_APP_ID`, `QVAPAY_APP_SECRET`
 * `WEBHOOK_ENCRYPTION_KEY`
-* SMTP credentials (if using email)
-* Litestream credentials (if using backup)
+* `LITESTREAM_REPLICA_URL`, `LITESTREAM_ACCESS_KEY_ID`, `LITESTREAM_SECRET_ACCESS_KEY` (opcional)
 
 ## URLs
 

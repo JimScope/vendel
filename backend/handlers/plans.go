@@ -57,7 +57,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		}
 
 		// Build callback URLs
-		baseURL := os.Getenv("SERVER_BASE_URL")
+		baseURL := os.Getenv("APP_URL")
 		if baseURL == "" {
 			baseURL = "http://localhost:8090"
 		}
@@ -67,12 +67,12 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		}
 
 		webhookURL := fmt.Sprintf("%s/api/webhooks/%s", baseURL, providerName)
-		frontendHost := os.Getenv("FRONTEND_HOST")
-		if frontendHost == "" {
-			frontendHost = "http://localhost:5173"
+		frontendURL := os.Getenv("FRONTEND_URL")
+		if frontendURL == "" {
+			frontendURL = "http://localhost:5173"
 		}
-		successURL := frontendHost + "/settings"
-		errorURL := frontendHost + "/settings"
+		successURL := frontendURL + "/settings"
+		errorURL := frontendURL + "/settings"
 
 		sub, redirectURL, err := services.StartSubscription(
 			e.App, userId, body.PlanID, body.BillingCycle, body.PaymentMethod,

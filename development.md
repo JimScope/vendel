@@ -94,8 +94,8 @@ Variables principales:
 | `SMTP_HOST` | Host SMTP | `localhost` |
 | `SMTP_PORT` | Puerto SMTP | `1025` |
 | `LITESTREAM_REPLICA_URL` | URL S3 para backup (opcional) | - |
-| `SERVER_BASE_URL` | URL del backend | `http://localhost:8090` |
-| `FRONTEND_HOST` | URL del frontend | `http://localhost:5173` |
+| `APP_URL` | URL de la app | `http://localhost:8090` |
+| `FRONTEND_URL` | URL del frontend | `http://localhost:5173` |
 
 ## URLs de Desarrollo
 

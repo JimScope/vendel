@@ -185,8 +185,8 @@ LITESTREAM_ACCESS_KEY_ID=
 LITESTREAM_SECRET_ACCESS_KEY=
 
 # URLs
-SERVER_BASE_URL=http://localhost:8090
-FRONTEND_HOST=http://localhost:5173
+APP_URL=http://localhost:8090
+FRONTEND_URL=http://localhost:5173
 ```
 
 ## Testing
