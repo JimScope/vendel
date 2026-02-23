@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Smartphone } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
 
 import { DataTable } from "@/components/Common/DataTable"
 import AddDevice from "@/components/Devices/AddDevice"
-import { columns } from "@/components/Devices/columns"
+import { getColumns } from "@/components/Devices/columns"
 import PendingDevices from "@/components/Pending/PendingDevices"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useDeviceListSuspense } from "@/hooks/useDeviceList"
+import { useModemStatus } from "@/hooks/useModemStatus"
 
 export const Route = createFileRoute("/_layout/devices")({
   component: Devices,
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/_layout/devices")({
 
 function DevicesTableContent() {
   const { data: devices } = useDeviceListSuspense()
+  const { data: modemStatus } = useModemStatus()
+  const columns = useMemo(() => getColumns(modemStatus), [modemStatus])
 
   if (!devices?.data || devices.data.length === 0) {
     return (
