@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/Common/DataTable"
 import { Badge } from "@/components/ui/badge"
+import { formatDate } from "@/lib/utils"
 import { SMSActionsMenu } from "./SMSActionsMenu"
 
 interface SMSTableProps {
@@ -20,10 +21,6 @@ function getStatusBadgeVariant(
     default:
       return "outline"
   }
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleString()
 }
 
 function truncateText(text: string, maxLength: number): string {

@@ -13,15 +13,11 @@ import {
 } from "@/components/ui/sheet"
 import { useWebhookLogs } from "@/hooks/useWebhookLogs"
 import { useWebhookRetryMutation } from "@/hooks/useWebhookRetryMutation"
-import { cn } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 
 interface WebhookLogsProps {
   webhook: Record<string, any>
   onSuccess: () => void
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleString()
 }
 
 function formatTimeUntil(dateString: string): string | null {

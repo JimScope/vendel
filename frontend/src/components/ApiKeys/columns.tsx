@@ -1,12 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 import { ApiKeyActionsMenu } from "./ApiKeyActionsMenu"
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleString()
-}
 
 function formatRelativeDate(dateString: string): string {
   const date = new Date(dateString)

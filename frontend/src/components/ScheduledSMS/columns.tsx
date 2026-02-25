@@ -1,13 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 import { ScheduledSMSActionsMenu } from "./ScheduledSMSActionsMenu"
-
-function formatDate(dateString: string): string {
-  if (!dateString) return "—"
-  return new Date(dateString).toLocaleString()
-}
 
 export const columns: ColumnDef<Record<string, any>>[] = [
   {

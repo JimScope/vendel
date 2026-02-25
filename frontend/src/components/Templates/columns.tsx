@@ -1,10 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
+import { formatDate } from "@/lib/utils"
 import { TemplateActionsMenu } from "./TemplateActionsMenu"
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleString()
-}
 
 export const columns: ColumnDef<Record<string, any>>[] = [
   {
