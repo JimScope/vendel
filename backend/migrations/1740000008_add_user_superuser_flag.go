@@ -1,0 +1,36 @@
+package migrations
+
+import (
+	"github.com/pocketbase/pocketbase/core"
+	m "github.com/pocketbase/pocketbase/migrations"
+)
+
+func init() {
+	m.Register(func(app core.App) error {
+		users, err := app.FindCollectionByNameOrId("users")
+		if err != nil {
+			return err
+		}
+
+		users.Fields.Add(&core.BoolField{
+			Name: "is_superuser",
+		})
+
+		// Allow superusers to list and view all users
+		users.ListRule = ptrStr("id = @request.auth.id || @request.auth.is_superuser = true")
+		users.ViewRule = ptrStr("id = @request.auth.id || @request.auth.is_superuser = true")
+
+		return app.Save(users)
+	}, func(app core.App) error {
+		users, err := app.FindCollectionByNameOrId("users")
+		if err != nil {
+			return err
+		}
+
+		users.Fields.RemoveByName("is_superuser")
+		users.ListRule = ptrStr("id = @request.auth.id")
+		users.ViewRule = ptrStr("id = @request.auth.id")
+
+		return app.Save(users)
+	})
+}

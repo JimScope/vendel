@@ -13,10 +13,13 @@ func MaintenanceMiddleware(app core.App) func(e *core.RequestEvent) error {
 	return func(e *core.RequestEvent) error {
 		path := e.Request.URL.Path
 
-		// Always allow health, admin, and API collections endpoints
+		// Always allow: health, PocketBase admin, auth, app-settings, system-config
 		if path == "/api/health" ||
 			strings.HasPrefix(path, "/_/") ||
-			strings.HasPrefix(path, "/api/admins") {
+			strings.HasPrefix(path, "/api/admins") ||
+			strings.HasPrefix(path, "/api/collections/users/auth-") ||
+			strings.HasPrefix(path, "/api/system-config") ||
+			path == "/api/utils/app-settings" {
 			return e.Next()
 		}
 

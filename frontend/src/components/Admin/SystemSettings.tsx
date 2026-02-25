@@ -1,11 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  Bell,
-  CreditCard,
-  Loader2,
-  MessageSquare,
-  Settings2,
-} from "lucide-react"
+import { CreditCard, Loader2, Settings2 } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -190,80 +184,6 @@ function SystemSettings() {
         </CardContent>
       </Card>
 
-      {/* SMS Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            SMS
-          </CardTitle>
-          <CardDescription>Configure SMS delivery settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="sms-retry">Retry Attempts</Label>
-            <Input
-              id="sms-retry"
-              type="number"
-              defaultValue={getConfigValue("sms_retry_attempts")}
-              onBlur={(e) =>
-                handleConfigChange("sms_retry_attempts", e.target.value)
-              }
-              className="w-[150px]"
-            />
-            <p className="text-sm text-muted-foreground">
-              Number of retry attempts for failed SMS delivery
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notifications Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Notifications
-          </CardTitle>
-          <CardDescription>
-            Configure notification and webhook settings
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-notifications">Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Send email notifications for important events
-              </p>
-            </div>
-            <Switch
-              id="email-notifications"
-              checked={getConfigValue("email_notifications_enabled") === "true"}
-              onCheckedChange={handleBooleanChange(
-                "email_notifications_enabled",
-              )}
-              disabled={updateConfigMutation.isPending}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="webhook-timeout">Webhook Timeout (seconds)</Label>
-            <Input
-              id="webhook-timeout"
-              type="number"
-              defaultValue={getConfigValue("webhook_timeout_seconds")}
-              onBlur={(e) =>
-                handleConfigChange("webhook_timeout_seconds", e.target.value)
-              }
-              className="w-[150px]"
-            />
-            <p className="text-sm text-muted-foreground">
-              Timeout for webhook delivery requests
-            </p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

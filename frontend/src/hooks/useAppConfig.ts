@@ -10,12 +10,14 @@ export interface PaymentProvider {
 export interface AppConfig {
   appName: string
   supportEmail: string
+  maintenanceMode: boolean
   paymentProviders: PaymentProvider[]
 }
 
 const DEFAULT_CONFIG: AppConfig = {
   appName: "Ender",
   supportEmail: "support@example.com",
+  maintenanceMode: false,
   paymentProviders: [],
 }
 
@@ -35,6 +37,7 @@ export function useAppConfig() {
   const config: AppConfig = {
     appName: data?.app_name ?? DEFAULT_CONFIG.appName,
     supportEmail: data?.support_email ?? DEFAULT_CONFIG.supportEmail,
+    maintenanceMode: data?.maintenance_mode === "true",
     paymentProviders:
       data?.payment_providers ?? DEFAULT_CONFIG.paymentProviders,
   }

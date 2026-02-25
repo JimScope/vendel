@@ -78,6 +78,19 @@ func main() {
 
 	// ── Record hooks ─────────────────────────────────────────────────
 
+	// System config: sync app_name to PocketBase settings
+	app.OnRecordAfterUpdateSuccess("system_config").BindFunc(func(e *core.RecordEvent) error {
+		if e.Record.GetString("key") == "app_name" {
+			settings := e.App.Settings()
+			settings.Meta.AppName = e.Record.GetString("value")
+			settings.Meta.SenderName = e.Record.GetString("value")
+			if err := e.App.Save(settings); err != nil {
+				e.App.Logger().Warn("could not sync app_name to PocketBase settings", slog.Any("error", err))
+			}
+		}
+		return e.Next()
+	})
+
 	// Users: create default quota on registration
 	app.OnRecordCreate("users").BindFunc(func(e *core.RecordEvent) error {
 		if err := e.Next(); err != nil {
@@ -395,9 +408,14 @@ func configureSMTP(app core.App) {
 		settings.SMTP.Password = pass
 	}
 
-	// Sender defaults
-	if settings.Meta.SenderName == "" || settings.Meta.SenderName == "Support" {
-		settings.Meta.SenderName = "Ender"
+	// Sender defaults — use app_name from system_config
+	appName := services.GetSystemConfigValue(app, "app_name")
+	if appName == "" {
+		appName = "Ender"
+	}
+	settings.Meta.AppName = appName
+	if settings.Meta.SenderName == "" || settings.Meta.SenderName == "Support" || settings.Meta.SenderName == "Acme" {
+		settings.Meta.SenderName = appName
 	}
 	if settings.Meta.SenderAddress == "" || settings.Meta.SenderAddress == "support@example.com" {
 		settings.Meta.SenderAddress = os.Getenv("FIRST_SUPERUSER")

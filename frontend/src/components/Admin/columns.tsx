@@ -9,7 +9,7 @@ export interface UserTableData {
   email: string
   full_name?: string | null
   is_superuser: boolean
-  is_active: boolean
+  verified: boolean
   isCurrentUser: boolean
   [key: string]: any
 }
@@ -53,18 +53,18 @@ export const columns: ColumnDef<UserTableData>[] = [
     ),
   },
   {
-    accessorKey: "is_active",
+    accessorKey: "verified",
     header: "Status",
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <span
           className={cn(
             "size-2 rounded-full",
-            row.original.is_active ? "bg-green-500" : "bg-gray-400",
+            row.original.verified ? "bg-green-500" : "bg-gray-400",
           )}
         />
-        <span className={row.original.is_active ? "" : "text-muted-foreground"}>
-          {row.original.is_active ? "Active" : "Inactive"}
+        <span className={row.original.verified ? "" : "text-muted-foreground"}>
+          {row.original.verified ? "Verified" : "Unverified"}
         </span>
       </div>
     ),

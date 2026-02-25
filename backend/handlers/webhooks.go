@@ -61,6 +61,64 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 		settings := services.GetAppSettings(e.App)
 		return e.JSON(http.StatusOK, settings)
 	})
+
+	// GET /api/system-config — returns all system_config records (app admin only)
+	se.Router.GET("/api/system-config", func(e *core.RequestEvent) error {
+		if !isAppSuperuser(e) {
+			return e.ForbiddenError("", nil)
+		}
+		records, err := e.App.FindAllRecords("system_config")
+		if err != nil {
+			return apis.NewApiError(http.StatusInternalServerError, "Failed to fetch system config", nil)
+		}
+		return e.JSON(http.StatusOK, map[string]any{"data": records})
+	}).Bind(apis.RequireAuth("users"))
+
+	// PATCH /api/system-config/{key} — update (or create) a config value (app admin only)
+	se.Router.PATCH("/api/system-config/{key}", func(e *core.RequestEvent) error {
+		if !isAppSuperuser(e) {
+			return e.ForbiddenError("", nil)
+		}
+		key := e.Request.PathValue("key")
+
+		var body struct {
+			Value string `json:"value"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return apis.NewBadRequestError("Invalid request body", nil)
+		}
+
+		// Try to find existing record by key
+		record, _ := e.App.FindFirstRecordByFilter("system_config", "key = {:key}", map[string]any{"key": key})
+
+		if record != nil {
+			// Update existing
+			record.Set("value", body.Value)
+			if err := e.App.Save(record); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to update config", nil)
+			}
+		} else {
+			// Create new
+			collection, err := e.App.FindCollectionByNameOrId("system_config")
+			if err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "system_config collection not found", nil)
+			}
+			record = core.NewRecord(collection)
+			record.Set("key", key)
+			record.Set("value", body.Value)
+			if err := e.App.Save(record); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to create config", nil)
+			}
+		}
+
+		return e.JSON(http.StatusOK, record)
+	}).Bind(apis.RequireAuth("users"))
+}
+
+// isAppSuperuser checks if the authenticated user has the is_superuser flag.
+func isAppSuperuser(e *core.RequestEvent) bool {
+	record := e.Auth
+	return record != nil && record.GetBool("is_superuser")
 }
 
 func handlePaymentWebhook(e *core.RequestEvent, providerName string) error {
