@@ -1,15 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
-import type { WebhookConfigPublic } from "@/client"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 import { WebhookActionsMenu } from "./WebhookActionsMenu"
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleString()
-}
-
-export const columns: ColumnDef<WebhookConfigPublic>[] = [
+export const columns: ColumnDef<Record<string, any>>[] = [
   {
     accessorKey: "url",
     header: "URL",

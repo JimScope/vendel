@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type { WebhookConfigPublic, WebhookConfigUpdate } from "@/client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -43,7 +42,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 interface EditWebhookProps {
-  webhook: WebhookConfigPublic
+  webhook: Record<string, any>
   onSuccess: () => void
 }
 
@@ -64,7 +63,7 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
 
   const updateWebhookMutation = useUpdateWebhook(webhook.id)
 
-  const onSubmit = (data: WebhookConfigUpdate) => {
+  const onSubmit = (data: Record<string, any>) => {
     updateWebhookMutation.mutate(data, {
       onSuccess: () => {
         setIsOpen(false)

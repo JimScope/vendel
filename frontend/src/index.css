@@ -36,6 +36,9 @@
   --input: #ccd4d0;
   --ring: #181c1b;
 
+  /* Brand accent (mint) */
+  --brand: #2dd4a8;
+
   /* Chart colors */
   --chart-1: #2dd4a8;
   --chart-2: #6ee7c2;
@@ -123,6 +126,8 @@
   --input: #383e3c;
   --ring: #edf5f1;
 
+  --brand: #2dd4a8;
+
   /* Chart colors (dark) */
   --chart-1: #2dd4a8;
   --chart-2: #6ee7c2;
@@ -166,6 +171,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-brand: var(--brand);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -204,6 +210,21 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+      transition-duration: 0.01ms;
+      scroll-behavior: auto;
+    }
   }
 
   body {
@@ -386,7 +407,9 @@ code:not(pre code) {
   border-color: var(--neutral-200);
 }
 
-[data-slot="card"]:hover {
+a [data-slot="card"]:hover,
+button [data-slot="card"]:hover,
+[data-slot="card"].cursor-pointer:hover {
   border-color: var(--neutral-300);
 }
 
@@ -395,6 +418,8 @@ code:not(pre code) {
   border-color: var(--neutral-700);
 }
 
-.dark [data-slot="card"]:hover {
+.dark a [data-slot="card"]:hover,
+.dark button [data-slot="card"]:hover,
+.dark [data-slot="card"].cursor-pointer:hover {
   border-color: var(--neutral-600);
 }

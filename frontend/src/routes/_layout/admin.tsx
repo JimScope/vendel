@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Settings, Users } from "lucide-react"
 import { Suspense, useState } from "react"
 
-import type { UserPublic } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
 import { columns, type UserTableData } from "@/components/Admin/columns"
 import SystemSettings from "@/components/Admin/SystemSettings"
@@ -17,7 +16,7 @@ export const Route = createFileRoute("/_layout/admin")({
   head: () => ({
     meta: [
       {
-        title: "Admin - FastAPI Cloud",
+        title: "Admin - Ender",
       },
     ],
   }),
@@ -27,14 +26,14 @@ function UsersTableContent() {
   const { user: currentUser } = useAuth()
   const { data: users } = useUserListSuspense()
 
-  const tableData: UserTableData[] = (users?.data ?? []).map(
-    (user: UserPublic) => ({
-      ...user,
-      isCurrentUser: currentUser?.id === user.id,
-    }),
-  )
+  const tableData = (users?.data ?? []).map((user) => ({
+    ...user,
+    isCurrentUser: currentUser?.id === user.id,
+  })) as unknown as UserTableData[]
 
-  return <DataTable columns={columns} data={tableData} />
+  return (
+    <DataTable columns={columns} data={tableData} caption="User accounts" />
+  )
 }
 
 function UsersTable() {

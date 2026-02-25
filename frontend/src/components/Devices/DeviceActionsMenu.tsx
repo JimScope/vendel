@@ -1,7 +1,6 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { SmsDevicePublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,7 +11,7 @@ import DeleteDevice from "./DeleteDevice"
 import EditDevice from "./EditDevice"
 
 interface DeviceActionsMenuProps {
-  device: SmsDevicePublic
+  device: Record<string, any>
 }
 
 export const DeviceActionsMenu = ({ device }: DeviceActionsMenuProps) => {

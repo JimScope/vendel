@@ -1,11 +1,11 @@
 import type { ColumnDef } from "@tanstack/react-table"
-import type { SmsMessagePublic } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
 import { Badge } from "@/components/ui/badge"
+import { formatDate } from "@/lib/utils"
 import { SMSActionsMenu } from "./SMSActionsMenu"
 
 interface SMSTableProps {
-  data: SmsMessagePublic[]
+  data: Record<string, any>[]
 }
 
 function getStatusBadgeVariant(
@@ -23,16 +23,12 @@ function getStatusBadgeVariant(
   }
 }
 
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleString()
-}
-
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return `${text.slice(0, maxLength)}...`
 }
 
-const columns: ColumnDef<SmsMessagePublic>[] = [
+const columns: ColumnDef<Record<string, any>>[] = [
   {
     accessorKey: "to",
     header: "To",
@@ -91,5 +87,7 @@ export function SMSTable({ data }: SMSTableProps) {
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   )
 
-  return <DataTable columns={columns} data={sortedData} />
+  return (
+    <DataTable columns={columns} data={sortedData} caption="SMS messages" />
+  )
 }

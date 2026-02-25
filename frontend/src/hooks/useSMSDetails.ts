@@ -1,14 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
-import { SmsService } from "@/client"
+import pb from "@/lib/pocketbase"
 
 export function useSMSDetails(id: string, enabled: boolean) {
   return useQuery({
     queryKey: ["sms", id],
     queryFn: async () => {
-      const response = await SmsService.smsGetMessage({
-        path: { message_id: id },
-      })
-      return response.data
+      return await pb.collection("sms_messages").getOne(id)
     },
     enabled,
     staleTime: 60_000,

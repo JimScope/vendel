@@ -7,8 +7,6 @@ import {
 } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-import { LoginService } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -22,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({
@@ -42,7 +41,7 @@ export const Route = createFileRoute("/recover-password")({
   head: () => ({
     meta: [
       {
-        title: "Recover Password - FastAPI Cloud",
+        title: "Recover Password - Ender",
       },
     ],
   }),
@@ -58,9 +57,7 @@ function RecoverPassword() {
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const recoverPassword = async (data: FormData) => {
-    await LoginService.loginRecoverPassword({
-      path: { email: data.email },
-    })
+    await pb.collection("users").requestPasswordReset(data.email)
   }
 
   const mutation = useMutation({

@@ -6,6 +6,7 @@ import { z } from "zod"
 
 import { LoadingButton } from "@/components/Common/LoadingButton"
 import { MultiSelect } from "@/components/Common/MultiSelect"
+import { TemplateSelect } from "@/components/Templates/TemplateSelect"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -18,8 +19,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import { TagInput } from "@/components/ui/tag-input"
+import { Textarea } from "@/components/ui/textarea"
 import { useDeviceList } from "@/hooks/useDeviceList"
 import { useSendSMS } from "@/hooks/useSMSMutations"
 
@@ -128,6 +129,9 @@ const SendSMS = () => {
             )}
           />
 
+          {/* Template Select */}
+          <TemplateSelect onSelect={(body) => form.setValue("body", body)} />
+
           {/* Message Body Field */}
           <Controller
             name="body"
@@ -137,10 +141,11 @@ const SendSMS = () => {
                 <FieldLabel htmlFor={field.name}>
                   SMS Body <span className="text-destructive">*</span>
                 </FieldLabel>
-                <Input
+                <Textarea
                   {...field}
                   id={field.name}
                   placeholder="Message Body"
+                  rows={3}
                   aria-invalid={fieldState.invalid}
                 />
                 {fieldState.invalid && (
@@ -161,7 +166,7 @@ const SendSMS = () => {
               </Button>
             </DialogClose>
             <LoadingButton type="submit" loading={sendSMSMutation.isPending}>
-              Save
+              Send
             </LoadingButton>
           </DialogFooter>
         </form>

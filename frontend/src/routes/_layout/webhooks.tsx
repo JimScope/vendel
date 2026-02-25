@@ -22,15 +22,22 @@ function WebhooksTableContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <Webhook className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold">No webhooks configured</h3>
+        <h2 className="text-lg font-semibold">No webhooks configured</h2>
         <p className="text-muted-foreground">
           Add a webhook to receive notifications when SMS messages arrive
         </p>
+        <AddWebhook />
       </div>
     )
   }
 
-  return <DataTable columns={columns} data={webhooks?.data ?? []} />
+  return (
+    <DataTable
+      columns={columns}
+      data={webhooks?.data ?? []}
+      caption="Webhooks"
+    />
+  )
 }
 
 function WebhooksTable() {

@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { z } from "zod"
 
 import ChangePassword from "@/components/UserSettings/ChangePassword"
 import DeleteAccount from "@/components/UserSettings/DeleteAccount"
@@ -14,12 +15,17 @@ const tabsConfig = [
   { value: "danger-zone", title: "Danger zone", component: DeleteAccount },
 ]
 
+const searchSchema = z.object({
+  tab: z.string().optional().catch(undefined),
+})
+
 export const Route = createFileRoute("/_layout/settings")({
   component: UserSettings,
+  validateSearch: searchSchema,
   head: () => ({
     meta: [
       {
-        title: "Settings - FastAPI Cloud",
+        title: "Settings - Ender",
       },
     ],
   }),
@@ -27,9 +33,13 @@ export const Route = createFileRoute("/_layout/settings")({
 
 function UserSettings() {
   const { user: currentUser } = useAuth()
+  const { tab } = Route.useSearch()
+  const navigate = useNavigate()
   const finalTabs = currentUser?.is_superuser
     ? tabsConfig.slice(0, 4)
     : tabsConfig
+
+  const activeTab = finalTabs.some((t) => t.value === tab) ? tab : "my-profile"
 
   if (!currentUser) {
     return null
@@ -44,7 +54,16 @@ function UserSettings() {
         </p>
       </div>
 
-      <Tabs defaultValue="my-profile">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) =>
+          navigate({
+            to: "/settings",
+            search: { tab: value },
+            replace: true,
+          })
+        }
+      >
         <TabsList>
           {finalTabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>

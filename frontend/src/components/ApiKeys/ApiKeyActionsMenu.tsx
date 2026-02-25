@@ -1,18 +1,19 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { ApiKeyPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import DeleteApiKey from "./DeleteApiKey"
 import RevokeApiKey from "./RevokeApiKey"
+import RotateApiKey from "./RotateApiKey"
 
 interface ApiKeyActionsMenuProps {
-  apiKey: ApiKeyPublic
+  apiKey: Record<string, any>
 }
 
 export const ApiKeyActionsMenu = ({ apiKey }: ApiKeyActionsMenuProps) => {
@@ -27,7 +28,11 @@ export const ApiKeyActionsMenu = ({ apiKey }: ApiKeyActionsMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {apiKey.is_active && (
-          <RevokeApiKey id={apiKey.id} onSuccess={() => setOpen(false)} />
+          <>
+            <RotateApiKey id={apiKey.id} onSuccess={() => setOpen(false)} />
+            <RevokeApiKey id={apiKey.id} onSuccess={() => setOpen(false)} />
+            <DropdownMenuSeparator />
+          </>
         )}
         <DeleteApiKey id={apiKey.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>

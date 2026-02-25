@@ -1,18 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 
-import {
-  type BodyLoginLoginAccessToken as AccessToken,
-  LoginService,
-  type UserPublic,
-  type UserRegister,
-  UsersService,
-} from "@/client"
-import { handleError } from "@/utils"
+import pb from "@/lib/pocketbase"
 import useCustomToast from "./useCustomToast"
 
 const isLoggedIn = () => {
-  return localStorage.getItem("access_token") !== null
+  return pb.authStore.isValid
+}
+
+interface LoginData {
+  username: string
+  password: string
+}
+
+interface SignUpData {
+  email: string
+  password: string
+  passwordConfirm: string
+  full_name?: string
 }
 
 const useAuth = () => {
@@ -20,34 +25,53 @@ const useAuth = () => {
   const queryClient = useQueryClient()
   const { showErrorToast } = useCustomToast()
 
-  const { data: user } = useQuery<UserPublic | null, Error>({
+  const { data: user } = useQuery({
     queryKey: ["currentUser"],
     queryFn: async () => {
-      const response = await UsersService.usersReadUserMe()
-      return response.data as UserPublic
+      try {
+        const result = await pb.collection("users").authRefresh()
+        return result.record
+      } catch (err: any) {
+        // Only clear auth on 401 (invalid token), not on network errors
+        if (err?.status === 401) {
+          pb.authStore.clear()
+        }
+        throw err
+      }
     },
     enabled: isLoggedIn(),
+    retry: (failureCount, error: any) => {
+      // Don't retry auth errors (401), only transient/network failures
+      if (error?.status === 401) return false
+      return failureCount < 2
+    },
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   })
 
   const signUpMutation = useMutation({
-    mutationFn: async (data: UserRegister) => {
-      const response = await UsersService.usersRegisterUser({ body: data })
-      return { ...response.data, email: data.email }
+    mutationFn: async (data: SignUpData) => {
+      const record = await pb.collection("users").create({
+        email: data.email,
+        password: data.password,
+        passwordConfirm: data.passwordConfirm,
+        full_name: data.full_name || "",
+      })
+      await pb.collection("users").requestVerification(data.email)
+      return { ...record, email: data.email }
     },
     onSuccess: (data) => {
       navigate({ to: "/check-email", search: { email: data?.email || "" } })
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Registration failed")
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
     },
   })
 
-  const login = async (data: AccessToken) => {
-    const response = await LoginService.loginLoginAccessToken({
-      body: data,
-    })
-    localStorage.setItem("access_token", response.data!.access_token)
+  const login = async (data: LoginData) => {
+    await pb.collection("users").authWithPassword(data.username, data.password)
   }
 
   const loginMutation = useMutation({
@@ -55,11 +79,15 @@ const useAuth = () => {
     onSuccess: () => {
       navigate({ to: "/" })
     },
-    onError: handleError.bind(showErrorToast),
+    onError: (error: Error) => {
+      showErrorToast(error.message || "Login failed")
+    },
   })
 
   const logout = () => {
+    pb.authStore.clear()
     localStorage.removeItem("access_token")
+    queryClient.clear()
     navigate({ to: "/login" })
   }
 

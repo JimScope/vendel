@@ -10,28 +10,30 @@ Ender is a full-stack SMS gateway platform that allows sending SMS messages usin
 
 ### Development (Docker Compose - Recommended)
 ```bash
-docker compose watch          # Start full stack with hot reload
-docker compose up -d --wait   # Start without watching
-docker compose down -v        # Clean up with volumes
+docker compose up -d              # Start app
+docker compose logs -f app        # View logs
+docker compose down -v            # Clean up with volumes
+```
+
+### Modem Agent (Docker)
+```bash
+docker compose --profile modem up -d                    # Start with modem agent
+docker compose --profile modem logs -f modem-agent      # View modem logs
+```
+
+### Modem Agent (Local)
+```bash
+cd modem-agent
+cp .env.example .env    # Edit with your device API key + serial ports
+go run .
 ```
 
 ### Backend
 ```bash
 cd backend
-uv sync                       # Install dependencies
-source .venv/bin/activate     # Activate venv
-fastapi dev app/main.py       # Run dev server
-
-# Testing
-pytest                        # Run all tests
-pytest -x                     # Stop on first failure
-pytest tests/path/test_file.py::test_name  # Run single test
-bash ./scripts/test.sh        # Run with coverage report
-
-# Code quality
-ruff check --fix              # Lint and fix
-ruff format                   # Format code
-mypy                          # Type checking (strict mode)
+go run . serve --http=0.0.0.0:8090   # Run dev server
+go build -o ender .                   # Build binary
+go build ./...                        # Verify compilation
 ```
 
 ### Frontend
@@ -42,43 +44,24 @@ npm install
 npm run dev                   # Dev server at localhost:5173
 npm run build                 # TypeScript + Vite build
 npm run lint                  # Biome check with auto-fix
-npm run generate-client       # Regenerate OpenAPI client
 
 # E2E tests (requires backend running)
 npx playwright test
 npx playwright test --ui      # Interactive UI mode
 ```
 
-### Pre-commit
-```bash
-uv run pre-commit install     # Setup git hooks
-uv run pre-commit run --all-files  # Run manually
-```
-
-### Database Migrations
-```bash
-docker compose exec backend bash
-alembic revision --autogenerate -m "Description"  # Create migration
-alembic upgrade head          # Apply migrations
-```
-
-### Generate Frontend API Client
-```bash
-./scripts/generate-client.sh  # From project root (backend venv must be active)
-```
-
 ## Architecture
 
 ### Backend (`backend/`)
-- **Framework**: FastAPI with Python 3.13+
-- **Database**: PostgreSQL 17 with SQLModel ORM
+- **Framework**: PocketBase (Go) - provides auth, CRUD, admin dashboard, cron, migrations
+- **Database**: SQLite (embedded)
 - **Key directories**:
-  - `app/api/routes/` - API endpoints (login, users, sms, webhooks, api_keys, plans)
-  - `app/services/` - Business logic (sms_service, fcm_service, qstash_service, quota_service, webhook_service)
-  - `app/core/` - Config, DB setup, security, rate limiting
-  - `app/models.py` - SQLModel data models
-  - `app/crud.py` - Database CRUD operations
-  - `app/alembic/` - Database migrations
+  - `handlers/` - Custom API routes (sms, plans, webhooks)
+  - `services/` - Business logic (SMS orchestration, FCM, quota, subscriptions, webhooks)
+  - `services/payment/` - Payment provider abstraction (QvaPay)
+  - `middleware/` - API key auth, maintenance mode
+  - `migrations/` - PocketBase collection definitions + seed data
+  - `main.go` - PocketBase init, record hooks, cron jobs, route registration
 
 ### Frontend (`frontend/`)
 - **Framework**: React 19 + TypeScript + Vite
@@ -87,35 +70,42 @@ alembic upgrade head          # Apply migrations
 - **Key directories**:
   - `src/routes/` - Pages using TanStack Router file-based routing
   - `src/components/` - React components
-  - `src/client/` - Auto-generated OpenAPI client (do not edit manually)
-  - `src/hooks/` - Custom React hooks
+  - `src/hooks/` - Custom React hooks using PocketBase JS SDK
+  - `src/lib/pocketbase.ts` - PocketBase client instance
 
 ### Services Integration
-- **FCM**: Firebase Cloud Messaging for push notifications to devices
-- **QStash**: Upstash message queue for async SMS processing
-- **Email**: Provider-agnostic (SMTP/Maileroo), Mailcatcher for local dev at localhost:1080
+- **FCM**: Firebase Cloud Messaging for push notifications to devices (via goroutines)
+- **Payments**: QvaPay for subscription billing
+- **Email**: PocketBase built-in SMTP, Mailcatcher for local dev at localhost:1080
+
+## Design System
+
+The Ender design system is defined in the **ender-homepage** repo (`../ender-homepage/src/pages/design-system.astro`) and documented at `/design-system` on the homepage site. It is the **single source of truth** for colors, typography, components, and patterns.
+
+- **Reference**: `../ender-homepage/src/styles/global.css` — all CSS custom properties (colors, fonts, neutrals, code syntax)
+- **Dashboard mapping**: `frontend/src/index.css` maps the same palette to shadcn/ui semantic variables
+- **Fonts**: Inter (sans/body), Libre Baskerville (serif/headings), JetBrains Mono (mono/code) — loaded via Google Fonts in `frontend/index.html`
+- **Accent**: `#2dd4a8` (mint/teal) — used consistently across both projects
+- **Neutrals**: Mint-tinted gray scale (50–950), not standard Tailwind grays
+
+When changing visual styles (colors, fonts, spacing, component patterns), update the design system page in ender-homepage **first**, then propagate changes to the dashboard's `frontend/src/index.css`.
 
 ## Code Quality Standards
 
 ### Backend
-- MyPy strict mode enabled
-- Ruff for linting (pycodestyle, pyflakes, isort, flake8-bugbear, pyupgrade)
-- Print statements not allowed (T201 rule)
+- Go standard formatting (`gofmt`)
+- All code must compile: `go build ./...`
 
 ### Frontend
 - Biome for linting and formatting
 - TypeScript strict mode
-- API client auto-generated from OpenAPI - regenerate after backend API changes
+- PocketBase JS SDK for all API calls (no auto-generated client)
+- All visual styles must follow the design system (see above)
 
 ## Development URLs
 | Service | URL |
 |---------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| Swagger Docs | http://localhost:8000/docs |
-| Adminer (DB) | http://localhost:8080 |
+| App (API + Frontend) | http://localhost:8090 |
+| PocketBase Admin | http://localhost:8090/_/ |
+| Frontend (dev server) | http://localhost:5173 |
 | Mailcatcher | http://localhost:1080 |
-
-## Email Templates
-
-Email templates use MJML. Source files are in `backend/app/email-templates/src/`. Use the VS Code MJML extension to export to HTML, then save to the `build/` directory.

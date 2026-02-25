@@ -5,153 +5,103 @@
 * Inicia el stack local con Docker Compose:
 
 ```bash
-docker compose watch
+docker compose up -d
 ```
 
 * Ahora puedes abrir tu navegador e interactuar con estas URLs:
 
-Frontend: <http://localhost:5173>
+App (API + Frontend): <http://localhost:8090>
 
-Backend, API web basada en JSON (OpenAPI): <http://localhost:8000>
-
-Documentación interactiva automática con Swagger UI: <http://localhost:8000/docs>
-
-Adminer, administración web de base de datos: <http://localhost:8080>
+PocketBase Admin Dashboard: <http://localhost:8090/_/>
 
 MailCatcher: <http://localhost:1080>
 
-**Nota**: La primera vez que inicies tu stack, puede tomar un minuto para estar listo. Mientras el backend espera que la base de datos esté lista y configura todo. Puedes revisar los logs para monitorearlo.
-
-Para revisar los logs, ejecuta (en otra terminal):
+Para revisar los logs:
 
 ```bash
-docker compose logs
-```
-
-Para revisar los logs de un servicio específico, agrega el nombre del servicio, ej.:
-
-```bash
-docker compose logs backend
+docker compose logs -f app
 ```
 
 ## Mailcatcher
 
-Mailcatcher es un servidor SMTP simple que captura todos los emails enviados por el backend durante el desarrollo local. En lugar de enviar emails reales, son capturados y mostrados en una interfaz web.
+Para desarrollo local con Mailcatcher, inicia el perfil `dev`:
 
-Esto es útil para:
+```bash
+docker compose --profile dev up -d
+```
 
-* Probar funcionalidad de email durante el desarrollo
-* Verificar contenido y formato de emails
-* Debuggear funcionalidad relacionada con email sin enviar emails reales
-
-El backend está configurado automáticamente para usar Mailcatcher cuando corre con Docker Compose localmente (SMTP en puerto 1025). Todos los emails capturados se pueden ver en <http://localhost:1080>.
+Mailcatcher captura todos los emails enviados por PocketBase durante el desarrollo local. Todos los emails capturados se pueden ver en <http://localhost:1080>.
 
 ## Desarrollo Local
 
-Los archivos de Docker Compose están configurados para que cada servicio esté disponible en un puerto diferente en `localhost`.
-
-Para el backend y frontend, usan el mismo puerto que usaría su servidor de desarrollo local, así que el backend está en `http://localhost:8000` y el frontend en `http://localhost:5173`.
-
-De esta manera, podrías apagar un servicio de Docker Compose e iniciar su servidor de desarrollo local, y todo seguiría funcionando porque todo usa los mismos puertos.
-
-Por ejemplo, puedes detener el servicio `frontend` en Docker Compose, en otra terminal, ejecuta:
-
-```bash
-docker compose stop frontend
-```
-
-Y luego inicia el servidor de desarrollo local del frontend:
-
-```bash
-cd frontend
-npm run dev
-```
-
-O podrías detener el servicio `backend` de Docker Compose:
-
-```bash
-docker compose stop backend
-```
-
-Y luego puedes ejecutar el servidor de desarrollo local del backend:
+### Backend
 
 ```bash
 cd backend
-fastapi dev app/main.py
+
+# Ejecutar servidor de desarrollo
+go run . serve --http=0.0.0.0:8090
+
+# Verificar compilación
+go build ./...
+
+# Compilar binario
+go build -o ender .
+./ender serve --http=0.0.0.0:8090
 ```
 
-## Archivos de Docker Compose y variables de entorno
+El backend corre en `http://localhost:8090`. El admin dashboard de PocketBase está disponible en `http://localhost:8090/_/`.
 
-Hay un archivo principal `docker-compose.yml` con todas las configuraciones que aplican a todo el stack, es usado automáticamente por `docker compose`.
+Las colecciones se definen en `migrations/1740000000_initial.go`. Con `ENVIRONMENT != production`, las auto-migraciones están habilitadas — los cambios hechos en el admin UI se reflejan automáticamente en archivos de migración.
 
-Y también hay un `docker-compose.override.yml` con overrides para desarrollo, por ejemplo para montar el código fuente como volumen. Es usado automáticamente por `docker compose` para aplicar overrides sobre `docker-compose.yml`.
-
-Estos archivos de Docker Compose usan el archivo `.env` que contiene configuraciones para inyectar como variables de entorno en los contenedores.
-
-Después de cambiar variables, asegúrate de reiniciar el stack:
+### Frontend
 
 ```bash
-docker compose watch
+cd frontend
+
+# Instalar dependencias
+npm install
+
+# Servidor de desarrollo
+npm run dev
+
+# Build
+npm run build
+
+# Lint
+npm run lint
 ```
 
-## El archivo .env
+El frontend corre en `http://localhost:5173` y se conecta al backend via PocketBase JS SDK.
 
-El archivo `.env` es el que contiene todas tus configuraciones, claves generadas y contraseñas, etc.
+## Variables de Entorno
 
-Dependiendo de tu flujo de trabajo, podrías querer excluirlo de Git, por ejemplo si tu proyecto es público. En ese caso, tendrías que asegurarte de configurar una manera para que tus herramientas de CI obtengan las variables mientras construyen o despliegan tu proyecto.
+El archivo `.env` contiene todas las configuraciones. Ver `.env.example` para referencia.
 
-## Pre-commits y linting de código
+Variables principales:
 
-Estamos usando una herramienta llamada [pre-commit](https://pre-commit.com/) para linting y formateo de código.
+| Variable | Descripción | Default |
+|----------|-------------|---------|
+| `ENVIRONMENT` | Entorno de ejecución | `local` |
+| `FIRST_SUPERUSER` | Email del superusuario | `admin@ender.app` |
+| `FIRST_SUPERUSER_PASSWORD` | Contraseña del superusuario | `changethis` |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | JSON de Firebase para FCM | - |
+| `GOOGLE_CLIENT_ID` | OAuth Google | - |
+| `GITHUB_CLIENT_ID` | OAuth GitHub | - |
+| `QVAPAY_APP_ID` | App ID de QvaPay | - |
+| `QVAPAY_APP_SECRET` | App Secret de QvaPay | - |
+| `WEBHOOK_ENCRYPTION_KEY` | Clave AES para secretos de webhooks | - |
+| `SMTP_HOST` | Host SMTP | `localhost` |
+| `SMTP_PORT` | Puerto SMTP | `1025` |
+| `LITESTREAM_REPLICA_URL` | URL S3 para backup (opcional) | - |
+| `APP_URL` | URL de la app | `http://localhost:8090` |
+| `FRONTEND_URL` | URL del frontend | `http://localhost:5173` |
 
-Cuando lo instalas, corre justo antes de hacer un commit en git. De esta manera asegura que el código sea consistente y formateado incluso antes de ser commiteado.
+## URLs de Desarrollo
 
-Puedes encontrar un archivo `.pre-commit-config.yaml` con configuraciones en la raíz del proyecto.
-
-### Instalar pre-commit para que corra automáticamente
-
-`pre-commit` ya es parte de las dependencias del proyecto, pero también podrías instalarlo globalmente si prefieres, siguiendo [la documentación oficial de pre-commit](https://pre-commit.com/).
-
-Después de tener la herramienta `pre-commit` instalada y disponible, necesitas "instalarla" en el repositorio local, para que corra automáticamente antes de cada commit.
-
-Usando `uv`, podrías hacerlo con:
-
-```bash
-❯ uv run pre-commit install
-pre-commit installed at .git/hooks/pre-commit
-```
-
-Ahora cada vez que intentes hacer commit, pre-commit correrá y revisará y formateará el código que estás a punto de commitear, y te pedirá que agregues ese código (stage it) con git de nuevo antes de commitear.
-
-### Correr pre-commit hooks manualmente
-
-También puedes correr `pre-commit` manualmente en todos los archivos usando `uv`:
-
-```bash
-❯ uv run pre-commit run --all-files
-check for added large files..............................................Passed
-check toml...............................................................Passed
-check yaml...............................................................Passed
-ruff.....................................................................Passed
-ruff-format..............................................................Passed
-eslint...................................................................Passed
-prettier.................................................................Passed
-```
-
-## URLs
-
-### URLs de Desarrollo
-
-URLs de desarrollo, para desarrollo local.
-
-Frontend: <http://localhost:5173>
-
-Backend: <http://localhost:8000>
-
-Documentación Interactiva Automática (Swagger UI): <http://localhost:8000/docs>
-
-Documentación Alternativa Automática (ReDoc): <http://localhost:8000/redoc>
-
-Adminer: <http://localhost:8080>
-
-MailCatcher: <http://localhost:1080>
+| Servicio | URL |
+|----------|-----|
+| App (API + Frontend) | http://localhost:8090 |
+| PocketBase Admin | http://localhost:8090/_/ |
+| Frontend (dev server) | http://localhost:5173 |
+| Mailcatcher | http://localhost:1080 |

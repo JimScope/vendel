@@ -23,10 +23,13 @@ import { Route as SubscriptionSuccessRouteImport } from './routes/subscription.s
 import { Route as SubscriptionErrorRouteImport } from './routes/subscription.error'
 import { Route as OauthCallbackProviderRouteImport } from './routes/oauth-callback.$provider'
 import { Route as LayoutWebhooksRouteImport } from './routes/_layout/webhooks'
+import { Route as LayoutTemplatesRouteImport } from './routes/_layout/templates'
 import { Route as LayoutSmsRouteImport } from './routes/_layout/sms'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutScheduledRouteImport } from './routes/_layout/scheduled'
 import { Route as LayoutIntegrationsRouteImport } from './routes/_layout/integrations'
 import { Route as LayoutDevicesRouteImport } from './routes/_layout/devices'
+import { Route as LayoutBillingRouteImport } from './routes/_layout/billing'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -98,6 +101,11 @@ const LayoutWebhooksRoute = LayoutWebhooksRouteImport.update({
   path: '/webhooks',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutTemplatesRoute = LayoutTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutSmsRoute = LayoutSmsRouteImport.update({
   id: '/sms',
   path: '/sms',
@@ -108,6 +116,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutScheduledRoute = LayoutScheduledRouteImport.update({
+  id: '/scheduled',
+  path: '/scheduled',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutIntegrationsRoute = LayoutIntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
@@ -116,6 +129,11 @@ const LayoutIntegrationsRoute = LayoutIntegrationsRouteImport.update({
 const LayoutDevicesRoute = LayoutDevicesRouteImport.update({
   id: '/devices',
   path: '/devices',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutBillingRoute = LayoutBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
@@ -134,10 +152,13 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin': typeof LayoutAdminRoute
+  '/billing': typeof LayoutBillingRoute
   '/devices': typeof LayoutDevicesRoute
   '/integrations': typeof LayoutIntegrationsRoute
+  '/scheduled': typeof LayoutScheduledRoute
   '/settings': typeof LayoutSettingsRoute
   '/sms': typeof LayoutSmsRoute
+  '/templates': typeof LayoutTemplatesRoute
   '/webhooks': typeof LayoutWebhooksRoute
   '/oauth-callback/$provider': typeof OauthCallbackProviderRoute
   '/subscription/error': typeof SubscriptionErrorRoute
@@ -154,10 +175,13 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/admin': typeof LayoutAdminRoute
+  '/billing': typeof LayoutBillingRoute
   '/devices': typeof LayoutDevicesRoute
   '/integrations': typeof LayoutIntegrationsRoute
+  '/scheduled': typeof LayoutScheduledRoute
   '/settings': typeof LayoutSettingsRoute
   '/sms': typeof LayoutSmsRoute
+  '/templates': typeof LayoutTemplatesRoute
   '/webhooks': typeof LayoutWebhooksRoute
   '/oauth-callback/$provider': typeof OauthCallbackProviderRoute
   '/subscription/error': typeof SubscriptionErrorRoute
@@ -176,10 +200,13 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/billing': typeof LayoutBillingRoute
   '/_layout/devices': typeof LayoutDevicesRoute
   '/_layout/integrations': typeof LayoutIntegrationsRoute
+  '/_layout/scheduled': typeof LayoutScheduledRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/sms': typeof LayoutSmsRoute
+  '/_layout/templates': typeof LayoutTemplatesRoute
   '/_layout/webhooks': typeof LayoutWebhooksRoute
   '/oauth-callback/$provider': typeof OauthCallbackProviderRoute
   '/subscription/error': typeof SubscriptionErrorRoute
@@ -198,10 +225,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/verify-email'
     | '/admin'
+    | '/billing'
     | '/devices'
     | '/integrations'
+    | '/scheduled'
     | '/settings'
     | '/sms'
+    | '/templates'
     | '/webhooks'
     | '/oauth-callback/$provider'
     | '/subscription/error'
@@ -218,10 +248,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/verify-email'
     | '/admin'
+    | '/billing'
     | '/devices'
     | '/integrations'
+    | '/scheduled'
     | '/settings'
     | '/sms'
+    | '/templates'
     | '/webhooks'
     | '/oauth-callback/$provider'
     | '/subscription/error'
@@ -239,10 +272,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/verify-email'
     | '/_layout/admin'
+    | '/_layout/billing'
     | '/_layout/devices'
     | '/_layout/integrations'
+    | '/_layout/scheduled'
     | '/_layout/settings'
     | '/_layout/sms'
+    | '/_layout/templates'
     | '/_layout/webhooks'
     | '/oauth-callback/$provider'
     | '/subscription/error'
@@ -365,6 +401,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutWebhooksRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/templates': {
+      id: '/_layout/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof LayoutTemplatesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/sms': {
       id: '/_layout/sms'
       path: '/sms'
@@ -377,6 +420,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof LayoutSettingsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/scheduled': {
+      id: '/_layout/scheduled'
+      path: '/scheduled'
+      fullPath: '/scheduled'
+      preLoaderRoute: typeof LayoutScheduledRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/integrations': {
@@ -393,6 +443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutDevicesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/billing': {
+      id: '/_layout/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof LayoutBillingRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/admin': {
       id: '/_layout/admin'
       path: '/admin'
@@ -405,20 +462,26 @@ declare module '@tanstack/react-router' {
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutBillingRoute: typeof LayoutBillingRoute
   LayoutDevicesRoute: typeof LayoutDevicesRoute
   LayoutIntegrationsRoute: typeof LayoutIntegrationsRoute
+  LayoutScheduledRoute: typeof LayoutScheduledRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutSmsRoute: typeof LayoutSmsRoute
+  LayoutTemplatesRoute: typeof LayoutTemplatesRoute
   LayoutWebhooksRoute: typeof LayoutWebhooksRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutBillingRoute: LayoutBillingRoute,
   LayoutDevicesRoute: LayoutDevicesRoute,
   LayoutIntegrationsRoute: LayoutIntegrationsRoute,
+  LayoutScheduledRoute: LayoutScheduledRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutSmsRoute: LayoutSmsRoute,
+  LayoutTemplatesRoute: LayoutTemplatesRoute,
   LayoutWebhooksRoute: LayoutWebhooksRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }

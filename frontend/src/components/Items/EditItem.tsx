@@ -4,8 +4,6 @@ import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-import { type ItemPublic, ItemsService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 import { handleError } from "@/utils"
 
 const formSchema = z.object({
@@ -38,7 +37,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 interface EditItemProps {
-  item: ItemPublic
+  item: Record<string, any>
   onSuccess: () => void
 }
 
@@ -59,7 +58,7 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
-      ItemsService.updateItem({ id: item.id, requestBody: data }),
+      pb.collection("items").update(item.id, data),
     onSuccess: () => {
       showSuccessToast("Item updated successfully")
       setIsOpen(false)

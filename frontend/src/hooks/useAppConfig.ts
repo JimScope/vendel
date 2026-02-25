@@ -1,24 +1,34 @@
 import { useQuery } from "@tanstack/react-query"
 
-import type { AppSettings } from "@/client"
-import { UtilsService } from "@/client"
+import pb from "@/lib/pocketbase"
+
+export interface PaymentProvider {
+  name: string
+  display_name: string
+}
 
 export interface AppConfig {
   appName: string
   supportEmail: string
+  maintenanceMode: boolean
+  paymentProviders: PaymentProvider[]
 }
 
 const DEFAULT_CONFIG: AppConfig = {
   appName: "Ender",
   supportEmail: "support@example.com",
+  maintenanceMode: false,
+  paymentProviders: [],
 }
 
 export function useAppConfig() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["app-settings"],
-    queryFn: async (): Promise<AppSettings> => {
-      const response = await UtilsService.utilsGetAppSettings()
-      return response.data as AppSettings
+    queryFn: async () => {
+      return (await pb.send("/api/utils/app-settings", {})) as Record<
+        string,
+        any
+      >
     },
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
     retry: 1,
@@ -27,6 +37,9 @@ export function useAppConfig() {
   const config: AppConfig = {
     appName: data?.app_name ?? DEFAULT_CONFIG.appName,
     supportEmail: data?.support_email ?? DEFAULT_CONFIG.supportEmail,
+    maintenanceMode: data?.maintenance_mode === "true",
+    paymentProviders:
+      data?.payment_providers ?? DEFAULT_CONFIG.paymentProviders,
   }
 
   return {

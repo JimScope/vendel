@@ -5,3 +5,9 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 .env
+pb_data/
+frontend/dist/
+backend/ender
+
+# Modem agent binary
+modem-agent/ender-modem-agent

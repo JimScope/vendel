@@ -1,14 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  Bell,
-  CreditCard,
-  Loader2,
-  MessageSquare,
-  Settings2,
-} from "lucide-react"
-
-import type { SystemConfigPublic } from "@/client"
-import { SystemConfigService } from "@/client"
+import { CreditCard, Loader2, Settings2 } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -27,6 +18,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 
 function SystemSettings() {
   const queryClient = useQueryClient()
@@ -35,15 +27,15 @@ function SystemSettings() {
   const { data: configs, isLoading } = useQuery({
     queryKey: ["system-config"],
     queryFn: async () => {
-      const response = await SystemConfigService.systemConfigListConfigs()
-      return response.data
+      const response = await pb.send("/api/system-config", {})
+      return response
     },
   })
 
   const updateConfigMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      return SystemConfigService.systemConfigUpdateConfig({
-        path: { key },
+      return pb.send(`/api/system-config/${key}`, {
+        method: "PATCH",
         body: { value },
       })
     },
@@ -65,7 +57,9 @@ function SystemSettings() {
   }
 
   const getConfigValue = (key: string): string => {
-    const config = configs?.data?.find((c: SystemConfigPublic) => c.key === key)
+    const config = configs?.data?.find(
+      (c: Record<string, any>) => c.key === key,
+    )
     return config?.value ?? ""
   }
 
@@ -166,17 +160,17 @@ function SystemSettings() {
               <SelectContent>
                 <SelectItem value="invoice">
                   <div className="flex flex-col items-start">
-                    <span>Invoice</span>
+                    <span>Pay per period</span>
                     <span className="text-xs text-muted-foreground">
-                      Manual payment via invoice each period
+                      User pays manually each billing cycle
                     </span>
                   </div>
                 </SelectItem>
                 <SelectItem value="authorized">
                   <div className="flex flex-col items-start">
-                    <span>Authorized</span>
+                    <span>Auto-renew</span>
                     <span className="text-xs text-muted-foreground">
-                      Automatic recurring payments
+                      Charged automatically on renewal
                     </span>
                   </div>
                 </SelectItem>
@@ -185,81 +179,6 @@ function SystemSettings() {
             <p className="text-sm text-muted-foreground">
               Determines whether new subscriptions use manual invoice payments
               or automatic recurring charges
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* SMS Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            SMS
-          </CardTitle>
-          <CardDescription>Configure SMS delivery settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="sms-retry">Retry Attempts</Label>
-            <Input
-              id="sms-retry"
-              type="number"
-              defaultValue={getConfigValue("sms_retry_attempts")}
-              onBlur={(e) =>
-                handleConfigChange("sms_retry_attempts", e.target.value)
-              }
-              className="w-[150px]"
-            />
-            <p className="text-sm text-muted-foreground">
-              Number of retry attempts for failed SMS delivery
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notifications Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Notifications
-          </CardTitle>
-          <CardDescription>
-            Configure notification and webhook settings
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-notifications">Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Send email notifications for important events
-              </p>
-            </div>
-            <Switch
-              id="email-notifications"
-              checked={getConfigValue("email_notifications_enabled") === "true"}
-              onCheckedChange={handleBooleanChange(
-                "email_notifications_enabled",
-              )}
-              disabled={updateConfigMutation.isPending}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="webhook-timeout">Webhook Timeout (seconds)</Label>
-            <Input
-              id="webhook-timeout"
-              type="number"
-              defaultValue={getConfigValue("webhook_timeout_seconds")}
-              onBlur={(e) =>
-                handleConfigChange("webhook_timeout_seconds", e.target.value)
-              }
-              className="w-[150px]"
-            />
-            <p className="text-sm text-muted-foreground">
-              Timeout for webhook delivery requests
             </p>
           </div>
         </CardContent>

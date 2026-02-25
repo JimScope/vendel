@@ -5,37 +5,18 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
-import axios from "axios"
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
-import { client } from "./client/client.gen"
 import { ThemeProvider } from "./components/theme-provider"
 import { Toaster } from "./components/ui/sonner"
+import pb from "./lib/pocketbase"
 import "./index.css"
 import { routeTree } from "./routeTree.gen"
 
-// Configure the API client
-client.setConfig({
-  baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // Required for OAuth cookies across subdomains
-  throwOnError: true, // Required for TanStack Query to catch errors
-})
-
-// Add auth interceptor
-client.instance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token")
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
 const handleApiError = (error: unknown) => {
-  if (
-    axios.isAxiosError(error) &&
-    [401, 403].includes(error.response?.status ?? 0)
-  ) {
-    localStorage.removeItem("access_token")
+  const status = (error as { status?: number })?.status
+  if (status === 401 || status === 403) {
+    pb.authStore.clear()
     window.location.href = "/login"
   }
 }

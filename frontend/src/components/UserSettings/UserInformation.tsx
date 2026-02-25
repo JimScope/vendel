@@ -3,8 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-import { UsersService, type UserUpdateMe } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -18,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import pb from "@/lib/pocketbase"
 import { cn } from "@/lib/utils"
 import { handleError } from "@/utils"
 
@@ -49,8 +48,11 @@ const UserInformation = () => {
   }
 
   const mutation = useMutation({
-    mutationFn: (data: UserUpdateMe) =>
-      UsersService.usersUpdateUserMe({ body: data }),
+    mutationFn: (data: Record<string, any>) => {
+      const userId = pb.authStore.record?.id
+      if (!userId) throw new Error("Not authenticated")
+      return pb.collection("users").update(userId, data)
+    },
     onSuccess: () => {
       showSuccessToast("User updated successfully")
       toggleEditMode()
@@ -62,7 +64,7 @@ const UserInformation = () => {
   })
 
   const onSubmit = (data: FormData) => {
-    const updateData: UserUpdateMe = {}
+    const updateData: Record<string, any> = {}
 
     // only include fields that have changed
     if (data.full_name !== currentUser?.full_name) {

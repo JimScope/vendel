@@ -5,7 +5,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type { SmsDeviceCreate } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -27,11 +26,19 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
 import { useCreateDevice } from "@/hooks/useDeviceMutations"
 
 const formSchema = z.object({
+  device_type: z.enum(["android", "modem"]),
   name: z
     .string()
     .min(1, { message: "Name is required" })
@@ -57,6 +64,7 @@ const AddDevice = () => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
+      device_type: "android",
       name: "",
       phone_number: "",
     },
@@ -64,7 +72,7 @@ const AddDevice = () => {
 
   const createDeviceMutation = useCreateDevice()
 
-  const onSubmit = (data: SmsDeviceCreate) => {
+  const onSubmit = (data: FormData) => {
     createDeviceMutation.mutate(data, {
       onSuccess: (response) => {
         setApiKey(response?.api_key ?? null)
@@ -110,7 +118,11 @@ const AddDevice = () => {
             </DialogHeader>
             <div className="flex flex-col gap-4 py-4">
               <div className="flex flex-col items-center gap-3">
-                <div className="rounded-lg border bg-white p-4">
+                <div
+                  className="rounded-lg border bg-white p-4"
+                  role="img"
+                  aria-label="QR code containing device connection details"
+                >
                   <Cuer.Root value={getQrPayload(apiKey)} size={200}>
                     <Cuer.Finder fill="black" />
                     <Cuer.Cells fill="black" />
@@ -127,6 +139,7 @@ const AddDevice = () => {
                   variant="outline"
                   size="icon"
                   onClick={() => copyToClipboard(apiKey)}
+                  aria-label={copiedText ? "Copied" : "Copy API key"}
                 >
                   {copiedText ? (
                     <Check className="h-4 w-4" />
@@ -151,6 +164,33 @@ const AddDevice = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="grid gap-4 py-4">
+                  <FormField
+                    control={form.control}
+                    name="device_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Device Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select device type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="android">
+                              Android Phone
+                            </SelectItem>
+                            <SelectItem value="modem">USB Modem</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="name"

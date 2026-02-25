@@ -1,18 +1,20 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { WebhookConfigPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import DeleteWebhook from "./DeleteWebhook"
 import EditWebhook from "./EditWebhook"
+import TestWebhook from "./TestWebhook"
+import WebhookLogs from "./WebhookLogs"
 
 interface WebhookActionsMenuProps {
-  webhook: WebhookConfigPublic
+  webhook: Record<string, any>
 }
 
 export const WebhookActionsMenu = ({ webhook }: WebhookActionsMenuProps) => {
@@ -26,6 +28,9 @@ export const WebhookActionsMenu = ({ webhook }: WebhookActionsMenuProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <TestWebhook webhookId={webhook.id} onSuccess={() => setOpen(false)} />
+        <WebhookLogs webhook={webhook} onSuccess={() => setOpen(false)} />
+        <DropdownMenuSeparator />
         <EditWebhook webhook={webhook} onSuccess={() => setOpen(false)} />
         <DeleteWebhook id={webhook.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>

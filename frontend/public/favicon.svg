@@ -1,0 +1,9 @@
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" fill="#edf5f1"/>
+  <!-- Left colon -->
+  <circle cx="6" cy="10" r="3" fill="#2dd4a8"/>
+  <circle cx="6" cy="22" r="3" fill="#2dd4a8"/>
+  <!-- Right colon -->
+  <circle cx="26" cy="10" r="3" fill="#2dd4a8"/>
+  <circle cx="26" cy="22" r="3" fill="#2dd4a8"/>
+</svg>

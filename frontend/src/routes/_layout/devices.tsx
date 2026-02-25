@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Smartphone } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
 
 import { DataTable } from "@/components/Common/DataTable"
 import AddDevice from "@/components/Devices/AddDevice"
-import { columns } from "@/components/Devices/columns"
+import { getColumns } from "@/components/Devices/columns"
 import PendingDevices from "@/components/Pending/PendingDevices"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useDeviceListSuspense } from "@/hooks/useDeviceList"
+import { useModemStatus } from "@/hooks/useModemStatus"
 
 export const Route = createFileRoute("/_layout/devices")({
   component: Devices,
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/_layout/devices")({
 
 function DevicesTableContent() {
   const { data: devices } = useDeviceListSuspense()
+  const { data: modemStatus } = useModemStatus()
+  const columns = useMemo(() => getColumns(modemStatus), [modemStatus])
 
   if (!devices?.data || devices.data.length === 0) {
     return (
@@ -22,15 +25,22 @@ function DevicesTableContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <Smartphone className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold">No devices registered</h3>
+        <h2 className="text-lg font-semibold">No devices registered</h2>
         <p className="text-muted-foreground">
           Add a device to start sending SMS messages
         </p>
+        <AddDevice />
       </div>
     )
   }
 
-  return <DataTable columns={columns} data={devices?.data ?? []} />
+  return (
+    <DataTable
+      columns={columns}
+      data={devices?.data ?? []}
+      caption="Registered devices"
+    />
+  )
 }
 
 function DevicesTable() {

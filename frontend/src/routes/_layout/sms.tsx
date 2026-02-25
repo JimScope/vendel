@@ -1,24 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Search } from "lucide-react"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 
 import PendingItems from "@/components/Pending/PendingItems"
 import SendSMS from "@/components/Sms/SendSMS"
 import { SMSTable } from "@/components/Sms/SMSTable"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useAppConfig from "@/hooks/useAppConfig"
-import { type SMSMessageType, useSMSList } from "@/hooks/useSMSList"
+import { type SMSMessageType, useSMSListSuspense } from "@/hooks/useSMSList"
 
 export const Route = createFileRoute("/_layout/sms")({
   component: Sms,
 })
 
 function SMSTableContent({ messageType }: { messageType: SMSMessageType }) {
-  const { data: sms, isLoading } = useSMSList(messageType)
-
-  if (isLoading) {
-    return <PendingItems />
-  }
+  const { data: sms } = useSMSListSuspense(messageType)
 
   if (!sms || sms.data.length === 0) {
     return (
@@ -26,7 +22,7 @@ function SMSTableContent({ messageType }: { messageType: SMSMessageType }) {
         <div className="rounded-full bg-muted p-4 mb-4">
           <Search className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold">No messages found</h3>
+        <h2 className="text-lg font-semibold">No messages found</h2>
         <p className="text-muted-foreground">
           {messageType === "incoming"
             ? "You haven't received any SMS yet"
@@ -34,6 +30,7 @@ function SMSTableContent({ messageType }: { messageType: SMSMessageType }) {
               ? "You haven't sent any SMS yet"
               : "You don't have any SMS yet"}
         </p>
+        {messageType !== "incoming" && <SendSMS />}
       </div>
     )
   }
@@ -67,7 +64,9 @@ function Sms() {
         </TabsList>
       </Tabs>
 
-      <SMSTableContent messageType={messageType} />
+      <Suspense fallback={<PendingItems />}>
+        <SMSTableContent messageType={messageType} />
+      </Suspense>
     </div>
   )
 }

@@ -7,15 +7,12 @@ Ender es una plataforma full-stack para gestión y envío de SMS a través de di
 ## Stack Tecnológico
 
 ### Backend
-- **Framework**: FastAPI (Python 3.13+)
-- **Base de datos**: PostgreSQL 17 con SQLModel ORM
-- **Autenticación**: JWT (JSON Web Tokens)
-- **Migraciones**: Alembic
+- **Framework**: [PocketBase](https://pocketbase.io/) (Go)
+- **Base de datos**: SQLite (embebido)
+- **Autenticación**: JWT (built-in), OAuth2 (Google, GitHub)
 - **Push Notifications**: Firebase Cloud Messaging (FCM)
-- **Cola de mensajes**: QStash (Upstash)
-- **Email**: Agnóstico de proveedor (Maileroo, SMTP) con Mailcatcher para dev local
-- **Tests**: Pytest con coverage
-- **Calidad de código**: Ruff, MyPy, pre-commit hooks
+- **Email**: Soporte SMTP integrado, Mailcatcher para dev local
+- **Admin**: Dashboard de PocketBase en `/_/`
 
 ### Frontend
 - **Framework**: React 19 con TypeScript
@@ -23,12 +20,13 @@ Ender es una plataforma full-stack para gestión y envío de SMS a través de di
 - **Estado**: TanStack Query + TanStack Router
 - **Estilos**: Tailwind CSS + shadcn/ui
 - **Formularios**: React Hook Form + Zod
-- **Cliente API**: Auto-generado desde OpenAPI
+- **Cliente API**: PocketBase JS SDK
 - **Tests E2E**: Playwright
 
 ### Infraestructura
 - **Contenedores**: Docker & Docker Compose
 - **CI/CD**: GitHub Actions
+- **Despliegue**: Binario único (~50MB imagen Docker)
 
 ## Funcionalidades Principales
 
@@ -49,11 +47,17 @@ Ender es una plataforma full-stack para gestión y envío de SMS a través de di
 - Múltiples planes de suscripción
 - Tracking de cuota mensual de SMS
 - Límites de dispositivos por plan
-- Reset automático de cuota configurable
+- Reset automático mensual de cuota (cron)
 
 ### Webhooks
-- Configuración de webhooks para actualizaciones de estado
-- Entrega automática en eventos de SMS
+- Suscripciones de webhooks configurables por tipo de evento
+- Eventos soportados: `sms_received`, `sms_sent`, `sms_delivered`, `sms_failed`
+- Payloads firmados con HMAC-SHA256 y JSON con claves ordenadas
+
+### Pagos
+- Abstracción de proveedores de pago (QvaPay)
+- Gestión de ciclo de vida de suscripciones
+- Flujos de pago por factura y autorización
 
 ### Integraciones
 - API keys múltiples por usuario
@@ -64,24 +68,25 @@ Ender es una plataforma full-stack para gestión y envío de SMS a través de di
 
 ```
 ender/
-├── backend/                    # API FastAPI
-│   ├── app/
-│   │   ├── api/routes/         # Endpoints (login, users, sms, webhooks, etc.)
-│   │   ├── services/           # Lógica de negocio (SMS, FCM, Queue, Quota)
-│   │   ├── core/               # Config, DB, Security
-│   │   ├── models.py           # Modelos SQLModel
-│   │   └── crud.py             # Operaciones de base de datos
-│   ├── tests/
-│   └── scripts/
+├── backend/                    # Go + PocketBase API
+│   ├── main.go                 # Setup de PocketBase, hooks, cron, rutas
+│   ├── go.mod / go.sum
+│   ├── handlers/               # Rutas API custom (sms, planes, webhooks)
+│   ├── services/               # Lógica de negocio (SMS, FCM, cuota, suscripciones)
+│   │   └── payment/            # Proveedor de pago (QvaPay)
+│   ├── middleware/              # Auth por API key, modo mantenimiento
+│   └── migrations/             # Definiciones de colecciones + datos semilla
 ├── frontend/                   # App React
 │   ├── src/
 │   │   ├── routes/             # Páginas (TanStack Router)
 │   │   ├── components/         # Componentes React
-│   │   ├── client/             # Cliente API auto-generado
-│   │   └── hooks/
+│   │   ├── hooks/              # Hooks custom (PocketBase SDK)
+│   │   └── lib/pocketbase.ts   # Cliente PocketBase
 │   └── tests/                  # Tests Playwright
+├── Dockerfile                  # Multi-stage (node + go + alpine)
 ├── docker-compose.yml
-├── docker-compose.override.yml # Overrides para desarrollo
+├── litestream.yml              # Config de replicación Litestream (opt-in)
+├── entrypoint.sh               # Startup condicional (con/sin Litestream)
 └── .env                        # Variables de entorno
 ```
 
@@ -89,27 +94,24 @@ ender/
 
 ### Requisitos Previos
 - Docker y Docker Compose
-- Node.js (ver `.nvmrc`)
-- Python 3.13+
-- uv (gestor de paquetes Python)
+- Go 1.23+ (para dev local del backend)
+- Node.js 24+ (para dev local del frontend)
 
 ### Desarrollo con Docker Compose (Recomendado)
 
 ```bash
-# Iniciar stack completo con hot reload
-docker compose watch
+# Iniciar la app
+docker compose up -d
 
-# O sin watching
-docker compose up -d --wait
+# Ver logs
+docker compose logs -f app
 ```
 
 **Servicios disponibles:**
 | Servicio | URL |
 |----------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| API Docs (Swagger) | http://localhost:8000/docs |
-| Adminer (DB UI) | http://localhost:8080 |
+| App (API + Frontend) | http://localhost:8090 |
+| PocketBase Admin | http://localhost:8090/_/ |
 | Mailcatcher | http://localhost:1080 |
 
 ### Desarrollo Manual
@@ -118,27 +120,17 @@ docker compose up -d --wait
 ```bash
 cd backend
 
-# Instalar dependencias
-uv sync
-
-# Activar entorno virtual
-source .venv/bin/activate
-
 # Ejecutar servidor de desarrollo
-fastapi dev app/main.py
+go run . serve --http=0.0.0.0:8090
 
-# Ejecutar tests
-pytest
-# o
-bash ./scripts/test.sh
+# Compilar binario
+go build -o ender .
+./ender serve --http=0.0.0.0:8090
 ```
 
 #### Frontend
 ```bash
 cd frontend
-
-# Instalar versión de Node
-fnm use  # o nvm use
 
 # Instalar dependencias
 npm install
@@ -146,8 +138,8 @@ npm install
 # Servidor de desarrollo
 npm run dev
 
-# Generar cliente API desde OpenAPI
-npm run generate-client
+# Build
+npm run build
 
 # Tests E2E
 npx playwright test
@@ -155,74 +147,49 @@ npx playwright test
 
 ## Configuración
 
-### Variables de Entorno Requeridas
+### Variables de Entorno
 
 Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
-# Base de datos
-POSTGRES_SERVER=localhost
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<tu-password>
-POSTGRES_DB=ender
-POSTGRES_PORT=5432
-
-# Aplicación
-PROJECT_NAME=ender
+# Core
 ENVIRONMENT=local
-SECRET_KEY=<generar-con-comando-abajo>
-FIRST_SUPERUSER=admin@example.com
-FIRST_SUPERUSER_PASSWORD=<tu-password>
+FIRST_SUPERUSER=admin@ender.app
+FIRST_SUPERUSER_PASSWORD=changethis
 
-# Frontend
-FRONTEND_HOST=http://localhost:5173
-BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173
-
-# Planes
-DEFAULT_PLAN=free
-QUOTA_RESET_DAY=1
-
-# Firebase (para push notifications)
+# Firebase (push notifications)
 FIREBASE_SERVICE_ACCOUNT_JSON=<json-de-firebase>
 
-# QStash (cola de mensajes)
-QSTASH_TOKEN=<tu-token>
-QSTASH_URL=http://localhost:8080
-QSTASH_CURRENT_SIGNING_KEY=<signing-key>
-QSTASH_NEXT_SIGNING_KEY=<next-signing-key>
-SERVER_BASE_URL=http://localhost:8000
+# OAuth (opcional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
 
-# Proveedor de Email (smtp o maileroo)
-EMAIL_PROVIDER=smtp
-EMAILS_FROM_EMAIL=noreply@tudominio.com
-EMAILS_FROM_NAME=Ender
+# Pago (QvaPay)
+QVAPAY_APP_ID=
+QVAPAY_APP_SECRET=
 
-# Para SMTP (desarrollo local con Mailcatcher)
-SMTP_HOST=localhost
-SMTP_PORT=1025
-SMTP_TLS=false
+# Seguridad
+WEBHOOK_ENCRYPTION_KEY=         # Clave AES para secretos de webhooks
 
-# Para Maileroo (producción)
-# EMAIL_PROVIDER=maileroo
-# MAILEROO_API_KEY=<tu-api-key-de-maileroo>
-```
+# SMTP (por defecto localhost:1025 para mailcatcher en dev)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USERNAME=
+SMTP_PASSWORD=
 
-### Generar Secret Key
+# Backup (Litestream - opcional)
+LITESTREAM_REPLICA_URL=         # ej. s3://my-bucket/ender/data
+LITESTREAM_ACCESS_KEY_ID=
+LITESTREAM_SECRET_ACCESS_KEY=
 
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+# URLs
+APP_URL=http://localhost:8090
+FRONTEND_URL=http://localhost:5173
 ```
 
 ## Testing
-
-### Backend
-```bash
-# Ejecutar todos los tests
-docker compose exec backend pytest
-
-# Con coverage
-docker compose exec backend bash scripts/tests-start.sh
-```
 
 ### Frontend
 ```bash
@@ -233,16 +200,6 @@ npx playwright test
 npx playwright test --ui
 ```
 
-## Migraciones de Base de Datos
-
-```bash
-# Crear nueva migración
-docker compose exec backend alembic revision --autogenerate -m "Descripción"
-
-# Aplicar migraciones
-docker compose exec backend alembic upgrade head
-```
-
 ## Despliegue
 
 Ver [deployment.md](./deployment.md) para instrucciones detalladas de despliegue en producción.
@@ -251,9 +208,6 @@ Ver [deployment.md](./deployment.md) para instrucciones detalladas de despliegue
 
 - [Desarrollo](./development.md) - Guía de desarrollo local
 - [Despliegue](./deployment.md) - Instrucciones de producción
-- [Backend](./backend/README.md) - Documentación del backend
-- [Frontend](./frontend/README.md) - Documentación del frontend
-- [Release Notes](./release-notes.md) - Historial de versiones
 
 ## Licencia
 
