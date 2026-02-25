@@ -99,7 +99,7 @@ func ClaimPendingMessages(app core.App, deviceId string) ([]*core.Record, error)
 		return nil, err
 	}
 
-	var claimed []*core.Record
+	claimed := make([]*core.Record, 0, len(records))
 	for _, r := range records {
 		r.Set("status", "sending")
 		if err := app.Save(r); err == nil {

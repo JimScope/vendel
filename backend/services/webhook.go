@@ -22,6 +22,14 @@ import (
 
 const webhookMaxRetries = 3
 
+// webhookTransport is a shared HTTP transport for webhook delivery,
+// enabling connection reuse across requests.
+var webhookTransport = &http.Transport{
+	MaxIdleConns:        20,
+	MaxIdleConnsPerHost: 5,
+	IdleConnTimeout:     90 * time.Second,
+}
+
 // webhookRetryBackoffs defines the delay before each retry attempt.
 var webhookRetryBackoffs = []time.Duration{
 	1 * time.Minute,  // after 1st failure
@@ -200,7 +208,10 @@ func deliverWebhook(app core.App, webhook *core.Record, payload map[string]any, 
 		timeout = 30
 	}
 
-	client := &http.Client{Timeout: time.Duration(timeout) * time.Second}
+	client := &http.Client{
+		Timeout:   time.Duration(timeout) * time.Second,
+		Transport: webhookTransport,
+	}
 	req, err := http.NewRequest("POST", url, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return logDelivery(app, webhook, event, url, payload, 0, "", "failed", fmt.Sprintf("create request: %v", err), 0)
@@ -298,6 +309,7 @@ func marshalSorted(m map[string]any) ([]byte, error) {
 	sort.Strings(keys)
 
 	var buf bytes.Buffer
+	buf.Grow(128)
 	buf.WriteByte('{')
 	for i, k := range keys {
 		if i > 0 {
