@@ -58,17 +58,18 @@ function MaintenancePage() {
           We're performing scheduled maintenance to improve your experience.
           Please check back shortly.
         </p>
-        {config.supportEmail && config.supportEmail !== "support@example.com" && (
-          <p className="text-sm text-muted-foreground">
-            Need help?{" "}
-            <a
-              href={`mailto:${config.supportEmail}`}
-              className="text-brand underline underline-offset-4"
-            >
-              Contact support
-            </a>
-          </p>
-        )}
+        {config.supportEmail &&
+          config.supportEmail !== "support@example.com" && (
+            <p className="text-sm text-muted-foreground">
+              Need help?{" "}
+              <a
+                href={`mailto:${config.supportEmail}`}
+                className="text-brand underline underline-offset-4"
+              >
+                Contact support
+              </a>
+            </p>
+          )}
       </div>
     </div>
   )
