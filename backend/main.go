@@ -63,6 +63,19 @@ func main() {
 		return se.Next()
 	})
 
+	// ── Auth hooks ───────────────────────────────────────────────────
+
+	// Block login for unverified users (password auth only; OAuth2 auto-verifies)
+	app.OnRecordAuthWithPasswordRequest("users").BindFunc(func(e *core.RecordAuthWithPasswordRequestEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
+		if !e.Record.Verified() {
+			return e.UnauthorizedError("Please verify your email address before logging in.", nil)
+		}
+		return nil
+	})
+
 	// ── Record hooks ─────────────────────────────────────────────────
 
 	// Users: create default quota on registration
