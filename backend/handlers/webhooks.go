@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -24,6 +25,17 @@ func RegisterWebhookRoutes(se *core.ServeEvent) {
 	se.Router.GET("/api/webhooks/{provider}", func(e *core.RequestEvent) error {
 		providerName := e.Request.PathValue("provider")
 
+		// Verify signed state token to prevent authorization callback poisoning
+		stateToken := e.Request.URL.Query().Get("state")
+		if stateToken == "" {
+			return apis.NewBadRequestError("Missing state parameter", nil)
+		}
+		verifiedUserId, err := services.VerifyCallbackState(stateToken, 1*time.Hour)
+		if err != nil {
+			e.App.Logger().Warn("invalid callback state", slog.String("provider", providerName), slog.Any("error", err))
+			return apis.NewBadRequestError("Invalid or expired state token", nil)
+		}
+
 		// Parse query params as payload for authorization callbacks
 		payload := make(map[string]any)
 		for key, values := range e.Request.URL.Query() {
@@ -31,6 +43,9 @@ func RegisterWebhookRoutes(se *core.ServeEvent) {
 				payload[key] = values[0]
 			}
 		}
+
+		// Override remote_id with the verified userId from the state token
+		payload["remote_id"] = verifiedUserId
 
 		return processWebhookPayload(e, providerName, payment.WebhookRequest{
 			Payload: payload,

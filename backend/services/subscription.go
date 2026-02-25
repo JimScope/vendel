@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/mail"
+	"strings"
 	"time"
 
 	"ender/services/payment"
@@ -146,9 +147,20 @@ func startAuthorizedSubscription(
 	provider payment.Provider,
 	userId, webhookURL, successURL, errorURL string,
 ) (*core.Record, string, error) {
+	// Append signed state token to callback URL to prevent authorization poisoning
+	stateToken, err := GenerateCallbackState(userId)
+	if err != nil {
+		return nil, "", fmt.Errorf("generate callback state: %w", err)
+	}
+	sep := "?"
+	if strings.Contains(webhookURL, "?") {
+		sep = "&"
+	}
+	signedCallbackURL := webhookURL + sep + "state=" + stateToken
+
 	result, err := provider.GetAuthorizationURL(payment.AuthorizationRequest{
 		RemoteID:    userId,
-		CallbackURL: webhookURL,
+		CallbackURL: signedCallbackURL,
 		SuccessURL:  successURL,
 		ErrorURL:    errorURL,
 	})

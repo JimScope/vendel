@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -26,6 +28,66 @@ var webhookRetryBackoffs = []time.Duration{
 	1 * time.Minute,  // after 1st failure
 	5 * time.Minute,  // after 2nd failure
 	15 * time.Minute, // after 3rd failure
+}
+
+// privateRanges defines IP ranges that should be blocked for webhook URLs.
+var privateRanges []*net.IPNet
+
+func init() {
+	for _, cidr := range []string{
+		"127.0.0.0/8",    // IPv4 loopback
+		"10.0.0.0/8",     // RFC1918
+		"172.16.0.0/12",  // RFC1918
+		"192.168.0.0/16", // RFC1918
+		"169.254.0.0/16", // Link-local
+		"::1/128",        // IPv6 loopback
+		"fe80::/10",      // IPv6 link-local
+		"fc00::/7",       // IPv6 unique local
+	} {
+		_, network, _ := net.ParseCIDR(cidr)
+		privateRanges = append(privateRanges, network)
+	}
+}
+
+func isPrivateIP(ip net.IP) bool {
+	for _, network := range privateRanges {
+		if network.Contains(ip) {
+			return true
+		}
+	}
+	return ip.IsUnspecified() || ip.IsMulticast()
+}
+
+// ValidateWebhookURL checks that a URL is safe to use as a webhook target.
+// It blocks non-HTTP(S) schemes and destinations that resolve to private/reserved IPs.
+func ValidateWebhookURL(rawURL string) error {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	scheme := strings.ToLower(parsed.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return fmt.Errorf("invalid URL scheme %q: only http and https are allowed", parsed.Scheme)
+	}
+
+	host := parsed.Hostname()
+	if host == "" {
+		return fmt.Errorf("URL has no hostname")
+	}
+
+	ips, err := net.LookupIP(host)
+	if err != nil {
+		return fmt.Errorf("failed to resolve hostname %q: %w", host, err)
+	}
+
+	for _, ip := range ips {
+		if isPrivateIP(ip) {
+			return fmt.Errorf("webhook URL resolves to private/reserved IP address")
+		}
+	}
+
+	return nil
 }
 
 // WebhookDeliveryResult holds the outcome of a webhook delivery attempt.
@@ -100,6 +162,11 @@ func SendTestWebhook(app core.App, webhook *core.Record) *WebhookDeliveryResult 
 // deliverWebhook performs the HTTP request, measures timing, and logs the delivery.
 func deliverWebhook(app core.App, webhook *core.Record, payload map[string]any, event string) *WebhookDeliveryResult {
 	url := webhook.GetString("url")
+
+	// SSRF protection: validate URL before making any request
+	if err := ValidateWebhookURL(url); err != nil {
+		return logDelivery(app, webhook, event, url, payload, 0, "", "failed", fmt.Sprintf("blocked: %v", err), 0)
+	}
 
 	payloadJSON, err := marshalSorted(payload)
 	if err != nil {

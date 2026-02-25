@@ -144,6 +144,12 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 		if remoteID == nil {
 			return nil, fmt.Errorf("QvaPay webhook missing remote_id")
 		}
+		remoteIDStr := fmt.Sprintf("%v", remoteID)
+
+		// Verify transaction with QvaPay API before trusting the webhook
+		if err := p.verifyTransaction(txUUID, remoteIDStr); err != nil {
+			return nil, fmt.Errorf("QvaPay webhook verification failed: %w", err)
+		}
 
 		var amount float64
 		if a, ok := payload["amount"]; ok {
@@ -157,7 +163,7 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 
 		return &WebhookEvent{
 			EventType:     EventPaymentCompleted,
-			RemoteID:      fmt.Sprintf("%v", remoteID),
+			RemoteID:      remoteIDStr,
 			TransactionID: txUUID,
 			Amount:        amount,
 			RawPayload:    payload,
@@ -167,15 +173,40 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 	return nil, fmt.Errorf("unrecognized QvaPay webhook payload")
 }
 
+// verifyTransaction calls the QvaPay API to confirm that the given transaction
+// exists, has status "paid", and its remote_id matches the expected value.
+func (p *QvaPayProvider) verifyTransaction(txUUID, expectedRemoteID string) error {
+	data, err := p.post("/transactions/"+txUUID, nil)
+	if err != nil {
+		return fmt.Errorf("QvaPay verification request failed: %w", err)
+	}
+
+	status := getAnyStringKey(data, "status")
+	if status != "paid" {
+		return fmt.Errorf("QvaPay transaction %s has status %q, expected \"paid\"", txUUID, status)
+	}
+
+	remoteID := getAnyStringKey(data, "remote_id")
+	if remoteID != expectedRemoteID {
+		return fmt.Errorf("QvaPay transaction %s remote_id mismatch: got %q, expected %q", txUUID, remoteID, expectedRemoteID)
+	}
+
+	return nil
+}
+
 // ── HTTP helpers ─────────────────────────────────────────────────────
 
 func (p *QvaPayProvider) post(path string, payload map[string]any) (map[string]any, error) {
-	bodyJSON, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
+	var body io.Reader
+	if payload != nil {
+		bodyJSON, err := json.Marshal(payload)
+		if err != nil {
+			return nil, err
+		}
+		body = strings.NewReader(string(bodyJSON))
 	}
 
-	req, err := http.NewRequest("POST", qvaPayBaseURL+path, strings.NewReader(string(bodyJSON)))
+	req, err := http.NewRequest("POST", qvaPayBaseURL+path, body)
 	if err != nil {
 		return nil, err
 	}
