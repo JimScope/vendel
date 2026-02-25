@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -285,4 +286,21 @@ func RetryFailedMessages(app core.App) error {
 	app.Logger().Info("Retried failed SMS messages",
 		slog.Int("retried", retried), slog.Int("skipped_permanent", skipped))
 	return nil
+}
+
+// containsEvent checks if a JSON array string contains a specific event.
+func containsEvent(eventsJSON string, event string) bool {
+	if eventsJSON == "" {
+		return false
+	}
+	var events []string
+	if err := json.Unmarshal([]byte(eventsJSON), &events); err != nil {
+		return strings.Contains(eventsJSON, event)
+	}
+	for _, e := range events {
+		if e == event {
+			return true
+		}
+	}
+	return false
 }

@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/tools/security"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -255,34 +253,4 @@ func findFreePlan(app core.App) (*core.Record, error) {
 	}
 
 	return plan, nil
-}
-
-// GenerateSecureKey generates a cryptographically secure random key with a prefix.
-func GenerateSecureKey(prefix string, length int) string {
-	return prefix + security.RandomString(length)
-}
-
-// GenerateKeyPrefix returns the first 10 characters of a key followed by "...".
-func GenerateKeyPrefix(key string) string {
-	if len(key) <= 10 {
-		return key
-	}
-	return key[:10] + "..."
-}
-
-// containsEvent checks if a JSON array string contains a specific event.
-func containsEvent(eventsJSON string, event string) bool {
-	if eventsJSON == "" {
-		return false
-	}
-	var events []string
-	if err := json.Unmarshal([]byte(eventsJSON), &events); err != nil {
-		return strings.Contains(eventsJSON, event)
-	}
-	for _, e := range events {
-		if e == event {
-			return true
-		}
-	}
-	return false
 }

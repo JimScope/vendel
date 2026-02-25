@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pocketbase/pocketbase/tools/security"
 )
 
 const encryptedPrefix = "enc:"
@@ -165,4 +167,17 @@ func VerifyCallbackState(token string, maxAge time.Duration) (string, error) {
 	}
 
 	return userId, nil
+}
+
+// GenerateSecureKey generates a cryptographically secure random key with a prefix.
+func GenerateSecureKey(prefix string, length int) string {
+	return prefix + security.RandomString(length)
+}
+
+// GenerateKeyPrefix returns the first 10 characters of a key followed by "...".
+func GenerateKeyPrefix(key string) string {
+	if len(key) <= 10 {
+		return key
+	}
+	return key[:10] + "..."
 }
