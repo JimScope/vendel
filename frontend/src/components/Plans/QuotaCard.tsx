@@ -57,7 +57,7 @@ function QuotaCard() {
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-2xl font-bold capitalize">
                 {quota?.plan || "Free"}
               </span>
