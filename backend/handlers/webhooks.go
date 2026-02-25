@@ -53,6 +53,93 @@ func RegisterWebhookRoutes(se *core.ServeEvent) {
 	})
 }
 
+// RegisterUserWebhookRoutes registers user-facing webhook management endpoints.
+func RegisterUserWebhookRoutes(se *core.ServeEvent) {
+	// POST /api/webhooks/test — Test a webhook endpoint (auth: JWT)
+	se.Router.POST("/api/webhooks/test", func(e *core.RequestEvent) error {
+		info, _ := e.RequestInfo()
+		if info == nil || info.Auth == nil || info.Auth.Id == "" {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+		userId := info.Auth.Id
+
+		var body struct {
+			WebhookID string `json:"webhook_id"`
+		}
+		if err := e.BindBody(&body); err != nil || body.WebhookID == "" {
+			return apis.NewBadRequestError("webhook_id is required", nil)
+		}
+
+		webhook, err := e.App.FindRecordById("webhook_configs", body.WebhookID)
+		if err != nil {
+			return apis.NewNotFoundError("Webhook not found", nil)
+		}
+		if webhook.GetString("user") != userId {
+			return apis.NewForbiddenError("Not your webhook", nil)
+		}
+
+		result := services.SendTestWebhook(e.App, webhook)
+
+		resp := map[string]any{
+			"delivery_status": result.DeliveryStatus,
+			"response_status": result.ResponseStatus,
+			"duration_ms":     result.DurationMs,
+			"error_message":   result.ErrorMessage,
+		}
+		if result.LogRecord != nil {
+			resp["log_id"] = result.LogRecord.Id
+		}
+
+		return e.JSON(http.StatusOK, resp)
+	})
+
+	// POST /api/webhooks/retry — Retry a failed webhook delivery (auth: JWT)
+	se.Router.POST("/api/webhooks/retry", func(e *core.RequestEvent) error {
+		info, _ := e.RequestInfo()
+		if info == nil || info.Auth == nil || info.Auth.Id == "" {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+		userId := info.Auth.Id
+
+		var body struct {
+			LogID string `json:"log_id"`
+		}
+		if err := e.BindBody(&body); err != nil || body.LogID == "" {
+			return apis.NewBadRequestError("log_id is required", nil)
+		}
+
+		// Validate the log belongs to the user via its webhook config
+		logRecord, err := e.App.FindRecordById("webhook_delivery_logs", body.LogID)
+		if err != nil {
+			return apis.NewNotFoundError("Delivery log not found", nil)
+		}
+		webhook, err := e.App.FindRecordById("webhook_configs", logRecord.GetString("webhook"))
+		if err != nil {
+			return apis.NewNotFoundError("Webhook not found", nil)
+		}
+		if webhook.GetString("user") != userId {
+			return apis.NewForbiddenError("Not your webhook", nil)
+		}
+
+		result, err := services.RetryWebhookDelivery(e.App, body.LogID)
+		if err != nil {
+			return apis.NewBadRequestError(err.Error(), nil)
+		}
+
+		resp := map[string]any{
+			"delivery_status": result.DeliveryStatus,
+			"response_status": result.ResponseStatus,
+			"duration_ms":     result.DurationMs,
+			"error_message":   result.ErrorMessage,
+		}
+		if result.LogRecord != nil {
+			resp["log_id"] = result.LogRecord.Id
+		}
+
+		return e.JSON(http.StatusOK, resp)
+	})
+}
+
 // RegisterUtilRoutes registers utility routes.
 // Note: /api/health is provided by PocketBase out of the box.
 func RegisterUtilRoutes(se *core.ServeEvent) {
@@ -113,6 +200,53 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 
 		return e.JSON(http.StatusOK, record)
 	}).Bind(apis.RequireAuth("users"))
+
+	// POST /api/sms/validate-cron — Validate a cron expression (auth: JWT)
+	se.Router.POST("/api/sms/validate-cron", func(e *core.RequestEvent) error {
+		info, _ := e.RequestInfo()
+		if info == nil || info.Auth == nil || info.Auth.Id == "" {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+
+		var body struct {
+			Expression string `json:"expression"`
+			Timezone   string `json:"timezone"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return apis.NewBadRequestError("Invalid request body", nil)
+		}
+
+		if body.Expression == "" {
+			return e.JSON(http.StatusOK, map[string]any{
+				"valid": false,
+				"error": "Expression is required",
+			})
+		}
+
+		if body.Timezone == "" {
+			body.Timezone = "UTC"
+		}
+
+		if err := services.ValidateCronExpression(body.Expression); err != nil {
+			return e.JSON(http.StatusOK, map[string]any{
+				"valid": false,
+				"error": err.Error(),
+			})
+		}
+
+		nextRun, err := services.ComputeNextRun(body.Expression, body.Timezone)
+		if err != nil {
+			return e.JSON(http.StatusOK, map[string]any{
+				"valid": false,
+				"error": err.Error(),
+			})
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"valid":    true,
+			"next_run": nextRun,
+		})
+	})
 }
 
 // isAppSuperuser checks if the authenticated user has the is_superuser flag.

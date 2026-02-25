@@ -53,6 +53,7 @@ func main() {
 		// ── Custom API routes ────────────────────────────────────────
 		handlers.RegisterSMSRoutes(se)
 		handlers.RegisterPlanRoutes(se)
+		handlers.RegisterUserWebhookRoutes(se)
 		handlers.RegisterWebhookRoutes(se)
 		handlers.RegisterApiKeyRoutes(se)
 		handlers.RegisterUtilRoutes(se)
