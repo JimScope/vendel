@@ -160,17 +160,17 @@ function SystemSettings() {
               <SelectContent>
                 <SelectItem value="invoice">
                   <div className="flex flex-col items-start">
-                    <span>Invoice</span>
+                    <span>Pay per period</span>
                     <span className="text-xs text-muted-foreground">
-                      Manual payment via invoice each period
+                      User pays manually each billing cycle
                     </span>
                   </div>
                 </SelectItem>
                 <SelectItem value="authorized">
                   <div className="flex flex-col items-start">
-                    <span>Authorized</span>
+                    <span>Auto-renew</span>
                     <span className="text-xs text-muted-foreground">
-                      Automatic recurring payments
+                      Charged automatically on renewal
                     </span>
                   </div>
                 </SelectItem>
