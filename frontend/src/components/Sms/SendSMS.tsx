@@ -166,7 +166,7 @@ const SendSMS = () => {
               </Button>
             </DialogClose>
             <LoadingButton type="submit" loading={sendSMSMutation.isPending}>
-              Save
+              Send
             </LoadingButton>
           </DialogFooter>
         </form>

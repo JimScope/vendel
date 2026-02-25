@@ -7,7 +7,7 @@ const ErrorComponent = () => {
       className="flex min-h-screen items-center justify-center flex-col p-4"
       data-testid="error-component"
     >
-      <div className="flex items-center z-10">
+      <div className="flex items-center">
         <div className="flex flex-col ml-4 items-center justify-center p-4">
           <span className="text-6xl md:text-8xl font-serif leading-none mb-4">
             Error
@@ -16,7 +16,7 @@ const ErrorComponent = () => {
         </div>
       </div>
 
-      <p className="text-lg text-muted-foreground mb-4 text-center z-10">
+      <p className="text-lg text-muted-foreground mb-4 text-center">
         Something went wrong. Please try again.
       </p>
       <Link to="/">

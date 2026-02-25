@@ -43,7 +43,7 @@ function QuotaCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
-          <CreditCard className="h-5 w-5 text-[#2dd4a8]" />
+          <CreditCard className="h-5 w-5 text-brand" />
           Current Plan
         </CardTitle>
         <CardDescription>Your usage and limits</CardDescription>

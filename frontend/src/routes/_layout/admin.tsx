@@ -31,7 +31,9 @@ function UsersTableContent() {
     isCurrentUser: currentUser?.id === user.id,
   })) as unknown as UserTableData[]
 
-  return <DataTable columns={columns} data={tableData} />
+  return (
+    <DataTable columns={columns} data={tableData} caption="User accounts" />
+  )
 }
 
 function UsersTable() {

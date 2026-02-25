@@ -90,5 +90,7 @@ export function SMSTable({ data }: SMSTableProps) {
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   )
 
-  return <DataTable columns={columns} data={sortedData} />
+  return (
+    <DataTable columns={columns} data={sortedData} caption="SMS messages" />
+  )
 }

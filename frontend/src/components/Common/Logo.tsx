@@ -12,13 +12,13 @@ interface LogoProps {
 function EnderWordmark({ className }: { className?: string }) {
   return (
     <span className={cn("flex items-baseline", className)}>
-      <span className="text-[#2dd4a8] text-2xl font-bold relative -top-[0.15em]">
+      <span className="text-brand text-2xl font-bold relative -top-[0.15em]">
         :
       </span>
       <span className="font-serif font-bold text-2xl tracking-tight uppercase">
         Ender
       </span>
-      <span className="text-[#2dd4a8] text-2xl font-bold relative -top-[0.15em]">
+      <span className="text-brand text-2xl font-bold relative -top-[0.15em]">
         :
       </span>
     </span>

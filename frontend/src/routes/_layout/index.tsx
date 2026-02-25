@@ -50,11 +50,14 @@ function StatCard({
   isLoading: boolean
 }) {
   return (
-    <Link to={href}>
+    <Link
+      to={href}
+      className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <Card className="cursor-pointer">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <Icon className="h-5 w-5 text-[#2dd4a8]" />
+            <Icon className="h-5 w-5 text-brand" />
             {title}
           </CardTitle>
           <CardDescription>{description}</CardDescription>
@@ -102,7 +105,8 @@ function StatusIndicator({
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center gap-2">
         <span
-          className={`h-2 w-2 rounded-full ${config.color} animate-pulse`}
+          className={`h-2 w-2 rounded-full ${config.color}`}
+          aria-hidden="true"
         />
         <span className="text-sm text-muted-foreground">{label}</span>
       </div>
@@ -118,7 +122,7 @@ function SystemStatusCard() {
     <Card>
       <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-3">
-          <Zap className="h-5 w-5 text-[#2dd4a8]" />
+          <Zap className="h-5 w-5 text-brand" />
           System Status
         </CardTitle>
         <Badge variant="secondary" className="text-xs">
@@ -147,7 +151,7 @@ function QuickInfoCard({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
-          <Clock className="h-5 w-5 text-[#2dd4a8]" />
+          <Clock className="h-5 w-5 text-brand" />
           Quick Info
         </CardTitle>
       </CardHeader>
@@ -192,12 +196,15 @@ function QuickInfoCard({
 
 function GettingStartedCard() {
   return (
-    <Link to="/devices">
+    <Link
+      to="/devices"
+      className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <Card className="cursor-pointer group">
         <CardHeader className="flex-row items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-[#2dd4a8]/10 p-2">
-              <CheckCircle2 className="h-5 w-5 text-[#2dd4a8]" />
+            <div className="rounded-full bg-brand/10 p-2">
+              <CheckCircle2 className="h-5 w-5 text-brand" />
             </div>
             <div>
               <CardTitle>Getting Started</CardTitle>
@@ -227,8 +234,8 @@ function Dashboard() {
     <div className="flex flex-col gap-8">
       <title>{`Dashboard - ${config.appName}`}</title>
       <div>
-        <h1 className="text-2xl truncate max-w-sm">
-          Hi, {currentUser?.full_name || currentUser?.email} 👋
+        <h1 className="text-2xl truncate max-w-md lg:max-w-lg">
+          Hi, {currentUser?.full_name || currentUser?.email}
         </h1>
         <p className="text-muted-foreground">
           Welcome back, nice to see you again!

@@ -22,15 +22,22 @@ function ApiKeysTableContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <Key className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold">No API keys</h3>
+        <h2 className="text-lg font-semibold">No API keys</h2>
         <p className="text-muted-foreground">
           Create an API key to access the API programmatically
         </p>
+        <AddApiKey />
       </div>
     )
   }
 
-  return <DataTable columns={columns} data={apiKeys?.data ?? []} />
+  return (
+    <DataTable
+      columns={columns}
+      data={apiKeys?.data ?? []}
+      caption="API keys"
+    />
+  )
 }
 
 function ApiKeysTable() {

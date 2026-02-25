@@ -22,15 +22,22 @@ function TemplatesTableContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <FileText className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold">No templates yet</h3>
+        <h2 className="text-lg font-semibold">No templates yet</h2>
         <p className="text-muted-foreground">
           Create a template to save reusable SMS messages
         </p>
+        <AddTemplate />
       </div>
     )
   }
 
-  return <DataTable columns={columns} data={templates?.data ?? []} />
+  return (
+    <DataTable
+      columns={columns}
+      data={templates?.data ?? []}
+      caption="SMS templates"
+    />
+  )
 }
 
 function TemplatesTable() {

@@ -21,7 +21,7 @@ function BillingTableContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <CreditCard className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold">No billing history</h3>
+        <h2 className="text-lg font-semibold">No billing history</h2>
         <p className="text-muted-foreground">
           Your payment history will appear here after subscribing to a plan
         </p>
@@ -29,7 +29,13 @@ function BillingTableContent() {
     )
   }
 
-  return <DataTable columns={columns} data={payments?.data ?? []} />
+  return (
+    <DataTable
+      columns={columns}
+      data={payments?.data ?? []}
+      caption="Payment history"
+    />
+  )
 }
 
 function BillingTable() {

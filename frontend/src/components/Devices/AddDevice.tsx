@@ -118,7 +118,11 @@ const AddDevice = () => {
             </DialogHeader>
             <div className="flex flex-col gap-4 py-4">
               <div className="flex flex-col items-center gap-3">
-                <div className="rounded-lg border bg-white p-4">
+                <div
+                  className="rounded-lg border bg-white p-4"
+                  role="img"
+                  aria-label="QR code containing device connection details"
+                >
                   <Cuer.Root value={getQrPayload(apiKey)} size={200}>
                     <Cuer.Finder fill="black" />
                     <Cuer.Cells fill="black" />
@@ -135,6 +139,7 @@ const AddDevice = () => {
                   variant="outline"
                   size="icon"
                   onClick={() => copyToClipboard(apiKey)}
+                  aria-label={copiedText ? "Copied" : "Copy API key"}
                 >
                   {copiedText ? (
                     <Check className="h-4 w-4" />

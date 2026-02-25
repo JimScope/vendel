@@ -22,15 +22,22 @@ function ScheduledTableContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <Clock className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold">No scheduled messages</h3>
+        <h2 className="text-lg font-semibold">No scheduled messages</h2>
         <p className="text-muted-foreground">
           Schedule an SMS to be sent at a specific time or on a recurring basis
         </p>
+        <AddScheduledSMS />
       </div>
     )
   }
 
-  return <DataTable columns={columns} data={scheduled?.data ?? []} />
+  return (
+    <DataTable
+      columns={columns}
+      data={scheduled?.data ?? []}
+      caption="Scheduled messages"
+    />
+  )
 }
 
 function ScheduledTable() {
