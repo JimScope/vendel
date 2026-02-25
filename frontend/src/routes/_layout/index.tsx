@@ -2,19 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import {
   CheckCircle2,
   ChevronRight,
-  Clock,
-  Globe,
-  Key,
   MessageSquare,
   MessageSquareText,
-  Server,
   Smartphone,
   Webhook,
-  Zap,
 } from "lucide-react"
 
 import QuotaCard from "@/components/Plans/QuotaCard"
-import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
@@ -23,7 +17,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useApiKeyList } from "@/hooks/useApiKeyList"
 import useAppConfig from "@/hooks/useAppConfig"
 import useAuth from "@/hooks/useAuth"
 import { useDeviceList } from "@/hooks/useDeviceList"
@@ -74,126 +67,6 @@ function StatCard({
   )
 }
 
-function StatusIndicator({
-  status,
-  label,
-}: {
-  status: "operational" | "degraded" | "down"
-  label: string
-}) {
-  const statusConfig = {
-    operational: {
-      color: "bg-green-500",
-      text: "Operational",
-      textColor: "text-green-600 dark:text-green-400",
-    },
-    degraded: {
-      color: "bg-yellow-500",
-      text: "Degraded",
-      textColor: "text-yellow-600 dark:text-yellow-400",
-    },
-    down: {
-      color: "bg-red-500",
-      text: "Down",
-      textColor: "text-red-600 dark:text-red-400",
-    },
-  }
-
-  const config = statusConfig[status]
-
-  return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center gap-2">
-        <span
-          className={`h-2 w-2 rounded-full ${config.color}`}
-          aria-hidden="true"
-        />
-        <span className="text-sm text-muted-foreground">{label}</span>
-      </div>
-      <span className={`text-xs font-medium ${config.textColor}`}>
-        {config.text}
-      </span>
-    </div>
-  )
-}
-
-function SystemStatusCard() {
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-3">
-          <Zap className="h-5 w-5 text-brand" />
-          System Status
-        </CardTitle>
-        <Badge variant="secondary" className="text-xs">
-          Live
-        </Badge>
-      </CardHeader>
-      <CardContent className="space-y-1">
-        <StatusIndicator status="operational" label="API Services" />
-        <StatusIndicator status="operational" label="SMS Gateway" />
-        <StatusIndicator status="operational" label="Webhooks" />
-      </CardContent>
-    </Card>
-  )
-}
-
-function QuickInfoCard({
-  devicesOnline,
-  apiKeysActive,
-  isLoading,
-}: {
-  devicesOnline: number
-  apiKeysActive: number
-  isLoading: boolean
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3">
-          <Clock className="h-5 w-5 text-brand" />
-          Quick Info
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Server className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              Devices Online
-            </span>
-          </div>
-          {isLoading ? (
-            <Skeleton className="h-5 w-8" />
-          ) : (
-            <Badge variant="outline">{devicesOnline}</Badge>
-          )}
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Key className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              Active API Keys
-            </span>
-          </div>
-          {isLoading ? (
-            <Skeleton className="h-5 w-8" />
-          ) : (
-            <Badge variant="outline">{apiKeysActive}</Badge>
-          )}
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">API Version</span>
-          </div>
-          <Badge variant="secondary">v1</Badge>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 function GettingStartedCard() {
   return (
     <Link
@@ -228,7 +101,6 @@ function Dashboard() {
     useSMSList("incoming")
   const { data: devicesData, isLoading: devicesLoading } = useDeviceList()
   const { data: webhooksData, isLoading: webhooksLoading } = useWebhookList()
-  const { data: apiKeysData, isLoading: apiKeysLoading } = useApiKeyList()
 
   return (
     <div className="flex flex-col gap-8">
@@ -277,25 +149,9 @@ function Dashboard() {
         />
       </div>
 
-      {/* Main content area with sidebar layout */}
-      <div className="grid gap-4 lg:grid-cols-4">
-        {/* Left side - System info (3/4 width) */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <SystemStatusCard />
-            <QuickInfoCard
-              devicesOnline={devicesData?.count ?? 0}
-              apiKeysActive={apiKeysData?.count ?? 0}
-              isLoading={devicesLoading || apiKeysLoading}
-            />
-          </div>
-          <GettingStartedCard />
-        </div>
-
-        {/* Right side - Quota card (1/4 width) */}
-        <div className="lg:col-span-1">
-          <QuotaCard />
-        </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <QuotaCard />
+        <GettingStartedCard />
       </div>
     </div>
   )
