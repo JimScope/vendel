@@ -149,9 +149,11 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
         <QuotaCard />
-        <GettingStartedCard />
+        <div className="lg:col-span-2">
+          <GettingStartedCard />
+        </div>
       </div>
     </div>
   )
