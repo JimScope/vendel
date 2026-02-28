@@ -1,0 +1,36 @@
+services:
+  restore:
+    image: litestream/litestream:0.5.9
+    command: ["restore", "-if-replica-exists", "-config", "/app/litestream.yml", "/app/pb_data/data.db"]
+    volumes:
+      - pb_data:/app/pb_data
+      - ./litestream.yml:/app/litestream.yml:ro
+    environment:
+      - LITESTREAM_REPLICA_URL=${LITESTREAM_REPLICA_URL}
+      - LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}
+      - LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}
+
+  app:
+    depends_on:
+      restore:
+        condition: service_completed_successfully
+
+  litestream:
+    image: litestream/litestream:0.5.9
+    command: ["replicate", "-config", "/app/litestream.yml"]
+    volumes:
+      - pb_data:/app/pb_data
+      - ./litestream.yml:/app/litestream.yml:ro
+    environment:
+      - LITESTREAM_REPLICA_URL=${LITESTREAM_REPLICA_URL}
+      - LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID}
+      - LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY}
+    depends_on:
+      app:
+        condition: service_started
+      restore:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  pb_data:

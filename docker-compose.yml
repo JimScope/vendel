@@ -18,16 +18,7 @@ services:
       - QVAPAY_APP_SECRET=${QVAPAY_APP_SECRET:-}
       - APP_URL=${APP_URL:-http://localhost:8090}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
-      - LITESTREAM_REPLICA_URL=${LITESTREAM_REPLICA_URL:-}
-      - LITESTREAM_ACCESS_KEY_ID=${LITESTREAM_ACCESS_KEY_ID:-}
-      - LITESTREAM_SECRET_ACCESS_KEY=${LITESTREAM_SECRET_ACCESS_KEY:-}
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8090/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   modem-agent:
     build: ./modem-agent
@@ -38,7 +29,7 @@ services:
       - "${MODEM_DEVICE_0:-/dev/ttyUSB0}:/dev/ttyUSB0"
     depends_on:
       app:
-        condition: service_healthy
+        condition: service_started
     profiles:
       - modem
     restart: unless-stopped
@@ -46,8 +37,8 @@ services:
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - "1080:1080"  # Web UI
-      - "1025:1025"  # SMTP
+      - "1080:1080" # Web UI
+      - "1025:1025" # SMTP
     profiles:
       - dev
 
