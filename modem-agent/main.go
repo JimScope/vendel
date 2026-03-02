@@ -14,6 +14,8 @@ import (
 	"github.com/xlab/at/sms"
 )
 
+var version = "dev"
+
 // ModemConfig holds the configuration for a single modem.
 type ModemConfig struct {
 	APIKey      string
@@ -30,7 +32,7 @@ type Config struct {
 func main() {
 	cfg := loadConfig()
 
-	log.Printf("ender-modem-agent starting with %d modem(s)", len(cfg.Modems))
+	log.Printf("ender-modem-agent %s starting with %d modem(s)", version, len(cfg.Modems))
 
 	var wg sync.WaitGroup
 	for _, modemCfg := range cfg.Modems {

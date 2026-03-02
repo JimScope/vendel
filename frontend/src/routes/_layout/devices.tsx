@@ -5,6 +5,7 @@ import { Suspense, useMemo } from "react"
 import { DataTable } from "@/components/Common/DataTable"
 import AddDevice from "@/components/Devices/AddDevice"
 import { getColumns } from "@/components/Devices/columns"
+import ModemAgentDownload from "@/components/Devices/ModemAgentDownload"
 import PendingDevices from "@/components/Pending/PendingDevices"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useDeviceListSuspense } from "@/hooks/useDeviceList"
@@ -66,6 +67,7 @@ function Devices() {
         </div>
         <AddDevice />
       </div>
+      <ModemAgentDownload />
       <DevicesTable />
     </div>
   )
