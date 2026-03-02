@@ -133,7 +133,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		})
 	})
 
-	// GET /api/sms/pending — Pending messages for modem agent startup recovery (auth: device API key)
+	// GET /api/sms/pending — Pending messages for devices: Android (post-FCM tickle) and modems (startup recovery) (auth: device API key)
 	se.Router.GET("/api/sms/pending", func(e *core.RequestEvent) error {
 		device, err := middleware.AuthenticateDevice(e)
 		if err != nil {

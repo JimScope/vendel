@@ -96,7 +96,7 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 
 	// Dispatch FCM notifications in background (replaces QStash)
 	if len(devices) > 0 {
-		go DispatchMessages(app, messages, body)
+		go DispatchMessages(app, messages)
 	}
 
 	return messages, nil

@@ -135,7 +135,7 @@ func configureRateLimits(app core.App) {
 		{Label: "POST /api/sms/incoming", MaxRequests: 60, Duration: 60},
 		{Label: "POST /api/sms/fcm-token", MaxRequests: 10, Duration: 60},
 		{Label: "POST /api/sms/send", MaxRequests: 30, Duration: 60},
-		{Label: "GET /api/sms/pending", MaxRequests: 12, Duration: 60},
+		{Label: "GET /api/sms/pending", MaxRequests: 30, Duration: 60},
 		{Label: "/api/", MaxRequests: 300, Duration: 60},
 	}
 

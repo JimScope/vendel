@@ -2,23 +2,17 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
 	"github.com/pocketbase/pocketbase/core"
 	"google.golang.org/api/option"
-)
-
-const (
-	FCMMaxPayloadBytes     = 4096
-	FCMPayloadOverhead     = 256
-	FCMChunkDelaySeconds   = 5
 )
 
 var fcmClient *messaging.Client
@@ -49,15 +43,10 @@ func InitFCM(pbApp core.App) {
 	pbApp.Logger().Info("Firebase Admin SDK initialized")
 }
 
-// MessageRef holds the ID and recipient for an FCM payload.
-type MessageRef struct {
-	MessageID string `json:"message_id"`
-	Recipient string `json:"recipient"`
-}
-
-// DispatchMessages groups messages by device and sends FCM notifications via goroutines.
-// This replaces QStash entirely.
-func DispatchMessages(app core.App, messages []*core.Record, body string) {
+// DispatchMessages groups messages by device and sends FCM tickle notifications.
+// The FCM payload contains no sensitive data (no message body or recipients).
+// Devices fetch actual messages via GET /api/sms/pending after receiving the tickle.
+func DispatchMessages(app core.App, messages []*core.Record) {
 	if len(messages) == 0 {
 		return
 	}
@@ -89,67 +78,47 @@ func DispatchMessages(app core.App, messages []*core.Record, body string) {
 			continue
 		}
 
-		// Build message refs
-		refs := make([]MessageRef, 0, len(deviceMessages))
+		// Send a single tickle per device with the message count
+		count := len(deviceMessages)
+		messageIds := make([]string, 0, count)
 		for _, msg := range deviceMessages {
-			refs = append(refs, MessageRef{
-				MessageID: msg.Id,
-				Recipient: msg.GetString("to"),
-			})
+			messageIds = append(messageIds, msg.Id)
 		}
 
-		// Chunk for FCM 4KB limit
-		chunks := chunkMessagesForFCM(refs, body)
-
-		// Dispatch each chunk in a goroutine with staggered delay and timeout
-		for i, chunk := range chunks {
-			delay := time.Duration(i*FCMChunkDelaySeconds) * time.Second
-			go func(token string, chunk []MessageRef, body string, delay time.Duration) {
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second+delay)
-				defer cancel()
-
-				if delay > 0 {
-					select {
-					case <-time.After(delay):
-					case <-ctx.Done():
-						app.Logger().Error("FCM dispatch timed out during delay", slog.String("token", token[:20]))
-						return
-					}
+		go func(token string, count int, msgIds []string) {
+			if !fcmBreaker.Allow() {
+				app.Logger().Warn("FCM circuit breaker open, skipping dispatch",
+					slog.String("token", token[:20]))
+				return // messages stay "assigned", retry cron picks them up
+			}
+			if err := sendFCMTickle(token, count); err != nil {
+				fcmBreaker.RecordFailure()
+				app.Logger().Error("FCM send failed", slog.String("token", token[:20]), slog.Any("error", err))
+				for _, id := range msgIds {
+					markMessageFailed(app, id, err.Error())
 				}
-				if !fcmBreaker.Allow() {
-					app.Logger().Warn("FCM circuit breaker open, skipping dispatch",
-						slog.String("token", token[:20]))
-					return // messages stay "assigned", retry cron picks them up
-				}
-				if err := sendFCMNotification(token, chunk, body); err != nil {
-					fcmBreaker.RecordFailure()
-					app.Logger().Error("FCM send failed", slog.String("token", token[:20]), slog.Any("error", err))
-					for _, ref := range chunk {
-						markMessageFailed(app, ref.MessageID, err.Error())
-					}
-				} else {
-					fcmBreaker.RecordSuccess()
-				}
-			}(fcmToken, chunk, body, delay)
-		}
+			} else {
+				fcmBreaker.RecordSuccess()
+			}
+		}(fcmToken, count, messageIds)
 	}
 }
 
-func sendFCMNotification(token string, refs []MessageRef, body string) error {
+// sendFCMTickle sends a data-only FCM message to wake up the device.
+// No sensitive data (message body, recipients) is included in the payload.
+func sendFCMTickle(token string, count int) error {
 	if fcmClient == nil {
 		return fmt.Errorf("FCM not initialized")
-	}
-
-	refsJSON, err := json.Marshal(refs)
-	if err != nil {
-		return fmt.Errorf("marshal refs: %w", err)
 	}
 
 	msg := &messaging.Message{
 		Token: token,
 		Data: map[string]string{
-			"messages": string(refsJSON),
-			"body":     body,
+			"type":  "tickle",
+			"count": strconv.Itoa(count),
+		},
+		Android: &messaging.AndroidConfig{
+			Priority: "high",
 		},
 	}
 
@@ -161,7 +130,7 @@ func sendFCMNotification(token string, refs []MessageRef, body string) error {
 		return err
 	}
 
-	log.Printf("FCM message sent: %s", resp) // no app context available here
+	log.Printf("FCM tickle sent: %s", resp)
 	return nil
 }
 
@@ -179,48 +148,3 @@ func markMessageFailed(app core.App, messageId, errMsg string) {
 	go TriggerWebhooks(app, record.GetString("user"), record, "sms_failed")
 }
 
-// chunkMessagesForFCM splits messages into chunks fitting within FCM's 4KB payload limit.
-func chunkMessagesForFCM(refs []MessageRef, body string) [][]MessageRef {
-	if len(refs) == 0 {
-		return nil
-	}
-
-	// Check if everything fits
-	if estimatePayloadSize(refs, body) <= FCMMaxPayloadBytes {
-		return [][]MessageRef{refs}
-	}
-
-	var chunks [][]MessageRef
-	var current []MessageRef
-
-	for _, ref := range refs {
-		candidate := append(current, ref)
-		if estimatePayloadSize(candidate, body) > FCMMaxPayloadBytes {
-			if len(current) > 0 {
-				chunks = append(chunks, current)
-			}
-			current = []MessageRef{ref}
-		} else {
-			current = candidate
-		}
-	}
-
-	if len(current) > 0 {
-		chunks = append(chunks, current)
-	}
-
-	return chunks
-}
-
-func estimatePayloadSize(refs []MessageRef, body string) int {
-	data, _ := json.Marshal(map[string]string{
-		"messages": mustMarshalString(refs),
-		"body":     body,
-	})
-	return len(data)
-}
-
-func mustMarshalString(v any) string {
-	b, _ := json.Marshal(v)
-	return string(b)
-}
