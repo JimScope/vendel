@@ -1,16 +1,16 @@
 package main
 
 import (
-	"ender/handlers"
-	"ender/middleware"
-	"ender/services"
+	"vendel/handlers"
+	"vendel/middleware"
+	"vendel/services"
 	"fmt"
 	"log"
 	"log/slog"
 	"os"
 	"strings"
 
-	_ "ender/migrations"
+	_ "vendel/migrations"
 
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/dbx"
@@ -161,7 +161,7 @@ func main() {
 
 	// API Keys: generate secure key on create
 	app.OnRecordCreate("api_keys").BindFunc(func(e *core.RecordEvent) error {
-		e.Record.Set("key", services.GenerateSecureKey("ek_", 32))
+		e.Record.Set("key", services.GenerateSecureKey("vk_", 32))
 
 		// Unhide so the key is returned in the create response (only shown once)
 		e.Record.Unhide("key")

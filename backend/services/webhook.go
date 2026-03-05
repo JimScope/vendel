@@ -158,7 +158,7 @@ func SendTestWebhook(app core.App, webhook *core.Record) *WebhookDeliveryResult 
 	payload := map[string]any{
 		"event":      "test",
 		"message_id": "test_" + GenerateSecureKey("", 12),
-		"body":       "Test webhook from Ender",
+		"body":       "Test webhook from Vendel",
 		"from":       "+1234567890",
 		"timestamp":  time.Now().UTC().Format(time.RFC3339),
 	}

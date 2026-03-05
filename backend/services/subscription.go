@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"ender/services/payment"
+	"vendel/services/payment"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"

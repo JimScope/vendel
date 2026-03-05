@@ -1,7 +1,7 @@
 {
-  "name": "ender-sdk",
+  "name": "vendel-sdk",
   "version": "0.1.0",
-  "description": "Official JavaScript/TypeScript SDK for the Ender SMS gateway API",
+  "description": "Official JavaScript/TypeScript SDK for the Vendel SMS gateway API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,9 +19,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/JimScope/ender"
+    "url": "https://github.com/JimScope/vendel"
   },
-  "homepage": "https://ender.jimscope.me/docs/api/sdks",
+  "homepage": "https://vendel.cc/docs/api/sdks",
   "engines": {
     "node": ">=18"
   },

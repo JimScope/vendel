@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ender/services"
+	"vendel/services"
 	"log/slog"
 	"os"
 	"strconv"
@@ -100,7 +100,7 @@ func configureSMTP(app core.App) {
 	// Sender defaults — use app_name from system_config
 	appName := services.GetSystemConfigValue(app, "app_name")
 	if appName == "" {
-		appName = "Ender"
+		appName = "Vendel"
 	}
 	settings.Meta.AppName = appName
 	if settings.Meta.SenderName == "" || settings.Meta.SenderName == "Support" || settings.Meta.SenderName == "Acme" {
@@ -109,7 +109,7 @@ func configureSMTP(app core.App) {
 	if settings.Meta.SenderAddress == "" || settings.Meta.SenderAddress == "support@example.com" {
 		settings.Meta.SenderAddress = os.Getenv("FIRST_SUPERUSER")
 		if settings.Meta.SenderAddress == "" {
-			settings.Meta.SenderAddress = "noreply@ender.app"
+			settings.Meta.SenderAddress = "noreply@vendel.cc"
 		}
 	}
 

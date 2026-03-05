@@ -1,8 +1,8 @@
-export { EnderClient } from "./client.js";
-export { EnderError, EnderAPIError, EnderQuotaError } from "./errors.js";
+export { VendelClient } from "./client.js";
+export { VendelError, VendelAPIError, VendelQuotaError } from "./errors.js";
 export { verifyWebhookSignature } from "./webhook.js";
 export type {
-  EnderClientOptions,
+  VendelClientOptions,
   SendSMSRequest,
   SendSMSResponse,
   Quota,

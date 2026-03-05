@@ -1,4 +1,4 @@
-package ender
+package vendel
 
 import (
 	"bytes"
@@ -10,16 +10,16 @@ import (
 	"strings"
 )
 
-// Client is the Ender SMS gateway API client.
+// Client is the Vendel SMS gateway API client.
 //
-// It uses an integration API key (ek_ prefix) for authentication.
+// It uses an integration API key (vk_ prefix) for authentication.
 type Client struct {
 	baseURL    string
 	apiKey     string
 	httpClient *http.Client
 }
 
-// NewClient creates a new Ender API client.
+// NewClient creates a new Vendel API client.
 func NewClient(baseURL, apiKey string) *Client {
 	return &Client{
 		baseURL:    strings.TrimRight(baseURL, "/"),
@@ -101,7 +101,7 @@ func (c *Client) do(req *http.Request, out any) error {
 		used, _ := detail["used"].(float64)
 		available, _ := detail["available"].(float64)
 		return &QuotaError{
-			EnderError: EnderError{StatusCode: 429, Message: msg, Detail: detail},
+			VendelError: VendelError{StatusCode: 429, Message: msg, Detail: detail},
 			Limit:      int(limit),
 			Used:       int(used),
 			Available:  int(available),
@@ -115,7 +115,7 @@ func (c *Client) do(req *http.Request, out any) error {
 		if msg == "" {
 			msg = fmt.Sprintf("HTTP %d", resp.StatusCode)
 		}
-		return &EnderError{StatusCode: resp.StatusCode, Message: msg, Detail: detail}
+		return &VendelError{StatusCode: resp.StatusCode, Message: msg, Detail: detail}
 	}
 
 	return json.Unmarshal(data, out)

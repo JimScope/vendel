@@ -1,4 +1,4 @@
-module ender
+module vendel
 
 go 1.25.6
 

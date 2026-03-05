@@ -20,7 +20,7 @@ export interface Quota {
   reset_date: string;
 }
 
-export interface EnderClientOptions {
+export interface VendelClientOptions {
   baseUrl: string;
   apiKey: string;
   /** Request timeout in milliseconds (default: 30000). */

@@ -10,4 +10,4 @@ frontend/dist/
 backend/ender
 
 # Modem agent binary
-modem-agent/ender-modem-agent
+modem-agent/vendel-modem-agent

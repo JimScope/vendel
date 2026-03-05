@@ -1,8 +1,8 @@
-project_name: ender-modem-agent
+project_name: vendel-modem-agent
 
 builds:
   - main: .
-    binary: ender-modem-agent
+    binary: vendel-modem-agent
     env:
       - CGO_ENABLED=0
     ldflags:
@@ -35,4 +35,4 @@ checksum:
 release:
   github:
     owner: JimScope
-    name: ender
+    name: vendel

@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"ender/middleware"
-	"ender/services"
+	"vendel/middleware"
+	"vendel/services"
 	"net/http"
 	"regexp"
 

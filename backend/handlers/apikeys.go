@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"ender/services"
+	"vendel/services"
 	"net/http"
 
 	"github.com/pocketbase/pocketbase/apis"

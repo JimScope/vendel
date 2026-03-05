@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * Verify an Ender webhook `X-Webhook-Signature` header.
+ * Verify a Vendel webhook `X-Webhook-Signature` header.
  *
  * The signature is an HMAC-SHA256 hex digest computed over the JSON
  * payload string using the webhook secret as the key.
@@ -9,7 +9,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * @param payload - The raw request body string, or a parsed object
  *                  (will be serialized with sorted keys, no spaces).
  * @param signature - Value of the `X-Webhook-Signature` header.
- * @param secret - The webhook secret configured in the Ender dashboard.
+ * @param secret - The webhook secret configured in the Vendel dashboard.
  * @returns `true` if the signature is valid.
  */
 export function verifyWebhookSignature(

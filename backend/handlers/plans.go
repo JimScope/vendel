@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"ender/middleware"
-	"ender/services"
-	"ender/services/payment"
+	"vendel/middleware"
+	"vendel/services"
+	"vendel/services/payment"
 	"fmt"
 	"net/http"
 	"os"

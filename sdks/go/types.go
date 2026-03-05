@@ -1,4 +1,4 @@
-package ender
+package vendel
 
 // SendSMSRequest is the payload for sending an SMS.
 type SendSMSRequest struct {

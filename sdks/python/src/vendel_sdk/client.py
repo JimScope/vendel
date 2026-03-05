@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import requests
 
-from .exceptions import EnderAPIError, EnderQuotaError
+from .exceptions import VendelAPIError, VendelQuotaError
 from .types import Quota, SendSMSResponse
 
 
-class EnderClient:
-    """Client for the Ender SMS gateway API.
+class VendelClient:
+    """Client for the Vendel SMS gateway API.
 
-    Uses an integration API key (``ek_`` prefix) for authentication.
+    Uses an integration API key (``vk_`` prefix) for authentication.
     """
 
     def __init__(self, base_url: str, api_key: str, timeout: int = 30):
@@ -40,8 +40,8 @@ class EnderClient:
             A :class:`SendSMSResponse` with batch ID and message IDs.
 
         Raises:
-            EnderQuotaError: If the monthly SMS quota is exceeded.
-            EnderAPIError: On any other API error.
+            VendelQuotaError: If the monthly SMS quota is exceeded.
+            VendelAPIError: On any other API error.
         """
         payload: dict = {"recipients": recipients, "body": body}
         if device_id:
@@ -76,7 +76,7 @@ class EnderClient:
     def _handle_response(resp: requests.Response) -> dict:
         if resp.status_code == 429:
             data = resp.json()
-            raise EnderQuotaError(
+            raise VendelQuotaError(
                 data.get("detail", "Quota exceeded"),
                 data,
             )
@@ -85,7 +85,7 @@ class EnderClient:
                 data = resp.json()
             except ValueError:
                 data = {}
-            raise EnderAPIError(
+            raise VendelAPIError(
                 resp.status_code,
                 data.get("message", resp.reason),
                 data,

@@ -1,4 +1,4 @@
-# Ender - Deployment
+# Vendel - Deployment
 
 Puedes desplegar el proyecto usando Docker Compose en un servidor remoto.
 

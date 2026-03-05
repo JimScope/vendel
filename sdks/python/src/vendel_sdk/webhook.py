@@ -10,7 +10,7 @@ def verify_webhook_signature(
     signature: str,
     secret: str,
 ) -> bool:
-    """Verify an Ender webhook ``X-Webhook-Signature`` header.
+    """Verify a Vendel webhook ``X-Webhook-Signature`` header.
 
     The signature is an HMAC-SHA256 hex digest computed over the JSON
     payload string using the webhook secret as the key.
@@ -19,7 +19,7 @@ def verify_webhook_signature(
         payload: The raw request body (string or bytes), or a parsed dict
                  (will be serialized with sorted keys, no spaces).
         signature: Value of the ``X-Webhook-Signature`` header.
-        secret: The webhook secret configured in the Ender dashboard.
+        secret: The webhook secret configured in the Vendel dashboard.
 
     Returns:
         ``True`` if the signature is valid.

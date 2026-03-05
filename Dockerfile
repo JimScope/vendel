@@ -18,7 +18,7 @@ COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
 COPY backend/ .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/ender -ldflags="-s -w" .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/vendel -ldflags="-s -w" .
 
 # Stage 3: Runtime
 FROM alpine:3.22
@@ -26,10 +26,10 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
 COPY --from=go-builder /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=go-builder /app/ender /app/ender
+COPY --from=go-builder /app/vendel /app/vendel
 COPY --from=frontend-builder /app/frontend/dist /app/pb_public
 
 EXPOSE 8090
 
-ENTRYPOINT ["/app/ender"]
+ENTRYPOINT ["/app/vendel"]
 CMD ["serve", "--http=0.0.0.0:8090"]

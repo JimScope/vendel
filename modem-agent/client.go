@@ -19,18 +19,18 @@ type PendingMessage struct {
 	Body      string `json:"body"`
 }
 
-// EnderClient communicates with the Ender backend.
-type EnderClient struct {
+// VendelClient communicates with the Vendel backend.
+type VendelClient struct {
 	baseURL  string
 	apiKey   string
 	deviceID string // resolved from backend via FetchPending
 	http     *http.Client
 }
 
-// NewEnderClient creates a new Ender API client.
+// NewVendelClient creates a new Vendel API client.
 // The deviceID is resolved from the backend on the first call to FetchPending.
-func NewEnderClient(baseURL, apiKey string) *EnderClient {
-	return &EnderClient{
+func NewVendelClient(baseURL, apiKey string) *VendelClient {
+	return &VendelClient{
 		baseURL: strings.TrimRight(baseURL, "/"),
 		apiKey:  apiKey,
 		http: &http.Client{
@@ -41,7 +41,7 @@ func NewEnderClient(baseURL, apiKey string) *EnderClient {
 
 // FetchPending recovers messages assigned while the agent was offline.
 // It also resolves the device record ID from the backend (stored in c.deviceID).
-func (c *EnderClient) FetchPending() ([]PendingMessage, error) {
+func (c *VendelClient) FetchPending() ([]PendingMessage, error) {
 	req, err := http.NewRequest("GET", c.baseURL+"/api/sms/pending", nil)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (c *EnderClient) FetchPending() ([]PendingMessage, error) {
 }
 
 // ReportStatus reports message delivery status back to the server.
-func (c *EnderClient) ReportStatus(messageID, status, errorMessage string) error {
+func (c *VendelClient) ReportStatus(messageID, status, errorMessage string) error {
 	payload, _ := json.Marshal(map[string]string{
 		"message_id":    messageID,
 		"status":        status,
@@ -103,7 +103,7 @@ func (c *EnderClient) ReportStatus(messageID, status, errorMessage string) error
 }
 
 // ReportIncoming reports an incoming SMS received on the modem.
-func (c *EnderClient) ReportIncoming(fromNumber, body, timestamp string) error {
+func (c *VendelClient) ReportIncoming(fromNumber, body, timestamp string) error {
 	payload, _ := json.Marshal(map[string]string{
 		"from_number": fromNumber,
 		"body":        body,
@@ -133,7 +133,7 @@ func (c *EnderClient) ReportIncoming(fromNumber, body, timestamp string) error {
 // ConnectSSE establishes an SSE connection to PocketBase and subscribes to the modem topic.
 // It reconnects automatically with exponential backoff on disconnect.
 // The onMessage callback is called for each incoming message assignment.
-func (c *EnderClient) ConnectSSE(onMessage func(PendingMessage)) {
+func (c *VendelClient) ConnectSSE(onMessage func(PendingMessage)) {
 	backoff := time.Second
 	maxBackoff := 60 * time.Second
 
@@ -150,7 +150,7 @@ func (c *EnderClient) ConnectSSE(onMessage func(PendingMessage)) {
 	}
 }
 
-func (c *EnderClient) runSSE(onMessage func(PendingMessage)) error {
+func (c *VendelClient) runSSE(onMessage func(PendingMessage)) error {
 	// Step 1: Connect to SSE endpoint
 	sseClient := &http.Client{
 		Timeout: 0, // no timeout for SSE
@@ -233,7 +233,7 @@ func (c *EnderClient) runSSE(onMessage func(PendingMessage)) error {
 }
 
 // subscribe sends a POST to /api/realtime to register subscriptions.
-func (c *EnderClient) subscribe(clientID string) error {
+func (c *VendelClient) subscribe(clientID string) error {
 	topic := "modem/" + c.deviceID
 	payload, _ := json.Marshal(map[string]any{
 		"clientId":      clientID,

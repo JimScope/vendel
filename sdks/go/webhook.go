@@ -1,4 +1,4 @@
-package ender
+package vendel
 
 import (
 	"crypto/hmac"
@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 )
 
-// VerifyWebhookSignature verifies an Ender webhook X-Webhook-Signature header.
+// VerifyWebhookSignature verifies a Vendel webhook X-Webhook-Signature header.
 //
 // The signature is an HMAC-SHA256 hex digest computed over the raw JSON
 // payload string using the webhook secret as the key.

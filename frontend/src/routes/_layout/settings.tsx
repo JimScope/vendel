@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_layout/settings")({
   head: () => ({
     meta: [
       {
-        title: "Settings - Ender",
+        title: "Settings - Vendel",
       },
     ],
   }),

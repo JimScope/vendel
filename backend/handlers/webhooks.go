@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"ender/services"
-	"ender/services/payment"
+	"vendel/services"
+	"vendel/services/payment"
 	"io"
 	"log/slog"
 	"net/http"

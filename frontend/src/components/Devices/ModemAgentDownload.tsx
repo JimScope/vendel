@@ -45,7 +45,7 @@ function detectPlatform(): string {
 function getDownloadUrl(platform: string): string {
   const p = PLATFORMS.find((p) => p.value === platform)
   const ext = p?.ext ?? ".tar.gz"
-  return `https://github.com/JimScope/ender/releases/latest/download/ender-modem-agent_${platform}${ext}`
+  return `https://github.com/JimScope/vendel/releases/latest/download/vendel-modem-agent_${platform}${ext}`
 }
 
 export default function ModemAgentDownload() {
@@ -63,7 +63,7 @@ export default function ModemAgentDownload() {
         </div>
         <CardAction>
           <a
-            href="https://github.com/JimScope/ender/releases"
+            href="https://github.com/JimScope/vendel/releases"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -97,7 +97,7 @@ export default function ModemAgentDownload() {
         <p className="text-muted-foreground text-xs mt-3">
           See the{" "}
           <a
-            href="https://ender.jimscope.dev/docs/usb-modems"
+            href="https://vendel.cc/docs/usb-modems"
             target="_blank"
             rel="noopener noreferrer"
             className="text-brand hover:underline"

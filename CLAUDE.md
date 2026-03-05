@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Ender is a full-stack SMS gateway platform that allows sending SMS messages using registered devices (Android phones or modems) as gateways. Features include quota management, webhooks, multi-user support, and API key authentication.
+Vendel is a full-stack SMS gateway platform that allows sending SMS messages using registered devices (Android phones or modems) as gateways. Features include quota management, webhooks, multi-user support, and API key authentication.
 
 ## Commands
 
@@ -32,7 +32,7 @@ go run .
 ```bash
 cd backend
 go run . serve --http=0.0.0.0:8090   # Run dev server
-go build -o ender .                   # Build binary
+go build -o vendel .                   # Build binary
 go build ./...                        # Verify compilation
 ```
 
@@ -80,7 +80,7 @@ npx playwright test --ui      # Interactive UI mode
 
 ## Design System
 
-The Ender design system is defined in the **ender-homepage** repo (`../ender-homepage/src/pages/design-system.astro`) and documented at `/design-system` on the homepage site. It is the **single source of truth** for colors, typography, components, and patterns.
+The Vendel design system is defined in the **ender-homepage** repo (`../ender-homepage/src/pages/design-system.astro`) and documented at `/design-system` on the homepage site. It is the **single source of truth** for colors, typography, components, and patterns.
 
 - **Reference**: `../ender-homepage/src/styles/global.css` — all CSS custom properties (colors, fonts, neutrals, code syntax)
 - **Dashboard mapping**: `frontend/src/index.css` maps the same palette to shadcn/ui semantic variables

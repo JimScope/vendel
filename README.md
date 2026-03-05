@@ -1,8 +1,8 @@
-# Ender - SMS Gateway Platform
+# Vendel - SMS Gateway Platform
 
 [Leer en Español](./README.es.md)
 
-Ender is a full-stack platform for SMS management and delivery through connected devices. It allows sending SMS messages using registered devices (Android phones or modems) as gateways, with quota management, webhooks, and multi-user support.
+Vendel is a full-stack platform for SMS management and delivery through connected devices. It allows sending SMS messages using registered devices (Android phones or modems) as gateways, with quota management, webhooks, and multi-user support.
 
 ## Tech Stack
 
@@ -67,7 +67,7 @@ Ender is a full-stack platform for SMS management and delivery through connected
 ## Project Structure
 
 ```
-ender/
+vendel/
 ├── backend/                    # Go + PocketBase API
 │   ├── main.go                 # PocketBase setup, hooks, cron, routes
 │   ├── go.mod / go.sum
@@ -124,8 +124,8 @@ cd backend
 go run . serve --http=0.0.0.0:8090
 
 # Build binary
-go build -o ender .
-./ender serve --http=0.0.0.0:8090
+go build -o vendel .
+./vendel serve --http=0.0.0.0:8090
 ```
 
 #### Frontend
@@ -154,7 +154,7 @@ Create a `.env` file in the project root:
 ```env
 # Core
 ENVIRONMENT=local
-FIRST_SUPERUSER=admin@ender.app
+FIRST_SUPERUSER=admin@vendel.cc
 FIRST_SUPERUSER_PASSWORD=changethis
 
 # Firebase (push notifications)
@@ -180,7 +180,7 @@ SMTP_USERNAME=
 SMTP_PASSWORD=
 
 # Backup (Litestream - optional)
-LITESTREAM_REPLICA_URL=         # e.g. s3://my-bucket/ender/data
+LITESTREAM_REPLICA_URL=         # e.g. s3://my-bucket/vendel/data
 LITESTREAM_ACCESS_KEY_ID=
 LITESTREAM_SECRET_ACCESS_KEY=
 

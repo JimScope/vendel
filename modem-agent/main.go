@@ -25,21 +25,21 @@ type ModemConfig struct {
 
 // Config holds the global configuration.
 type Config struct {
-	EnderURL string
+	VendelURL string
 	Modems   []ModemConfig
 }
 
 func main() {
 	cfg := loadConfig()
 
-	log.Printf("ender-modem-agent %s starting with %d modem(s)", version, len(cfg.Modems))
+	log.Printf("vendel-modem-agent %s starting with %d modem(s)", version, len(cfg.Modems))
 
 	var wg sync.WaitGroup
 	for _, modemCfg := range cfg.Modems {
 		wg.Add(1)
 		go func(m ModemConfig) {
 			defer wg.Done()
-			runModem(m, cfg.EnderURL)
+			runModem(m, cfg.VendelURL)
 		}(modemCfg)
 	}
 
@@ -51,9 +51,9 @@ func main() {
 }
 
 func loadConfig() Config {
-	enderURL := os.Getenv("ENDER_URL")
-	if enderURL == "" {
-		enderURL = "http://localhost:8090"
+	vendelURL := os.Getenv("VENDEL_URL")
+	if vendelURL == "" {
+		vendelURL = "http://localhost:8090"
 	}
 
 	modemStr := os.Getenv("MODEMS")
@@ -89,12 +89,12 @@ func loadConfig() Config {
 	}
 
 	return Config{
-		EnderURL: enderURL,
+		VendelURL: vendelURL,
 		Modems:   modems,
 	}
 }
 
-func runModem(cfg ModemConfig, enderURL string) {
+func runModem(cfg ModemConfig, vendelURL string) {
 	logPrefix := fmt.Sprintf("[%s]", cfg.CommandPort)
 	log.Printf("%s starting modem on command=%s notify=%s", logPrefix, cfg.CommandPort, cfg.NotifyPort)
 
@@ -115,7 +115,7 @@ func runModem(cfg ModemConfig, enderURL string) {
 	}
 	log.Printf("%s modem initialized", logPrefix)
 
-	client := NewEnderClient(enderURL, cfg.APIKey)
+	client := NewVendelClient(vendelURL, cfg.APIKey)
 
 	// Recover any pending messages and resolve the device record ID
 	pending, err := client.FetchPending()
@@ -160,7 +160,7 @@ func runModem(cfg ModemConfig, enderURL string) {
 	})
 }
 
-func sendAndReport(dev *at.Device, client *EnderClient, msg PendingMessage, logPrefix string) {
+func sendAndReport(dev *at.Device, client *VendelClient, msg PendingMessage, logPrefix string) {
 	if err := dev.SendSMS(msg.Body, sms.PhoneNumber(msg.Recipient)); err != nil {
 		log.Printf("%s send failed for %s: %v", logPrefix, msg.MessageID, err)
 		if reportErr := client.ReportStatus(msg.MessageID, "failed", err.Error()); reportErr != nil {

@@ -41,7 +41,7 @@ export const Route = createFileRoute("/recover-password")({
   head: () => ({
     meta: [
       {
-        title: "Recover Password - Ender",
+        title: "Recover Password - Vendel",
       },
     ],
   }),

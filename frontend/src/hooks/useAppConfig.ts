@@ -15,7 +15,7 @@ export interface AppConfig {
 }
 
 const DEFAULT_CONFIG: AppConfig = {
-  appName: "Ender",
+  appName: "Vendel",
   supportEmail: "support@example.com",
   maintenanceMode: false,
   paymentProviders: [],

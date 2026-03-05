@@ -1,3 +1,3 @@
-module github.com/JimScope/ender-sdk-go
+module github.com/JimScope/vendel-sdk-go
 
 go 1.21

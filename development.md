@@ -1,4 +1,4 @@
-# Ender - Development
+# Vendel - Development
 
 ## Docker Compose
 
@@ -46,8 +46,8 @@ go run . serve --http=0.0.0.0:8090
 go build ./...
 
 # Compilar binario
-go build -o ender .
-./ender serve --http=0.0.0.0:8090
+go build -o vendel .
+./vendel serve --http=0.0.0.0:8090
 ```
 
 El backend corre en `http://localhost:8090`. El admin dashboard de PocketBase está disponible en `http://localhost:8090/_/`.
@@ -83,7 +83,7 @@ Variables principales:
 | Variable | Descripción | Default |
 |----------|-------------|---------|
 | `ENVIRONMENT` | Entorno de ejecución | `local` |
-| `FIRST_SUPERUSER` | Email del superusuario | `admin@ender.app` |
+| `FIRST_SUPERUSER` | Email del superusuario | `admin@vendel.cc` |
 | `FIRST_SUPERUSER_PASSWORD` | Contraseña del superusuario | `changethis` |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | JSON de Firebase para FCM | - |
 | `GOOGLE_CLIENT_ID` | OAuth Google | - |

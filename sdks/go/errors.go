@@ -1,21 +1,21 @@
-package ender
+package vendel
 
 import "fmt"
 
-// EnderError is the base error returned by the SDK.
-type EnderError struct {
+// VendelError is the base error returned by the SDK.
+type VendelError struct {
 	StatusCode int
 	Message    string
 	Detail     map[string]any
 }
 
-func (e *EnderError) Error() string {
+func (e *VendelError) Error() string {
 	return fmt.Sprintf("[%d] %s", e.StatusCode, e.Message)
 }
 
 // QuotaError is returned when a quota limit is exceeded (HTTP 429).
 type QuotaError struct {
-	EnderError
+	VendelError
 	Limit     int
 	Used      int
 	Available int
@@ -27,9 +27,9 @@ func IsQuotaError(err error) bool {
 	return ok
 }
 
-// IsAPIError returns true if err is an *EnderError (or *QuotaError).
+// IsAPIError returns true if err is a *VendelError (or *QuotaError).
 func IsAPIError(err error) bool {
-	_, ok := err.(*EnderError)
+	_, ok := err.(*VendelError)
 	if ok {
 		return true
 	}

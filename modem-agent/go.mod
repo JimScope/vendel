@@ -1,4 +1,4 @@
-module ender-modem-agent
+module vendel-modem-agent
 
 go 1.25.6
 

@@ -1,17 +1,17 @@
-import { EnderAPIError, EnderQuotaError } from "./errors.js";
-import type { EnderClientOptions, Quota, SendSMSResponse } from "./types.js";
+import { VendelAPIError, VendelQuotaError } from "./errors.js";
+import type { VendelClientOptions, Quota, SendSMSResponse } from "./types.js";
 
 /**
- * Client for the Ender SMS gateway API.
+ * Client for the Vendel SMS gateway API.
  *
- * Uses an integration API key (`ek_` prefix) for authentication.
+ * Uses an integration API key (`vk_` prefix) for authentication.
  */
-export class EnderClient {
+export class VendelClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly timeout: number;
 
-  constructor(options: EnderClientOptions) {
+  constructor(options: VendelClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
     this.apiKey = options.apiKey;
     this.timeout = options.timeout ?? 30_000;
@@ -67,7 +67,7 @@ export class EnderClient {
   private async handleResponse<T>(resp: Response): Promise<T> {
     if (resp.status === 429) {
       const data = (await resp.json()) as Record<string, unknown>;
-      throw new EnderQuotaError(
+      throw new VendelQuotaError(
         (data.detail as string) ?? "Quota exceeded",
         data,
       );
@@ -79,7 +79,7 @@ export class EnderClient {
       } catch {
         /* empty */
       }
-      throw new EnderAPIError(
+      throw new VendelAPIError(
         resp.status,
         (data.message as string) ?? resp.statusText,
         data,

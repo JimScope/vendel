@@ -23,7 +23,7 @@ services:
   modem-agent:
     build: ./modem-agent
     environment:
-      - ENDER_URL=http://app:8090
+      - VENDEL_URL=http://app:8090
       - MODEMS=${MODEMS:?MODEMS is required}
     devices:
       - "${MODEM_DEVICE_0:-/dev/ttyUSB0}:/dev/ttyUSB0"

@@ -3,7 +3,7 @@ import { FaGithub } from "react-icons/fa"
 const socialLinks = [
   {
     icon: FaGithub,
-    href: "https://github.com/JimScope/ender",
+    href: "https://github.com/JimScope/vendel",
     label: "GitHub",
   },
 ]
@@ -14,7 +14,7 @@ export function Footer() {
   return (
     <footer className="border-t py-4 px-6">
       <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-        <p className="text-muted-foreground text-sm">Ender - {currentYear}</p>
+        <p className="text-muted-foreground text-sm">Vendel - {currentYear}</p>
         <div className="flex items-center gap-4">
           {socialLinks.map(({ icon: Icon, href, label }) => (
             <a
