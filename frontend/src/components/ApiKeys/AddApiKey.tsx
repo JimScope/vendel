@@ -39,8 +39,15 @@ type FormData = z.infer<typeof formSchema>
 
 const QR_PAYLOAD_VERSION = "0.1"
 
-const AddApiKey = () => {
-  const [isOpen, setIsOpen] = useState(false)
+interface AddApiKeyProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isOpen = open ?? internalOpen
+  const setIsOpen = onOpenChange ?? setInternalOpen
   const [createdKey, setCreatedKey] = useState<string | null>(null)
   const [copiedText, copyToClipboard] = useCopyToClipboard()
 

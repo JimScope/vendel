@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Key } from "lucide-react"
-import { Suspense } from "react"
+import { Key, Plus } from "lucide-react"
+import { Suspense, useState } from "react"
 
 import AddApiKey from "@/components/ApiKeys/AddApiKey"
 import { columns } from "@/components/ApiKeys/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingApiKeys from "@/components/Pending/PendingApiKeys"
+import { Button } from "@/components/ui/button"
 import { useApiKeyListSuspense } from "@/hooks/useApiKeyList"
 import useAppConfig from "@/hooks/useAppConfig"
 
@@ -13,22 +14,29 @@ export const Route = createFileRoute("/_layout/integrations")({
   component: Integrations,
 })
 
-function ApiKeysTableContent() {
+function ApiKeysEmptyState({ onAddApiKey }: { onAddApiKey: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center text-center py-12">
+      <div className="rounded-full bg-muted p-4 mb-4">
+        <Key className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <h2 className="text-lg font-semibold">No API keys</h2>
+      <p className="text-muted-foreground">
+        Create an API key to access the API programmatically
+      </p>
+      <Button className="my-4" onClick={onAddApiKey}>
+        <Plus />
+        Create API Key
+      </Button>
+    </div>
+  )
+}
+
+function ApiKeysTableContent({ onAddApiKey }: { onAddApiKey: () => void }) {
   const { data: apiKeys } = useApiKeyListSuspense()
 
   if (!apiKeys?.data || apiKeys.data.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center text-center py-12">
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <Key className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h2 className="text-lg font-semibold">No API keys</h2>
-        <p className="text-muted-foreground">
-          Create an API key to access the API programmatically
-        </p>
-        <AddApiKey />
-      </div>
-    )
+    return <ApiKeysEmptyState onAddApiKey={onAddApiKey} />
   }
 
   return (
@@ -40,16 +48,17 @@ function ApiKeysTableContent() {
   )
 }
 
-function ApiKeysTable() {
+function ApiKeysTable({ onAddApiKey }: { onAddApiKey: () => void }) {
   return (
     <Suspense fallback={<PendingApiKeys />}>
-      <ApiKeysTableContent />
+      <ApiKeysTableContent onAddApiKey={onAddApiKey} />
     </Suspense>
   )
 }
 
 function Integrations() {
   const { config } = useAppConfig()
+  const [addApiKeyOpen, setAddApiKeyOpen] = useState(false)
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,9 +70,9 @@ function Integrations() {
             Manage API keys for programmatic access to the API
           </p>
         </div>
-        <AddApiKey />
+        <AddApiKey open={addApiKeyOpen} onOpenChange={setAddApiKeyOpen} />
       </div>
-      <ApiKeysTable />
+      <ApiKeysTable onAddApiKey={() => setAddApiKeyOpen(true)} />
     </div>
   )
 }
