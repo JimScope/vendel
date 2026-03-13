@@ -7,6 +7,7 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/routine"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -55,12 +56,12 @@ func AuthenticateIntegrationAPIKey(e *core.RequestEvent) (string, error) {
 
 	// Update last_used_at in background
 	app := e.App
-	go func() {
+	routine.FireAndForget(func() {
 		record.Set("last_used_at", types.NowDateTime())
 		if err := app.Save(record); err != nil {
 			app.Logger().Warn("failed to update api_key last_used_at", slog.Any("error", err))
 		}
-	}()
+	})
 
 	return record.GetString("user"), nil
 }

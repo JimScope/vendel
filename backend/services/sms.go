@@ -9,6 +9,7 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/routine"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -96,7 +97,7 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 
 	// Dispatch FCM notifications in background (replaces QStash)
 	if len(devices) > 0 {
-		go DispatchMessages(app, messages)
+		routine.FireAndForget(func() { DispatchMessages(app, messages) })
 	}
 
 	return messages, nil
@@ -131,7 +132,7 @@ func ProcessSMSAck(app core.App, deviceId string, messageId string, status strin
 	// Trigger webhooks for status transitions
 	eventMap := map[string]string{"sent": "sms_sent", "delivered": "sms_delivered", "failed": "sms_failed"}
 	if event, ok := eventMap[status]; ok {
-		go TriggerWebhooks(app, record.GetString("user"), record, event)
+		routine.FireAndForget(func() { TriggerWebhooks(app, record.GetString("user"), record, event) })
 	}
 
 	return nil
@@ -171,7 +172,7 @@ func HandleIncomingSMS(app core.App, userId string, deviceId string, fromNumber 
 	}
 
 	// Trigger webhooks in background
-	go TriggerWebhooks(app, userId, record, "sms_received")
+	routine.FireAndForget(func() { TriggerWebhooks(app, userId, record, "sms_received") })
 
 	return record, nil
 }
@@ -198,14 +199,15 @@ func TriggerWebhooks(app core.App, userId string, message *core.Record, event st
 	for _, wh := range webhooks {
 		events := wh.GetString("events")
 		if containsEvent(events, event) {
-			go func(webhook *core.Record) {
-				if err := SendWebhookForMessage(app, webhook, message, event); err != nil {
+			wh := wh // capture loop variable for closure
+			routine.FireAndForget(func() {
+				if err := SendWebhookForMessage(app, wh, message, event); err != nil {
 					webhookBreaker.RecordFailure()
 					app.Logger().Warn("webhook delivery failed", slog.Any("error", err))
 				} else {
 					webhookBreaker.RecordSuccess()
 				}
-			}(wh)
+			})
 		}
 	}
 }

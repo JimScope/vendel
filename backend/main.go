@@ -17,6 +17,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
+	"github.com/pocketbase/pocketbase/tools/routine"
 )
 
 func main() {
@@ -229,7 +230,7 @@ func main() {
 		if err != nil || device.GetString("device_type") != "modem" {
 			return e.Next()
 		}
-		go services.NotifyModemAgent(e.App, deviceId, e.Record)
+		routine.FireAndForget(func() { services.NotifyModemAgent(e.App, deviceId, e.Record) })
 		return e.Next()
 	}
 	app.OnRecordAfterCreateSuccess("sms_messages").BindFunc(notifyModemIfAssigned)
@@ -267,7 +268,7 @@ func main() {
 		}
 		// Broadcast modem status when an agent connects or a frontend subscribes
 		if hasModemSub || hasStatusSub {
-			go services.BroadcastModemStatus(e.App)
+			routine.FireAndForget(func() { services.BroadcastModemStatus(e.App) })
 		}
 		return nil
 	})
@@ -279,7 +280,7 @@ func main() {
 			return err
 		}
 		// Client disconnected — broadcast updated modem status
-		go services.BroadcastModemStatus(e.App)
+		routine.FireAndForget(func() { services.BroadcastModemStatus(e.App) })
 		return nil
 	})
 

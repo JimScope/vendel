@@ -12,6 +12,7 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/routine"
 	"google.golang.org/api/option"
 )
 
@@ -85,22 +86,22 @@ func DispatchMessages(app core.App, messages []*core.Record) {
 			messageIds = append(messageIds, msg.Id)
 		}
 
-		go func(token string, count int, msgIds []string) {
+		routine.FireAndForget(func() {
 			if !fcmBreaker.Allow() {
 				app.Logger().Warn("FCM circuit breaker open, skipping dispatch",
-					slog.String("token", token[:20]))
+					slog.String("token", fcmToken[:20]))
 				return // messages stay "assigned", retry cron picks them up
 			}
-			if err := sendFCMTickle(token, count); err != nil {
+			if err := sendFCMTickle(fcmToken, count); err != nil {
 				fcmBreaker.RecordFailure()
-				app.Logger().Error("FCM send failed", slog.String("token", token[:20]), slog.Any("error", err))
-				for _, id := range msgIds {
+				app.Logger().Error("FCM send failed", slog.String("token", fcmToken[:20]), slog.Any("error", err))
+				for _, id := range messageIds {
 					markMessageFailed(app, id, err.Error())
 				}
 			} else {
 				fcmBreaker.RecordSuccess()
 			}
-		}(fcmToken, count, messageIds)
+		})
 	}
 }
 
@@ -145,6 +146,6 @@ func markMessageFailed(app core.App, messageId, errMsg string) {
 		app.Logger().Warn("failed to save failed message", slog.Any("error", err))
 		return
 	}
-	go TriggerWebhooks(app, record.GetString("user"), record, "sms_failed")
+	routine.FireAndForget(func() { TriggerWebhooks(app, record.GetString("user"), record, "sms_failed") })
 }
 
