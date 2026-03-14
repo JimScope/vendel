@@ -127,6 +127,20 @@ type WebhookDeliveryResult struct {
 	ErrorMessage   string
 }
 
+// ToJSON returns the result as a map suitable for JSON responses.
+func (r *WebhookDeliveryResult) ToJSON() map[string]any {
+	resp := map[string]any{
+		"delivery_status": r.DeliveryStatus,
+		"response_status": r.ResponseStatus,
+		"duration_ms":     r.DurationMs,
+		"error_message":   r.ErrorMessage,
+	}
+	if r.LogRecord != nil {
+		resp["log_id"] = r.LogRecord.Id
+	}
+	return resp
+}
+
 // SendWebhookForMessage delivers a webhook HTTP POST for an SMS message.
 func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Record, event string) error {
 	if !webhook.GetBool("active") {

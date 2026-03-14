@@ -66,6 +66,12 @@ func AuthenticateIntegrationAPIKey(e *core.RequestEvent) (string, error) {
 	return record.GetString("user"), nil
 }
 
+// IsAppSuperuser checks if the authenticated user has the is_superuser flag.
+func IsAppSuperuser(e *core.RequestEvent) bool {
+	record := e.Auth
+	return record != nil && record.GetBool("is_superuser")
+}
+
 // ResolveAuthOrAPIKey tries JWT auth first, falls back to integration API key.
 // Returns the user ID.
 func ResolveAuthOrAPIKey(e *core.RequestEvent) (string, error) {

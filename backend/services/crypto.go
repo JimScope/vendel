@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pocketbase/pocketbase/core"
+
 	"github.com/pocketbase/pocketbase/tools/security"
 )
 
@@ -187,4 +189,53 @@ func GenerateKeyPrefix(key string) string {
 		return key
 	}
 	return key[:10] + "..."
+}
+
+// RotateAPIKeyResult holds the output of a successful key rotation.
+type RotateAPIKeyResult struct {
+	NewKey *core.Record
+}
+
+// RotateAPIKey deactivates the old key and creates a new one.
+// The new key record has "key" unhidden so the caller can read the raw value once.
+func RotateAPIKey(app core.App, userId, keyId, expiresAt string) (*RotateAPIKeyResult, error) {
+	oldKey, err := app.FindRecordById("api_keys", keyId)
+	if err != nil {
+		return nil, fmt.Errorf("API key not found")
+	}
+	if oldKey.GetString("user") != userId {
+		return nil, fmt.Errorf("not your API key")
+	}
+	if !oldKey.GetBool("is_active") {
+		return nil, fmt.Errorf("cannot rotate a revoked key")
+	}
+
+	// Deactivate old key
+	oldKey.Set("is_active", false)
+	if err := app.Save(oldKey); err != nil {
+		return nil, fmt.Errorf("failed to deactivate old key: %w", err)
+	}
+
+	// Create new key (the OnRecordCreate hook generates the actual key value)
+	col, err := app.FindCollectionByNameOrId("api_keys")
+	if err != nil {
+		return nil, fmt.Errorf("api_keys collection not found: %w", err)
+	}
+
+	newKey := core.NewRecord(col)
+	newKey.Set("name", oldKey.GetString("name")+" (rotated)")
+	newKey.Set("user", userId)
+	newKey.Set("is_active", true)
+	if expiresAt != "" {
+		newKey.Set("expires_at", expiresAt)
+	}
+
+	if err := app.Save(newKey); err != nil {
+		return nil, fmt.Errorf("failed to create new key: %w", err)
+	}
+
+	// Unhide key so the caller can read the raw value (shown once)
+	newKey.Unhide("key")
+
+	return &RotateAPIKeyResult{NewKey: newKey}, nil
 }

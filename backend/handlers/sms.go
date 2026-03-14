@@ -47,10 +47,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 
 		messages, err := services.SendSMS(e.App, userId, body.Recipients, body.Body, body.DeviceID)
 		if err != nil {
-			if qe, ok := err.(*services.QuotaError); ok {
-				return e.JSON(qe.StatusCode, qe.Body)
-			}
-			return apis.NewBadRequestError(err.Error(), nil)
+			return handleServiceError(e, err)
 		}
 
 		// Build response

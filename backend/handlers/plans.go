@@ -31,11 +31,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 
 	// PUT /api/plans/upgrade — Start subscription
 	se.Router.PUT("/api/plans/upgrade", func(e *core.RequestEvent) error {
-		info, _ := e.RequestInfo()
-		userId := info.Auth.Id
-		if userId == "" {
-			return apis.NewUnauthorizedError("Authentication required", nil)
-		}
+		userId := e.Auth.Id
 
 		var body struct {
 			PlanID        string `json:"plan_id"`
@@ -88,10 +84,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 			providerName, webhookURL, successURL, errorURL,
 		)
 		if err != nil {
-			if qe, ok := err.(*services.QuotaError); ok {
-				return e.JSON(qe.StatusCode, qe.Body)
-			}
-			return apis.NewBadRequestError(err.Error(), nil)
+			return handleServiceError(e, err)
 		}
 
 		result := map[string]any{
@@ -106,15 +99,11 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		}
 
 		return e.JSON(http.StatusOK, result)
-	})
+	}).Bind(apis.RequireAuth("users"))
 
 	// POST /api/plans/cancel — Cancel subscription
 	se.Router.POST("/api/plans/cancel", func(e *core.RequestEvent) error {
-		info, _ := e.RequestInfo()
-		userId := info.Auth.Id
-		if userId == "" {
-			return apis.NewUnauthorizedError("Authentication required", nil)
-		}
+		userId := e.Auth.Id
 
 		var body struct {
 			Immediate bool `json:"immediate"`
@@ -136,5 +125,5 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 			"subscription_id": sub.Id,
 			"status":          sub.GetString("status"),
 		})
-	})
+	}).Bind(apis.RequireAuth("users"))
 }
