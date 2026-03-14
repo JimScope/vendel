@@ -149,6 +149,24 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 		return e.JSON(http.StatusOK, settings)
 	})
 
+	// GET /api/user/export — export all user data (GDPR Art. 20)
+	se.Router.GET("/api/user/export", func(e *core.RequestEvent) error {
+		info, _ := e.RequestInfo()
+		if info == nil || info.Auth == nil || info.Auth.Id == "" {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+
+		data, err := services.ExportUserData(e.App, info.Auth.Id)
+		if err != nil {
+			return apis.NewApiError(http.StatusInternalServerError, "Failed to export data", nil)
+		}
+
+		data["exported_at"] = time.Now().UTC().Format(time.RFC3339)
+
+		e.Response.Header().Set("Content-Disposition", "attachment; filename=\"vendel-export.json\"")
+		return e.JSON(http.StatusOK, data)
+	}).Bind(apis.RequireAuth("users"))
+
 	// GET /api/system-config — returns all system_config records (app admin only)
 	se.Router.GET("/api/system-config", func(e *core.RequestEvent) error {
 		if !isAppSuperuser(e) {

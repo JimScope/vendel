@@ -164,6 +164,7 @@ func configureRateLimits(app core.App) {
 	settings.RateLimits.Enabled = true
 	settings.RateLimits.Rules = []core.RateLimitRule{
 		{Label: "POST /api/collections/users/auth-with-password", MaxRequests: 5, Duration: 300},
+		{Label: "GET /api/user/export", MaxRequests: 3, Duration: 3600},
 		{Label: "POST /api/sms/report", MaxRequests: 60, Duration: 60},
 		{Label: "POST /api/sms/incoming", MaxRequests: 60, Duration: 60},
 		{Label: "POST /api/sms/fcm-token", MaxRequests: 10, Duration: 60},
