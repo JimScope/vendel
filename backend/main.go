@@ -324,6 +324,12 @@ func main() {
 		}
 	})
 
+	app.Cron().MustAdd("purge-expired-data", "0 3 * * *", func() {
+		if err := services.PurgeExpiredData(app); err != nil {
+			app.Logger().Error("purge expired data failed", slog.Any("error", err))
+		}
+	})
+
 	// ── Start ────────────────────────────────────────────────────────
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
