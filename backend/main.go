@@ -63,7 +63,8 @@ func main() {
 		handlers.RegisterApiKeyRoutes(se)
 		handlers.RegisterUtilRoutes(se)
 
-		// ── Maintenance mode middleware ───────────────────────────────
+		// ── Global middleware ─────────────────────────────────────────
+		se.Router.BindFunc(middleware.SecurityHeadersMiddleware)
 		se.Router.BindFunc(middleware.MaintenanceMiddleware(se.App))
 
 		return se.Next()
