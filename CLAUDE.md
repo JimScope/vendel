@@ -56,12 +56,14 @@ npx playwright test --ui      # Interactive UI mode
 - **Framework**: PocketBase (Go) - provides auth, CRUD, admin dashboard, cron, migrations
 - **Database**: SQLite (embedded)
 - **Key directories**:
+  - `hooks/` - Record lifecycle hooks, one file per domain (auth, users, devices, etc.)
+  - `cronjobs/` - Periodic background tasks (quota reset, retries, purge)
   - `handlers/` - Custom API routes (sms, plans, webhooks)
   - `services/` - Business logic (SMS orchestration, FCM, quota, subscriptions, webhooks)
   - `services/payment/` - Payment provider abstraction (QvaPay)
   - `middleware/` - API key auth, maintenance mode
   - `migrations/` - PocketBase collection definitions + seed data
-  - `main.go` - PocketBase init, record hooks, cron jobs, route registration
+  - `main.go` - Thin wiring layer: env, app init, OnServe config, Register* calls
 
 ### Frontend (`frontend/`)
 - **Framework**: React 19 + TypeScript + Vite
@@ -95,6 +97,27 @@ When changing visual styles (colors, fonts, spacing, component patterns), update
 ### Backend
 - Go standard formatting (`gofmt`)
 - All code must compile: `go build ./...`
+
+### Backend Structure Conventions
+
+**main.go must stay thin** (~80 lines). It only contains: env loading, PocketBase init, migration config, `OnServe` bootstrap (FCM, seed, OAuth, SMTP, routes, middleware), `Register*` calls, and `app.Start()`. **Never add hooks or cron jobs directly to main.go.**
+
+**Where to put new code:**
+
+| Type of code | Where it goes | Pattern |
+|---|---|---|
+| Record lifecycle hook (`OnRecord*`) | `hooks/<domain>.go` | `RegisterXxxHooks(app *pocketbase.PocketBase)` |
+| Cron job | `cronjobs/jobs.go` | Add a `register(...)` call in `RegisterCronJobs` |
+| API route | `handlers/<domain>.go` | `RegisterXxxRoutes(se *core.ServeEvent)` |
+| Business logic | `services/<domain>.go` | Pure functions taking `core.App` |
+| Request middleware | `middleware/` | Func returning `func(*core.RequestEvent) error` |
+
+**Rules:**
+- Each `hooks/` file owns **one domain** (e.g., devices, webhooks). If a new collection needs hooks, create a new file — don't append to an unrelated one.
+- Hook files export a **single** `RegisterXxxHooks` function. Call it from `main.go` alongside the others.
+- Cron jobs go in `cronjobs/jobs.go` using the `register()` helper to avoid boilerplate.
+- Service functions accept `core.App` (the interface), not `*pocketbase.PocketBase`, so they stay testable.
+- When create and update hooks share logic, extract a **private helper** in the same file (e.g., `computeNextRunAt`) instead of duplicating code.
 
 ### Frontend
 - Biome for linting and formatting
