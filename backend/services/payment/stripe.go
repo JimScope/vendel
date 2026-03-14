@@ -278,6 +278,15 @@ func (p *StripeProvider) verifySignature(sigHeader string, body []byte) error {
 		return fmt.Errorf("signature mismatch")
 	}
 
+	// Reject stale webhooks to prevent replay attacks
+	ts, err := strconv.ParseInt(timestamp, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid signature timestamp")
+	}
+	if time.Since(time.Unix(ts, 0)) > 5*time.Minute {
+		return fmt.Errorf("webhook timestamp too old")
+	}
+
 	return nil
 }
 
