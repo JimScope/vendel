@@ -141,7 +141,7 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 	}
 
 	if includeBody {
-		payload["body"] = message.GetString("body")
+		payload["body"] = GetRecordBody(message)
 	}
 
 	switch event {

@@ -155,7 +155,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 			msgs = append(msgs, pendingMsg{
 				MessageID: r.Id,
 				Recipient: r.GetString("to"),
-				Body:      r.GetString("body"),
+				Body:      services.GetRecordBody(r),
 			})
 		}
 

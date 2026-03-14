@@ -95,12 +95,17 @@ func ExportUserData(app core.App, userId string) (map[string]any, error) {
 }
 
 // pickFields extracts only the specified fields from records.
+// Encrypted body fields are automatically decrypted for export.
 func pickFields(records []*core.Record, fields []string) []map[string]any {
 	result := make([]map[string]any, 0, len(records))
 	for _, r := range records {
 		item := make(map[string]any, len(fields))
 		for _, f := range fields {
-			item[f] = r.Get(f)
+			if f == "body" {
+				item[f] = GetRecordBody(r)
+			} else {
+				item[f] = r.Get(f)
+			}
 		}
 		result = append(result, item)
 	}

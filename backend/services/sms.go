@@ -142,11 +142,13 @@ func ProcessSMSAck(app core.App, deviceId string, messageId string, status strin
 // deviceId is used for deduplication and traceability.
 func HandleIncomingSMS(app core.App, userId string, deviceId string, fromNumber string, body string, timestamp string) (*core.Record, error) {
 	// Deduplicate: check for identical incoming SMS within the last 5 minutes
+	// Uses blind index (body_hash) instead of plaintext body for encrypted field lookup
 	cutoff := time.Now().UTC().Add(-5 * time.Minute).Format(time.RFC3339)
+	bodyHash, _ := ComputeBodyHash(body)
 	existing, err := app.FindFirstRecordByFilter(
 		"sms_messages",
-		"message_type = 'incoming' && device = {:deviceId} && from_number = {:from} && body = {:body} && created >= {:cutoff}",
-		dbx.Params{"deviceId": deviceId, "from": fromNumber, "body": body, "cutoff": cutoff},
+		"message_type = 'incoming' && device = {:deviceId} && from_number = {:from} && body_hash = {:hash} && created >= {:cutoff}",
+		dbx.Params{"deviceId": deviceId, "from": fromNumber, "hash": bodyHash, "cutoff": cutoff},
 	)
 	if err == nil && existing != nil {
 		return existing, nil

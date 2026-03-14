@@ -16,7 +16,7 @@ func NotifyModemAgent(app core.App, deviceId string, record *core.Record) {
 	data, err := json.Marshal(map[string]string{
 		"message_id": record.Id,
 		"recipient":  record.GetString("to"),
-		"body":       record.GetString("body"),
+		"body":       GetRecordBody(record),
 	})
 	if err != nil {
 		app.Logger().Error("failed to marshal modem SSE payload", slog.Any("error", err))

@@ -43,7 +43,7 @@ func ProcessDueSchedules(app core.App) error {
 		}
 
 		userId := record.GetString("user")
-		body := record.GetString("body")
+		body := GetRecordBody(record)
 		deviceId := record.GetString("device_id")
 
 		// Send the SMS
