@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -20,14 +21,10 @@ import (
 const encryptedPrefix = "enc:"
 
 // deriveKey returns a 32-byte AES key from the WEBHOOK_ENCRYPTION_KEY env var.
-// Falls back to FIRST_SUPERUSER_PASSWORD as a default key.
 func deriveKey() ([]byte, error) {
 	raw := os.Getenv("WEBHOOK_ENCRYPTION_KEY")
 	if raw == "" {
-		raw = os.Getenv("FIRST_SUPERUSER_PASSWORD")
-	}
-	if raw == "" {
-		return nil, fmt.Errorf("no encryption key configured")
+		return nil, fmt.Errorf("WEBHOOK_ENCRYPTION_KEY not set: webhook secrets will not be encrypted")
 	}
 	hash := sha256.Sum256([]byte(raw))
 	return hash[:], nil
@@ -43,7 +40,8 @@ func EncryptSecret(plaintext string) (string, error) {
 
 	key, err := deriveKey()
 	if err != nil {
-		return plaintext, nil // no key configured — store plaintext (backwards compatible)
+		log.Println("WARNING:", err, "— storing webhook secret in plaintext")
+		return plaintext, nil
 	}
 
 	block, err := aes.NewCipher(key)
