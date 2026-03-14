@@ -19,6 +19,7 @@ import (
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/routine"
 )
 
 const webhookMaxRetries = 3
@@ -394,6 +395,80 @@ func maskPhone(phone string) string {
 	return phone[:2] + strings.Repeat("*", len(phone)-6) + phone[len(phone)-4:]
 }
 
+var webhookBreaker = NewCircuitBreaker("webhook", 5, 60*time.Second)
+
+// TriggerWebhooks finds active webhook configs for a user and fires matching webhooks.
+func TriggerWebhooks(app core.App, userId string, message *core.Record, event string) {
+	if !webhookBreaker.Allow() {
+		app.Logger().Warn("Webhook circuit breaker open, skipping webhooks",
+			slog.String("event", event), slog.String("user", userId))
+		return
+	}
+	webhooks, err := app.FindRecordsByFilter(
+		"webhook_configs",
+		"user = {:userId} && active = true",
+		"", 0, 0,
+		dbx.Params{"userId": userId},
+	)
+	if err != nil || len(webhooks) == 0 {
+		return
+	}
+
+	for _, wh := range webhooks {
+		events := wh.GetString("events")
+		if containsEvent(events, event) {
+			wh := wh // capture loop variable for closure
+			routine.FireAndForget(func() {
+				if err := SendWebhookForMessage(app, wh, message, event); err != nil {
+					webhookBreaker.RecordFailure()
+					app.Logger().Warn("webhook delivery failed", slog.Any("error", err))
+				} else {
+					webhookBreaker.RecordSuccess()
+				}
+			})
+		}
+	}
+}
+
+// containsEvent checks if a JSON array string contains a specific event.
+func containsEvent(eventsJSON string, event string) bool {
+	if eventsJSON == "" {
+		return false
+	}
+	var events []string
+	if err := json.Unmarshal([]byte(eventsJSON), &events); err != nil {
+		return strings.Contains(eventsJSON, event)
+	}
+	for _, e := range events {
+		if e == event {
+			return true
+		}
+	}
+	return false
+}
+
+// parseStoredPayload extracts a map from a stored request_body value,
+// handling the multiple types PocketBase may return (map, string, or raw JSON).
+func parseStoredPayload(raw any) (map[string]any, error) {
+	switch v := raw.(type) {
+	case map[string]any:
+		return v, nil
+	case string:
+		var m map[string]any
+		if err := json.Unmarshal([]byte(v), &m); err != nil {
+			return nil, fmt.Errorf("parse stored payload: %w", err)
+		}
+		return m, nil
+	default:
+		rawJSON, _ := json.Marshal(raw)
+		var m map[string]any
+		if err := json.Unmarshal(rawJSON, &m); err != nil {
+			return nil, fmt.Errorf("parse stored payload: %w", err)
+		}
+		return m, nil
+	}
+}
+
 // RetryFailedWebhooks retries failed webhook deliveries with exponential backoff.
 func RetryFailedWebhooks(app core.App) error {
 	if !webhookBreaker.Allow() {
@@ -432,25 +507,12 @@ func RetryFailedWebhooks(app core.App) error {
 		}
 
 		// Reconstruct payload from stored request_body
-		var payload map[string]any
-		raw := record.Get("request_body")
-		switch v := raw.(type) {
-		case map[string]any:
-			payload = v
-		case string:
-			if err := json.Unmarshal([]byte(v), &payload); err != nil {
-				app.Logger().Warn("failed to parse stored request_body", slog.Any("error", err))
-				record.Set("next_retry_at", "")
-				_ = app.Save(record)
-				continue
-			}
-		default:
-			rawJSON, _ := json.Marshal(raw)
-			if err := json.Unmarshal(rawJSON, &payload); err != nil {
-				record.Set("next_retry_at", "")
-				_ = app.Save(record)
-				continue
-			}
+		payload, err := parseStoredPayload(record.Get("request_body"))
+		if err != nil {
+			app.Logger().Warn("failed to parse stored request_body", slog.Any("error", err))
+			record.Set("next_retry_at", "")
+			_ = app.Save(record)
+			continue
 		}
 
 		event := record.GetString("event")
@@ -511,20 +573,9 @@ func RetryWebhookDelivery(app core.App, logId string) (*WebhookDeliveryResult, e
 	}
 
 	// Parse stored payload
-	var payload map[string]any
-	raw := record.Get("request_body")
-	switch v := raw.(type) {
-	case map[string]any:
-		payload = v
-	case string:
-		if err := json.Unmarshal([]byte(v), &payload); err != nil {
-			return nil, fmt.Errorf("failed to parse stored request_body")
-		}
-	default:
-		rawJSON, _ := json.Marshal(raw)
-		if err := json.Unmarshal(rawJSON, &payload); err != nil {
-			return nil, fmt.Errorf("failed to parse stored request_body")
-		}
+	payload, err := parseStoredPayload(record.Get("request_body"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse stored request_body")
 	}
 
 	event := record.GetString("event")

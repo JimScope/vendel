@@ -48,19 +48,7 @@ func StartSubscription(
 		return nil, "", fmt.Errorf("plan not available")
 	}
 
-	// Calculate amount and period
-	var amount float64
-	var periodDays int
-	if billingCycle == "monthly" {
-		amount = plan.GetFloat("price")
-		periodDays = 30
-	} else {
-		amount = plan.GetFloat("price_yearly")
-		if amount <= 0 {
-			amount = plan.GetFloat("price") * 12
-		}
-		periodDays = 365
-	}
+	amount, periodDays := calculateBilling(plan, billingCycle)
 
 	now := time.Now().UTC()
 	periodEnd := now.Add(time.Duration(periodDays) * 24 * time.Hour)
@@ -88,12 +76,9 @@ func StartSubscription(
 		return nil, "", err
 	}
 
-	provider := payment.GetProvider(providerName)
-	if provider == nil {
-		provider = payment.GetDefaultProvider()
-	}
-	if provider == nil {
-		return nil, "", fmt.Errorf("no payment provider configured")
+	provider, err := resolveProvider(providerName)
+	if err != nil {
+		return nil, "", err
 	}
 
 	if paymentMethod == "invoice" {
@@ -244,38 +229,20 @@ func CompleteAuthorization(app core.App, userId, providerUserUUID string) (*core
 		return nil, fmt.Errorf("plan not found")
 	}
 
-	var amount float64
-	var periodDays int
-	if sub.GetString("billing_cycle") == "monthly" {
-		amount = plan.GetFloat("price")
-		periodDays = 30
-	} else {
-		amount = plan.GetFloat("price_yearly")
-		if amount <= 0 {
-			amount = plan.GetFloat("price") * 12
-		}
-		periodDays = 365
-	}
+	amount, periodDays := calculateBilling(plan, sub.GetString("billing_cycle"))
 
 	now := time.Now().UTC()
 	periodEnd := now.Add(time.Duration(periodDays) * 24 * time.Hour)
 
-	providerName := sub.GetString("provider")
-	if providerName == "" {
-		providerName = "qvapay"
-	}
 	pay, err := createPaymentRecord(app, sub.Id, amount, "USD",
-		providerName, now, periodEnd, "pending")
+		sub.GetString("provider"), now, periodEnd, "pending")
 	if err != nil {
 		return nil, err
 	}
 
-	provider := payment.GetProvider(providerName)
-	if provider == nil {
-		provider = payment.GetDefaultProvider()
-	}
-	if provider == nil {
-		return nil, fmt.Errorf("no payment provider configured")
+	provider, err := resolveProvider(sub.GetString("provider"))
+	if err != nil {
+		return nil, err
 	}
 	chargeResult, err := provider.ChargeAuthorizedUser(payment.ChargeRequest{
 		UserUUID:    providerUserUUID,
@@ -343,33 +310,16 @@ func ProcessRenewal(app core.App, subscriptionId string) error {
 		return fmt.Errorf("plan not found")
 	}
 
+	amount, periodDays := calculateBilling(plan, sub.GetString("billing_cycle"))
 	periodStart := sub.GetDateTime("current_period_end").Time()
-	var amount float64
-	var periodEnd time.Time
-	if sub.GetString("billing_cycle") == "monthly" {
-		amount = plan.GetFloat("price")
-		periodEnd = periodStart.Add(30 * 24 * time.Hour)
-	} else {
-		amount = plan.GetFloat("price_yearly")
-		if amount <= 0 {
-			amount = plan.GetFloat("price") * 12
-		}
-		periodEnd = periodStart.Add(365 * 24 * time.Hour)
-	}
+	periodEnd := periodStart.Add(time.Duration(periodDays) * 24 * time.Hour)
 
-	providerName := sub.GetString("provider")
-	if providerName == "" {
-		providerName = "qvapay"
-	}
-	provider := payment.GetProvider(providerName)
-	if provider == nil {
-		provider = payment.GetDefaultProvider()
-	}
-	if provider == nil {
-		return fmt.Errorf("no payment provider configured")
+	provider, err := resolveProvider(sub.GetString("provider"))
+	if err != nil {
+		return err
 	}
 	pay, err := createPaymentRecord(app, sub.Id, amount, "USD",
-		providerName, periodStart, periodEnd, "pending")
+		sub.GetString("provider"), periodStart, periodEnd, "pending")
 	if err != nil {
 		return err
 	}
@@ -462,6 +412,33 @@ func CheckRenewals(app core.App) error {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
+
+// calculateBilling returns the amount and period in days for a plan+cycle.
+func calculateBilling(plan *core.Record, cycle string) (amount float64, periodDays int) {
+	if cycle == "monthly" {
+		return plan.GetFloat("price"), 30
+	}
+	amount = plan.GetFloat("price_yearly")
+	if amount <= 0 {
+		amount = plan.GetFloat("price") * 12
+	}
+	return amount, 365
+}
+
+// resolveProvider returns the payment provider by name, falling back to the default.
+func resolveProvider(name string) (payment.Provider, error) {
+	if name == "" {
+		name = "qvapay"
+	}
+	provider := payment.GetProvider(name)
+	if provider == nil {
+		provider = payment.GetDefaultProvider()
+	}
+	if provider == nil {
+		return nil, fmt.Errorf("no payment provider configured")
+	}
+	return provider, nil
+}
 
 // FindPaymentByTransactionID looks up a payment record by provider_transaction_id.
 func FindPaymentByTransactionID(app core.App, transactionID string) (*core.Record, error) {

@@ -29,19 +29,9 @@ func deriveKey() ([]byte, error) {
 	return hash[:], nil
 }
 
-// EncryptSecret encrypts a plaintext secret using AES-GCM.
-// Returns a base64-encoded string prefixed with "enc:".
-// If the value is already encrypted or empty, it is returned as-is.
-func EncryptSecret(plaintext string) (string, error) {
-	if plaintext == "" || strings.HasPrefix(plaintext, encryptedPrefix) {
-		return plaintext, nil
-	}
-
-	key, err := deriveKey()
-	if err != nil {
-		return "", fmt.Errorf("cannot encrypt webhook secret: %w", err)
-	}
-
+// aesGCMEncrypt encrypts plaintext using AES-GCM with the given key,
+// returning prefix + base64url(nonce || ciphertext).
+func aesGCMEncrypt(key []byte, plaintext, prefix string) (string, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", fmt.Errorf("create cipher: %w", err)
@@ -58,23 +48,13 @@ func EncryptSecret(plaintext string) (string, error) {
 	}
 
 	ciphertext := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
-	return encryptedPrefix + base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(ciphertext), nil
+	return prefix + base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(ciphertext), nil
 }
 
-// DecryptSecret decrypts an AES-GCM encrypted secret.
-// If the value is not prefixed with "enc:", it is returned as-is (plaintext fallback).
-func DecryptSecret(encrypted string) (string, error) {
-	if encrypted == "" || !strings.HasPrefix(encrypted, encryptedPrefix) {
-		return encrypted, nil // plaintext — backwards compatible
-	}
-
-	key, err := deriveKey()
-	if err != nil {
-		return "", fmt.Errorf("no encryption key: %w", err)
-	}
-
+// aesGCMDecrypt decrypts a prefix + base64url(nonce || ciphertext) string.
+func aesGCMDecrypt(key []byte, value, prefix string) (string, error) {
 	data, err := base64.URLEncoding.WithPadding(base64.NoPadding).DecodeString(
-		strings.TrimPrefix(encrypted, encryptedPrefix),
+		strings.TrimPrefix(value, prefix),
 	)
 	if err != nil {
 		return "", fmt.Errorf("decode base64: %w", err)
@@ -102,6 +82,37 @@ func DecryptSecret(encrypted string) (string, error) {
 	}
 
 	return string(plaintext), nil
+}
+
+// EncryptSecret encrypts a plaintext secret using AES-GCM.
+// Returns a base64-encoded string prefixed with "enc:".
+// If the value is already encrypted or empty, it is returned as-is.
+func EncryptSecret(plaintext string) (string, error) {
+	if plaintext == "" || strings.HasPrefix(plaintext, encryptedPrefix) {
+		return plaintext, nil
+	}
+
+	key, err := deriveKey()
+	if err != nil {
+		return "", fmt.Errorf("cannot encrypt webhook secret: %w", err)
+	}
+
+	return aesGCMEncrypt(key, plaintext, encryptedPrefix)
+}
+
+// DecryptSecret decrypts an AES-GCM encrypted secret.
+// If the value is not prefixed with "enc:", it is returned as-is (plaintext fallback).
+func DecryptSecret(encrypted string) (string, error) {
+	if encrypted == "" || !strings.HasPrefix(encrypted, encryptedPrefix) {
+		return encrypted, nil // plaintext — backwards compatible
+	}
+
+	key, err := deriveKey()
+	if err != nil {
+		return "", fmt.Errorf("no encryption key: %w", err)
+	}
+
+	return aesGCMDecrypt(key, encrypted, encryptedPrefix)
 }
 
 // GenerateCallbackState creates an HMAC-signed state token encoding the userId
