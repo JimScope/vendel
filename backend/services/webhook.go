@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -24,10 +25,29 @@ const webhookMaxRetries = 3
 
 // webhookTransport is a shared HTTP transport for webhook delivery,
 // enabling connection reuse across requests.
+// Uses a custom DialContext to re-validate resolved IPs at connection time,
+// preventing DNS rebinding attacks (TOCTOU between ValidateWebhookURL and connect).
 var webhookTransport = &http.Transport{
 	MaxIdleConns:        20,
 	MaxIdleConnsPerHost: 5,
 	IdleConnTimeout:     90 * time.Second,
+	DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+		host, port, err := net.SplitHostPort(addr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid address %q: %w", addr, err)
+		}
+		ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+		if err != nil {
+			return nil, fmt.Errorf("DNS resolution failed for %q: %w", host, err)
+		}
+		for _, ip := range ips {
+			if isPrivateIP(ip.IP) {
+				return nil, fmt.Errorf("blocked: %q resolves to private IP", host)
+			}
+		}
+		dialer := &net.Dialer{Timeout: 10 * time.Second}
+		return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
+	},
 }
 
 // webhookRetryBackoffs defines the delay before each retry attempt.
@@ -211,6 +231,15 @@ func deliverWebhook(app core.App, webhook *core.Record, payload map[string]any, 
 	client := &http.Client{
 		Timeout:   time.Duration(timeout) * time.Second,
 		Transport: webhookTransport,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 3 {
+				return fmt.Errorf("too many redirects")
+			}
+			if err := ValidateWebhookURL(req.URL.String()); err != nil {
+				return fmt.Errorf("redirect blocked: %w", err)
+			}
+			return nil
+		},
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewReader(payloadJSON))
 	if err != nil {
