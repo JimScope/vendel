@@ -132,11 +132,16 @@ func SendWebhookForMessage(app core.App, webhook *core.Record, message *core.Rec
 		return fmt.Errorf("webhook inactive")
 	}
 
+	includeBody := webhook.GetBool("include_body")
+
 	payload := map[string]any{
 		"event":      event,
-		"body":       message.GetString("body"),
 		"message_id": message.Id,
 		"timestamp":  message.GetString("created"),
+	}
+
+	if includeBody {
+		payload["body"] = message.GetString("body")
 	}
 
 	switch event {
@@ -294,7 +299,7 @@ func logDelivery(app core.App, webhook *core.Record, event, url string, payload 
 	record.Set("webhook", webhook.Id)
 	record.Set("event", event)
 	record.Set("url", url)
-	record.Set("request_body", payload)
+	record.Set("request_body", redactPII(payload))
 	record.Set("response_status", responseStatus)
 	record.Set("response_body", responseBody)
 	record.Set("delivery_status", deliveryStatus)
@@ -361,6 +366,32 @@ func marshalSorted(m map[string]any) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+// redactPII returns a copy of the payload with sensitive fields masked for storage in logs.
+func redactPII(payload map[string]any) map[string]any {
+	redacted := make(map[string]any, len(payload))
+	for k, v := range payload {
+		redacted[k] = v
+	}
+	if _, ok := redacted["body"]; ok {
+		redacted["body"] = "[redacted]"
+	}
+	if v, ok := redacted["from"].(string); ok {
+		redacted["from"] = maskPhone(v)
+	}
+	if v, ok := redacted["to"].(string); ok {
+		redacted["to"] = maskPhone(v)
+	}
+	return redacted
+}
+
+// maskPhone replaces middle digits: +1234567890 → +1****7890
+func maskPhone(phone string) string {
+	if len(phone) <= 6 {
+		return phone
+	}
+	return phone[:2] + strings.Repeat("*", len(phone)-6) + phone[len(phone)-4:]
 }
 
 // RetryFailedWebhooks retries failed webhook deliveries with exponential backoff.
