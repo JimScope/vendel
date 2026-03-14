@@ -47,6 +47,9 @@ func main() {
 		// Configure SMTP from env vars
 		configureSMTP(se.App)
 
+		// Configure auth security (password policy + token lifetime)
+		configureAuthSecurity(se.App)
+
 		// Configure rate limits
 		configureRateLimits(se.App)
 
