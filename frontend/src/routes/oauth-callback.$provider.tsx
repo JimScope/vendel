@@ -43,7 +43,6 @@ function OAuthCallback() {
           body: { email: existing_email, password: pwd },
         })
         if (response?.access_token) {
-          localStorage.setItem("access_token", response.access_token)
           showSuccessToast(`Your ${provider} account has been linked.`)
           navigate({ to: "/" })
         }
@@ -67,7 +66,6 @@ function OAuthCallback() {
 
     // Handle successful OAuth (not requiring linking)
     if (access_token && !requires_linking) {
-      localStorage.setItem("access_token", access_token)
       if (is_new_user) {
         showSuccessToast("Welcome! Your account has been created.")
       } else {
