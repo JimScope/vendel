@@ -123,7 +123,7 @@ func sendFCMTickle(token string, count int) error {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), FCMContextTimeout)
 	defer cancel()
 
 	resp, err := fcmClient.Send(ctx, msg)

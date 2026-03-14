@@ -41,7 +41,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 		if body.Body == "" {
 			return apis.NewBadRequestError("Message body required", nil)
 		}
-		if len(body.Body) > 1600 {
+		if len(body.Body) > services.MaxMessageBodyLength {
 			return apis.NewBadRequestError("Message body exceeds 1600 character limit", nil)
 		}
 

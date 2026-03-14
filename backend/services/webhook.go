@@ -22,16 +22,14 @@ import (
 	"github.com/pocketbase/pocketbase/tools/routine"
 )
 
-const webhookMaxRetries = 3
-
 // webhookTransport is a shared HTTP transport for webhook delivery,
 // enabling connection reuse across requests.
 // Uses a custom DialContext to re-validate resolved IPs at connection time,
 // preventing DNS rebinding attacks (TOCTOU between ValidateWebhookURL and connect).
 var webhookTransport = &http.Transport{
-	MaxIdleConns:        20,
-	MaxIdleConnsPerHost: 5,
-	IdleConnTimeout:     90 * time.Second,
+	MaxIdleConns:        WebhookMaxIdleConns,
+	MaxIdleConnsPerHost: WebhookMaxIdlePerHost,
+	IdleConnTimeout:     WebhookIdleConnTimeout,
 	DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 		host, port, err := net.SplitHostPort(addr)
 		if err != nil {
@@ -46,17 +44,13 @@ var webhookTransport = &http.Transport{
 				return nil, fmt.Errorf("blocked: %q resolves to private IP", host)
 			}
 		}
-		dialer := &net.Dialer{Timeout: 10 * time.Second}
+		dialer := &net.Dialer{Timeout: WebhookDialTimeout}
 		return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
 	},
 }
 
-// webhookRetryBackoffs defines the delay before each retry attempt.
-var webhookRetryBackoffs = []time.Duration{
-	1 * time.Minute,  // after 1st failure
-	5 * time.Minute,  // after 2nd failure
-	15 * time.Minute, // after 3rd failure
-}
+// webhookRetryBackoffs aliases the shared constant for internal use.
+var webhookRetryBackoffs = WebhookRetryBackoffs
 
 // privateRanges defines IP ranges that should be blocked for webhook URLs.
 var privateRanges []*net.IPNet
@@ -198,7 +192,7 @@ func SendTestWebhook(app core.App, webhook *core.Record) *WebhookDeliveryResult 
 	payload := map[string]any{
 		"event":      "test",
 		"message_id": "test_" + GenerateSecureKey("", 12),
-		"body":       "Test webhook from Vendel",
+		"body":       "Test webhook from " + DefaultAppName,
 		"from":       "+1234567890",
 		"timestamp":  time.Now().UTC().Format(time.RFC3339),
 	}
@@ -236,23 +230,23 @@ func deliverWebhook(app core.App, webhook *core.Record, payload map[string]any, 
 		headers["X-Webhook-Signature"] = sig
 	}
 
-	// Get timeout from system config (capped at 30s)
-	timeout := 10
+	// Get timeout from system config (capped)
+	timeout := WebhookDefaultTimeout
 	config, err := app.FindFirstRecordByFilter("system_config", "key = 'webhook_timeout'")
 	if err == nil && config != nil {
 		if t := config.GetInt("value"); t > 0 {
 			timeout = t
 		}
 	}
-	if timeout > 30 {
-		timeout = 30
+	if timeout > WebhookMaxTimeout {
+		timeout = WebhookMaxTimeout
 	}
 
 	client := &http.Client{
 		Timeout:   time.Duration(timeout) * time.Second,
 		Transport: webhookTransport,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) >= 3 {
+			if len(via) >= WebhookMaxRedirects {
 				return fmt.Errorf("too many redirects")
 			}
 			if err := ValidateWebhookURL(req.URL.String()); err != nil {
@@ -279,10 +273,10 @@ func deliverWebhook(app core.App, webhook *core.Record, payload map[string]any, 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, WebhookResponseMaxBytes))
 	respBodyStr := string(respBody)
-	if len(respBodyStr) > 2000 {
-		respBodyStr = respBodyStr[:2000]
+	if len(respBodyStr) > WebhookResponseMaxChars {
+		respBodyStr = respBodyStr[:WebhookResponseMaxChars]
 	}
 
 	status := "success"
@@ -496,7 +490,7 @@ func RetryFailedWebhooks(app core.App) error {
 		"webhook_delivery_logs",
 		"delivery_status = 'failed' && next_retry_at != '' && next_retry_at <= {:now} && retry_count < {:maxRetries}",
 		"-created", 50, 0,
-		dbx.Params{"now": now, "maxRetries": webhookMaxRetries},
+		dbx.Params{"now": now, "maxRetries": WebhookMaxRetries},
 	)
 	if err != nil {
 		return err
@@ -548,7 +542,7 @@ func RetryFailedWebhooks(app core.App) error {
 			if result.ResponseStatus > 0 {
 				record.Set("response_status", result.ResponseStatus)
 			}
-			if retryCount < webhookMaxRetries {
+			if retryCount < WebhookMaxRetries {
 				nextRetry := time.Now().UTC().Add(webhookRetryBackoffs[retryCount])
 				record.Set("next_retry_at", nextRetry.Format(time.RFC3339))
 			} else {

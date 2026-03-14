@@ -100,7 +100,7 @@ func configureSMTP(app core.App) {
 	// Sender defaults — use app_name from system_config
 	appName := services.GetSystemConfigValue(app, "app_name")
 	if appName == "" {
-		appName = "Vendel"
+		appName = services.DefaultAppName
 	}
 	settings.Meta.AppName = appName
 	if settings.Meta.SenderName == "" || settings.Meta.SenderName == "Support" || settings.Meta.SenderName == "Acme" {
@@ -129,17 +129,17 @@ func configureAuthSecurity(app core.App) {
 
 	changed := false
 
-	// Enforce minimum 10-character passwords
+	// Enforce minimum password length
 	if pwField, ok := users.Fields.GetByName("password").(*core.PasswordField); ok {
-		if pwField.Min < 10 {
-			pwField.Min = 10
+		if pwField.Min < services.MinPasswordLength {
+			pwField.Min = services.MinPasswordLength
 			changed = true
 		}
 	}
 
-	// Reduce auth token lifetime from 7 days to 24 hours
-	if users.AuthToken.Duration > 86400 {
-		users.AuthToken.Duration = 86400
+	// Reduce auth token lifetime to 24 hours
+	if users.AuthToken.Duration > services.AuthTokenDurationSecs {
+		users.AuthToken.Duration = services.AuthTokenDurationSecs
 		changed = true
 	}
 

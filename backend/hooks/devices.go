@@ -23,7 +23,7 @@ func RegisterDeviceHooks(app *pocketbase.PocketBase) {
 		}
 
 		// Generate secure API key
-		e.Record.Set("api_key", services.GenerateSecureKey("dk_", 32))
+		e.Record.Set("api_key", services.GenerateSecureKey(services.DeviceKeyPrefix, services.GeneratedKeyLen))
 
 		// Default device_type to "android" if not set
 		if e.Record.GetString("device_type") == "" {

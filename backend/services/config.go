@@ -30,7 +30,7 @@ func GetAppSettings(app core.App) map[string]any {
 	}
 	// Fill defaults
 	if result["app_name"] == "" {
-		result["app_name"] = "Vendel"
+		result["app_name"] = DefaultAppName
 	}
 	// Add maintenance status
 	if strings.ToLower(GetSystemConfigValue(app, "maintenance_mode")) == "true" {

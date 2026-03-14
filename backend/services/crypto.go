@@ -183,12 +183,12 @@ func GenerateSecureKey(prefix string, length int) string {
 	return prefix + security.RandomString(length)
 }
 
-// GenerateKeyPrefix returns the first 10 characters of a key followed by "...".
+// GenerateKeyPrefix returns the first KeyPrefixDisplay characters of a key followed by "...".
 func GenerateKeyPrefix(key string) string {
-	if len(key) <= 10 {
+	if len(key) <= KeyPrefixDisplay {
 		return key
 	}
-	return key[:10] + "..."
+	return key[:KeyPrefixDisplay] + "..."
 }
 
 // RotateAPIKeyResult holds the output of a successful key rotation.

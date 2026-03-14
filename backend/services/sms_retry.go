@@ -10,15 +10,6 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
-const maxRetries = 3
-
-// retryBackoffs defines the minimum wait time before each retry attempt.
-var retryBackoffs = []time.Duration{
-	15 * time.Minute, // after 1st failure
-	1 * time.Hour,    // after 2nd failure
-	6 * time.Hour,    // after 3rd failure
-}
-
 // isPermanentFailure returns true for errors that should not be retried.
 func isPermanentFailure(errMsg string) bool {
 	permanent := []string{
@@ -38,15 +29,15 @@ func isPermanentFailure(errMsg string) bool {
 }
 
 // RetryFailedMessages retries failed outgoing messages with exponential backoff
-// and a maximum of 3 retry attempts. Permanent failures are skipped.
+// and a maximum of SMSMaxRetries attempts. Permanent failures are skipped.
 func RetryFailedMessages(app core.App) error {
-	cutoff := time.Now().UTC().Add(-24 * time.Hour).Format(time.RFC3339)
+	cutoff := time.Now().UTC().Add(-SMSRetryCutoff).Format(time.RFC3339)
 
 	records, err := app.FindRecordsByFilter(
 		"sms_messages",
 		"status = 'failed' && message_type = 'outgoing' && retry_count < {:maxRetries} && created >= {:cutoff}",
 		"", 50, 0,
-		dbx.Params{"maxRetries": maxRetries, "cutoff": cutoff},
+		dbx.Params{"maxRetries": SMSMaxRetries, "cutoff": cutoff},
 	)
 	if err != nil {
 		return err
@@ -64,10 +55,10 @@ func RetryFailedMessages(app core.App) error {
 
 		// Enforce exponential backoff based on retry_count
 		retryCount := record.GetInt("retry_count")
-		if retryCount > 0 && retryCount <= len(retryBackoffs) {
+		if retryCount > 0 && retryCount <= len(SMSRetryBackoffs) {
 			lastRetry := record.GetDateTime("last_retry_at").Time()
 			if !lastRetry.IsZero() {
-				requiredWait := retryBackoffs[retryCount-1]
+				requiredWait := SMSRetryBackoffs[retryCount-1]
 				if now.Sub(lastRetry) < requiredWait {
 					continue // not enough time has passed
 				}

@@ -7,7 +7,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -30,7 +29,7 @@ func RegisterWebhookRoutes(se *core.ServeEvent) {
 		if stateToken == "" {
 			return apis.NewBadRequestError("Missing state parameter", nil)
 		}
-		verifiedUserId, err := services.VerifyCallbackState(stateToken, 1*time.Hour)
+		verifiedUserId, err := services.VerifyCallbackState(stateToken, services.CallbackStateMaxAge)
 		if err != nil {
 			e.App.Logger().Warn("invalid callback state", slog.String("provider", providerName), slog.Any("error", err))
 			return apis.NewBadRequestError("Invalid or expired state token", nil)

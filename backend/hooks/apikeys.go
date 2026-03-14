@@ -12,11 +12,11 @@ import (
 // expiration on API key creation.
 func RegisterApiKeyHooks(app *pocketbase.PocketBase) {
 	app.OnRecordCreate("api_keys").BindFunc(func(e *core.RecordEvent) error {
-		e.Record.Set("key", services.GenerateSecureKey("vk_", 32))
+		e.Record.Set("key", services.GenerateSecureKey(services.APIKeyPrefix, services.GeneratedKeyLen))
 
 		// Default expiration to 1 year if not explicitly set
 		if e.Record.GetDateTime("expires_at").IsZero() {
-			e.Record.Set("expires_at", time.Now().AddDate(1, 0, 0).UTC().Format(time.RFC3339))
+			e.Record.Set("expires_at", time.Now().AddDate(services.DefaultAPIKeyExpiryYrs, 0, 0).UTC().Format(time.RFC3339))
 		}
 
 		// Unhide so the key is returned in the create response (only shown once)
