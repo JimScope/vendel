@@ -50,6 +50,11 @@ func main() {
 		// Configure rate limits
 		configureRateLimits(se.App)
 
+		// Require webhook encryption key
+		if os.Getenv("WEBHOOK_ENCRYPTION_KEY") == "" {
+			return fmt.Errorf("WEBHOOK_ENCRYPTION_KEY environment variable is required")
+		}
+
 		// ── Custom API routes ────────────────────────────────────────
 		handlers.RegisterSMSRoutes(se)
 		handlers.RegisterPlanRoutes(se)

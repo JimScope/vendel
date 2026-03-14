@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -40,8 +39,7 @@ func EncryptSecret(plaintext string) (string, error) {
 
 	key, err := deriveKey()
 	if err != nil {
-		log.Println("WARNING:", err, "— storing webhook secret in plaintext")
-		return plaintext, nil
+		return "", fmt.Errorf("cannot encrypt webhook secret: %w", err)
 	}
 
 	block, err := aes.NewCipher(key)
