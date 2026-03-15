@@ -8,6 +8,8 @@ node_modules/
 pb_data/
 frontend/dist/
 backend/ender
+backend/vendel
+backend/pb_public/
 
 # Modem agent binary
 modem-agent/vendel-modem-agent
