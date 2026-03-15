@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import {
@@ -12,9 +11,7 @@ import {
 } from "@/components/ui/form"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
-import useCustomToast from "@/hooks/useCustomToast"
-import pb from "@/lib/pocketbase"
-import { handleError } from "@/utils"
+import { useChangePassword } from "@/hooks/useAccountMutations"
 
 const formSchema = z
   .object({
@@ -38,7 +35,7 @@ const formSchema = z
 type FormData = z.infer<typeof formSchema>
 
 const ChangePassword = () => {
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const mutation = useChangePassword()
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     mode: "onSubmit",
@@ -50,29 +47,10 @@ const ChangePassword = () => {
     },
   })
 
-  const mutation = useMutation({
-    mutationFn: (data: {
-      current_password: string
-      new_password: string
-      confirm_password: string
-    }) => {
-      const userId = pb.authStore.record?.id
-      if (!userId) throw new Error("Not authenticated")
-      return pb.collection("users").update(userId, {
-        oldPassword: data.current_password,
-        password: data.new_password,
-        passwordConfirm: data.confirm_password,
-      })
-    },
-    onSuccess: () => {
-      showSuccessToast("Password updated successfully")
-      form.reset()
-    },
-    onError: handleError.bind(showErrorToast),
-  })
-
-  const onSubmit = async (data: FormData) => {
-    mutation.mutate(data)
+  const onSubmit = (data: FormData) => {
+    mutation.mutate(data, {
+      onSuccess: () => form.reset(),
+    })
   }
 
   return (

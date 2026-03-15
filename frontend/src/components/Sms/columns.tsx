@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Check, Copy } from "lucide-react"
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
+import type { SMSMessage } from "@/types/collections"
 import { Button } from "../ui/button"
 import { SMSActionsMenu } from "./SMSActionsMenu"
 
@@ -28,17 +29,17 @@ function CopyId({ id }: { id: string }) {
   )
 }
 
-export const columns: ColumnDef<Record<string, any>>[] = [
+export const columns: ColumnDef<SMSMessage>[] = [
   {
     accessorKey: "id",
     header: "ID",
     cell: ({ row }) => <CopyId id={row.original.id} />,
   },
   {
-    accessorKey: "device_id",
+    accessorKey: "device",
     header: "Device ID",
     cell: ({ row }) => (
-      <span className="font-medium">{row.original.device_id}</span>
+      <span className="font-medium">{row.original.device}</span>
     ),
   },
   {

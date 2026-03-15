@@ -17,7 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import useAuth from "@/hooks/useAuth"
-import { getInitials } from "@/utils"
+import { getInitials } from "@/lib/utils"
 
 interface UserInfoProps {
   fullName?: string

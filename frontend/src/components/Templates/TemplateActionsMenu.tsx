@@ -8,11 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { SMSTemplate } from "@/types/collections"
 import DeleteTemplate from "./DeleteTemplate"
 import EditTemplate from "./EditTemplate"
 
 interface TemplateActionsMenuProps {
-  template: Record<string, any>
+  template: SMSTemplate
 }
 
 export const TemplateActionsMenu = ({ template }: TemplateActionsMenuProps) => {

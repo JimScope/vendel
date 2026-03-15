@@ -9,6 +9,7 @@ import PendingApiKeys from "@/components/Pending/PendingApiKeys"
 import { Button } from "@/components/ui/button"
 import { useApiKeyListSuspense } from "@/hooks/useApiKeyList"
 import useAppConfig from "@/hooks/useAppConfig"
+import type { ApiKey } from "@/types/collections"
 
 export const Route = createFileRoute("/_layout/integrations")({
   component: Integrations,
@@ -42,7 +43,7 @@ function ApiKeysTableContent({ onAddApiKey }: { onAddApiKey: () => void }) {
   return (
     <DataTable
       columns={columns}
-      data={apiKeys?.data ?? []}
+      data={(apiKeys?.data ?? []) as unknown as ApiKey[]}
       caption="API keys"
     />
   )

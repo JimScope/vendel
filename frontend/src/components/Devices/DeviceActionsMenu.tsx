@@ -7,11 +7,12 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { Device } from "@/types/collections"
 import DeleteDevice from "./DeleteDevice"
 import EditDevice from "./EditDevice"
 
 interface DeviceActionsMenuProps {
-  device: Record<string, any>
+  device: Device
 }
 
 export const DeviceActionsMenu = ({ device }: DeviceActionsMenuProps) => {

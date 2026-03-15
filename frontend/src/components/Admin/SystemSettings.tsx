@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { CreditCard, Loader2, Settings2 } from "lucide-react"
 import {
   Card,
@@ -17,36 +16,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import useCustomToast from "@/hooks/useCustomToast"
-import pb from "@/lib/pocketbase"
+import { useSystemConfig, useUpdateSystemConfig } from "@/hooks/useSystemConfig"
+import type { SystemConfig } from "@/types/collections"
 
 function SystemSettings() {
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
-
-  const { data: configs, isLoading } = useQuery({
-    queryKey: ["system-config"],
-    queryFn: async () => {
-      const response = await pb.send("/api/system-config", {})
-      return response
-    },
-  })
-
-  const updateConfigMutation = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      return pb.send(`/api/system-config/${key}`, {
-        method: "PATCH",
-        body: { value },
-      })
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["system-config"] })
-      showSuccessToast("Configuration updated successfully")
-    },
-    onError: () => {
-      showErrorToast("Failed to update configuration")
-    },
-  })
+  const { data: configs, isLoading } = useSystemConfig()
+  const updateConfigMutation = useUpdateSystemConfig()
 
   if (isLoading) {
     return (
@@ -57,9 +32,7 @@ function SystemSettings() {
   }
 
   const getConfigValue = (key: string): string => {
-    const config = configs?.data?.find(
-      (c: Record<string, any>) => c.key === key,
-    )
+    const config = configs?.data?.find((c: SystemConfig) => c.key === key)
     return config?.value ?? ""
   }
 

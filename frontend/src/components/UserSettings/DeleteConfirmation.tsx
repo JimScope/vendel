@@ -1,4 +1,3 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,35 +11,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { useDeleteAccount } from "@/hooks/useAccountMutations"
 import useAuth from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
-import pb from "@/lib/pocketbase"
-import { handleError } from "@/utils"
 
 const DeleteConfirmation = () => {
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
   const { logout } = useAuth()
+  const mutation = useDeleteAccount()
 
-  const mutation = useMutation({
-    mutationFn: () => {
-      const userId = pb.authStore.record?.id
-      if (!userId) throw new Error("Not authenticated")
-      return pb.collection("users").delete(userId)
-    },
-    onSuccess: () => {
-      showSuccessToast("Your account has been successfully deleted")
-      logout()
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
-    },
-  })
-
-  const onSubmit = async () => {
-    mutation.mutate()
+  const onSubmit = () => {
+    mutation.mutate(undefined, {
+      onSuccess: () => logout(),
+    })
   }
 
   return (

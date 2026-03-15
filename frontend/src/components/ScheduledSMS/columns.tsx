@@ -2,9 +2,10 @@ import type { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
 import { cn, formatDate } from "@/lib/utils"
+import type { ScheduledSMS } from "@/types/collections"
 import { ScheduledSMSActionsMenu } from "./ScheduledSMSActionsMenu"
 
-export const columns: ColumnDef<Record<string, any>>[] = [
+export const columns: ColumnDef<ScheduledSMS>[] = [
   {
     accessorKey: "name",
     header: "Name",

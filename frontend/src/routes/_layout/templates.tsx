@@ -8,6 +8,7 @@ import AddTemplate from "@/components/Templates/AddTemplate"
 import { columns } from "@/components/Templates/columns"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useTemplateListSuspense } from "@/hooks/useTemplateList"
+import type { SMSTemplate } from "@/types/collections"
 
 export const Route = createFileRoute("/_layout/templates")({
   component: Templates,
@@ -34,7 +35,7 @@ function TemplatesTableContent() {
   return (
     <DataTable
       columns={columns}
-      data={templates?.data ?? []}
+      data={(templates?.data ?? []) as unknown as SMSTemplate[]}
       caption="SMS templates"
     />
   )

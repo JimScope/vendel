@@ -2,10 +2,11 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/Common/DataTable"
 import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/utils"
+import type { SMSMessage } from "@/types/collections"
 import { SMSActionsMenu } from "./SMSActionsMenu"
 
 interface SMSTableProps {
-  data: Record<string, any>[]
+  data: SMSMessage[]
 }
 
 function getStatusBadgeVariant(
@@ -28,7 +29,7 @@ function truncateText(text: string, maxLength: number): string {
   return `${text.slice(0, maxLength)}...`
 }
 
-const columns: ColumnDef<Record<string, any>>[] = [
+const columns: ColumnDef<SMSMessage>[] = [
   {
     accessorKey: "to",
     header: "To",
@@ -65,11 +66,11 @@ const columns: ColumnDef<Record<string, any>>[] = [
     ),
   },
   {
-    accessorKey: "created_at",
+    accessorKey: "created",
     header: "Date",
     cell: ({ row }) => (
       <span className="text-muted-foreground text-sm">
-        {formatDate(row.original.created_at)}
+        {formatDate(row.original.created)}
       </span>
     ),
   },
@@ -84,7 +85,7 @@ export function SMSTable({ data }: SMSTableProps) {
   // Sort by created_at descending
   const sortedData = [...data].sort(
     (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      new Date(b.created).getTime() - new Date(a.created).getTime(),
   )
 
   return (

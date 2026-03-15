@@ -8,13 +8,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { WebhookConfig } from "@/types/collections"
 import DeleteWebhook from "./DeleteWebhook"
 import EditWebhook from "./EditWebhook"
 import TestWebhook from "./TestWebhook"
 import WebhookLogs from "./WebhookLogs"
 
 interface WebhookActionsMenuProps {
-  webhook: Record<string, any>
+  webhook: WebhookConfig
 }
 
 export const WebhookActionsMenu = ({ webhook }: WebhookActionsMenuProps) => {

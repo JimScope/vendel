@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -25,9 +24,8 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
-import useCustomToast from "@/hooks/useCustomToast"
-import pb from "@/lib/pocketbase"
-import { handleError } from "@/utils"
+import { useUpdateItem } from "@/hooks/useItemMutations"
+import type { Item } from "@/types/collections"
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
@@ -37,14 +35,13 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 interface EditItemProps {
-  item: Record<string, any>
+  item: Item
   onSuccess: () => void
 }
 
 const EditItem = ({ item, onSuccess }: EditItemProps) => {
   const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const mutation = useUpdateItem(item.id)
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -56,22 +53,13 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
     },
   })
 
-  const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      pb.collection("items").update(item.id, data),
-    onSuccess: () => {
-      showSuccessToast("Item updated successfully")
-      setIsOpen(false)
-      onSuccess()
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
-    },
-  })
-
   const onSubmit = (data: FormData) => {
-    mutation.mutate(data)
+    mutation.mutate(data, {
+      onSuccess: () => {
+        setIsOpen(false)
+        onSuccess()
+      },
+    })
   }
 
   return (

@@ -7,10 +7,11 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { SMSMessage } from "@/types/collections"
 import SMSDetails from "./SMSDetails"
 
 interface SMSActionsMenuProps {
-  sms: Record<string, any>
+  sms: SMSMessage
 }
 
 export const SMSActionsMenu = ({ sms }: SMSActionsMenuProps) => {

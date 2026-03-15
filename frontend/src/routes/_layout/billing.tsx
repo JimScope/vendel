@@ -7,6 +7,7 @@ import { DataTable } from "@/components/Common/DataTable"
 import PendingBilling from "@/components/Pending/PendingBilling"
 import useAppConfig from "@/hooks/useAppConfig"
 import { usePaymentListSuspense } from "@/hooks/usePaymentList"
+import type { Payment } from "@/types/collections"
 
 export const Route = createFileRoute("/_layout/billing")({
   component: Billing,
@@ -32,7 +33,7 @@ function BillingTableContent() {
   return (
     <DataTable
       columns={columns}
-      data={payments?.data ?? []}
+      data={(payments?.data ?? []) as unknown as Payment[]}
       caption="Payment history"
     />
   )

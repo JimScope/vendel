@@ -14,9 +14,10 @@ import {
 import { useWebhookLogs } from "@/hooks/useWebhookLogs"
 import { useWebhookRetryMutation } from "@/hooks/useWebhookRetryMutation"
 import { cn, formatDate } from "@/lib/utils"
+import type { WebhookConfig, WebhookDeliveryLog } from "@/types/collections"
 
 interface WebhookLogsProps {
-  webhook: Record<string, any>
+  webhook: WebhookConfig
   onSuccess: () => void
 }
 
@@ -29,7 +30,7 @@ function formatTimeUntil(dateString: string): string | null {
   return `${minutes}min`
 }
 
-function RetryStatus({ log }: { log: Record<string, any> }) {
+function RetryStatus({ log }: { log: WebhookDeliveryLog }) {
   const retryCount = log.retry_count ?? 0
   const nextRetryAt = log.next_retry_at
 
@@ -75,7 +76,7 @@ function LogEntry({
   log,
   webhookId,
 }: {
-  log: Record<string, any>
+  log: WebhookDeliveryLog
   webhookId: string
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -206,7 +207,11 @@ const WebhookLogs = ({ webhook, onSuccess }: WebhookLogsProps) => {
             ) : (
               <div className="border rounded-md">
                 {data.data.map((log) => (
-                  <LogEntry key={log.id} log={log} webhookId={webhook.id} />
+                  <LogEntry
+                    key={log.id}
+                    log={log as unknown as WebhookDeliveryLog}
+                    webhookId={webhook.id}
+                  />
                 ))}
               </div>
             )}

@@ -7,11 +7,12 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { Item } from "@/types/collections"
 import DeleteItem from "../Items/DeleteItem"
 import EditItem from "../Items/EditItem"
 
 interface ItemActionsMenuProps {
-  item: Record<string, any>
+  item: Item
 }
 
 export const ItemActionsMenu = ({ item }: ItemActionsMenuProps) => {

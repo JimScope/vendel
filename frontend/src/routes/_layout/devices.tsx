@@ -9,6 +9,7 @@ import PendingDevices from "@/components/Pending/PendingDevices"
 import { Button } from "@/components/ui/button"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useDeviceListSuspense } from "@/hooks/useDeviceList"
+import type { Device } from "@/types/collections"
 import { useModemStatus } from "@/hooks/useModemStatus"
 
 export const Route = createFileRoute("/_layout/devices")({
@@ -45,7 +46,7 @@ function DevicesTableContent({ onAddDevice }: { onAddDevice: () => void }) {
   return (
     <DataTable
       columns={columns}
-      data={devices?.data ?? []}
+      data={(devices?.data ?? []) as unknown as Device[]}
       caption="Registered devices"
     />
   )

@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { useUpdateWebhook } from "@/hooks/useWebhookMutations"
+import type { WebhookConfig } from "@/types/collections"
 
 const formSchema = z.object({
   url: z
@@ -42,7 +43,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 interface EditWebhookProps {
-  webhook: Record<string, any>
+  webhook: WebhookConfig
   onSuccess: () => void
 }
 
@@ -56,20 +57,28 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
     defaultValues: {
       url: webhook.url,
       secret_key: webhook.secret_key ?? "",
-      events: webhook.events ?? "incoming_sms",
+      events: webhook.events?.join(",") ?? "incoming_sms",
       active: webhook.active ?? true,
     },
   })
 
   const updateWebhookMutation = useUpdateWebhook(webhook.id)
 
-  const onSubmit = (data: Record<string, any>) => {
-    updateWebhookMutation.mutate(data, {
-      onSuccess: () => {
-        setIsOpen(false)
-        onSuccess()
+  const onSubmit = (data: FormData) => {
+    updateWebhookMutation.mutate(
+      {
+        url: data.url,
+        secret_key: data.secret_key ?? undefined,
+        events: data.events ?? undefined,
+        active: data.active ?? undefined,
       },
-    })
+      {
+        onSuccess: () => {
+          setIsOpen(false)
+          onSuccess()
+        },
+      },
+    )
   }
 
   return (

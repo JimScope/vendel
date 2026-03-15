@@ -27,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { useUpdateUser } from "@/hooks/useUserMutations"
+import type { User } from "@/types/collections"
 
 const formSchema = z
   .object({
@@ -49,7 +50,7 @@ const formSchema = z
 type FormData = z.infer<typeof formSchema>
 
 interface EditUserProps {
-  user: Record<string, any>
+  user: User
   onSuccess: () => void
 }
 

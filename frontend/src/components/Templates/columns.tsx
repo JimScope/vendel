@@ -1,9 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
 import { formatDate } from "@/lib/utils"
+import type { SMSTemplate } from "@/types/collections"
 import { TemplateActionsMenu } from "./TemplateActionsMenu"
 
-export const columns: ColumnDef<Record<string, any>>[] = [
+export const columns: ColumnDef<SMSTemplate>[] = [
   {
     accessorKey: "name",
     header: "Name",

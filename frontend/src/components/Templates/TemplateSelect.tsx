@@ -29,9 +29,7 @@ export const TemplateSelect = ({ onSelect }: TemplateSelectProps) => {
           return
         }
         setSelected(value)
-        const template = templates.data.find(
-          (t: Record<string, any>) => t.id === value,
-        )
+        const template = templates.data.find((t) => t.id === value)
         if (template) {
           onSelect(template.body)
         }
@@ -44,7 +42,7 @@ export const TemplateSelect = ({ onSelect }: TemplateSelectProps) => {
         <SelectItem value="__none__" className="text-muted-foreground">
           None
         </SelectItem>
-        {templates.data.map((template: Record<string, any>) => (
+        {templates.data.map((template) => (
           <SelectItem key={template.id} value={template.id}>
             {template.name}
           </SelectItem>

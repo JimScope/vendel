@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -14,11 +13,9 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { useUpdateProfile } from "@/hooks/useAccountMutations"
 import useAuth from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
-import pb from "@/lib/pocketbase"
 import { cn } from "@/lib/utils"
-import { handleError } from "@/utils"
 
 const formSchema = z.object({
   full_name: z.string().max(30).optional(),
@@ -28,10 +25,9 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 const UserInformation = () => {
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
   const [editMode, setEditMode] = useState(false)
   const { user: currentUser } = useAuth()
+  const mutation = useUpdateProfile()
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -47,22 +43,6 @@ const UserInformation = () => {
     setEditMode(!editMode)
   }
 
-  const mutation = useMutation({
-    mutationFn: (data: Record<string, any>) => {
-      const userId = pb.authStore.record?.id
-      if (!userId) throw new Error("Not authenticated")
-      return pb.collection("users").update(userId, data)
-    },
-    onSuccess: () => {
-      showSuccessToast("User updated successfully")
-      toggleEditMode()
-    },
-    onError: handleError.bind(showErrorToast),
-    onSettled: () => {
-      queryClient.invalidateQueries()
-    },
-  })
-
   const onSubmit = (data: FormData) => {
     const updateData: Record<string, any> = {}
 
@@ -74,7 +54,9 @@ const UserInformation = () => {
       updateData.email = data.email
     }
 
-    mutation.mutate(updateData)
+    mutation.mutate(updateData, {
+      onSuccess: () => toggleEditMode(),
+    })
   }
 
   const onCancel = () => {

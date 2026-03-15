@@ -2,9 +2,10 @@ import type { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
 import { cn, formatDate } from "@/lib/utils"
+import type { WebhookConfig } from "@/types/collections"
 import { WebhookActionsMenu } from "./WebhookActionsMenu"
 
-export const columns: ColumnDef<Record<string, any>>[] = [
+export const columns: ColumnDef<WebhookConfig>[] = [
   {
     accessorKey: "url",
     header: "URL",
@@ -43,11 +44,11 @@ export const columns: ColumnDef<Record<string, any>>[] = [
     },
   },
   {
-    accessorKey: "created_at",
+    accessorKey: "created",
     header: "Created",
     cell: ({ row }) => (
       <span className="text-muted-foreground">
-        {formatDate(row.original.created_at)}
+        {formatDate(row.original.created)}
       </span>
     ),
   },

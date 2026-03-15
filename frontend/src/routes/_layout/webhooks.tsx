@@ -8,6 +8,7 @@ import AddWebhook from "@/components/Webhooks/AddWebhook"
 import { columns } from "@/components/Webhooks/columns"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useWebhookListSuspense } from "@/hooks/useWebhookList"
+import type { WebhookConfig } from "@/types/collections"
 
 export const Route = createFileRoute("/_layout/webhooks")({
   component: Webhooks,
@@ -34,7 +35,7 @@ function WebhooksTableContent() {
   return (
     <DataTable
       columns={columns}
-      data={webhooks?.data ?? []}
+      data={(webhooks?.data ?? []) as unknown as WebhookConfig[]}
       caption="Webhooks"
     />
   )

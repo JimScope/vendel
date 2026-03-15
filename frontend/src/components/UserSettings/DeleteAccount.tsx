@@ -1,31 +1,24 @@
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import useCustomToast from "@/hooks/useCustomToast"
-import pb from "@/lib/pocketbase"
+import { useExportData } from "@/hooks/useAccountMutations"
 import DeleteConfirmation from "./DeleteConfirmation"
 
 const ExportData = () => {
-  const [loading, setLoading] = useState(false)
-  const { showErrorToast } = useCustomToast()
+  const mutation = useExportData()
 
-  const handleExport = async () => {
-    setLoading(true)
-    try {
-      const response = await pb.send("/api/user/export", { method: "GET" })
-      const blob = new Blob([JSON.stringify(response, null, 2)], {
-        type: "application/json",
-      })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = "vendel-export.json"
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      showErrorToast("Failed to export data")
-    } finally {
-      setLoading(false)
-    }
+  const handleExport = () => {
+    mutation.mutate(undefined, {
+      onSuccess: (response) => {
+        const blob = new Blob([JSON.stringify(response, null, 2)], {
+          type: "application/json",
+        })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = "vendel-export.json"
+        a.click()
+        URL.revokeObjectURL(url)
+      },
+    })
   }
 
   return (
@@ -39,9 +32,9 @@ const ExportData = () => {
         variant="outline"
         className="mt-3"
         onClick={handleExport}
-        disabled={loading}
+        disabled={mutation.isPending}
       >
-        {loading ? "Exporting..." : "Export Data"}
+        {mutation.isPending ? "Exporting..." : "Export Data"}
       </Button>
     </div>
   )

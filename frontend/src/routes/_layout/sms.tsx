@@ -8,6 +8,7 @@ import { SMSTable } from "@/components/Sms/SMSTable"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useAppConfig from "@/hooks/useAppConfig"
 import { type SMSMessageType, useSMSListSuspense } from "@/hooks/useSMSList"
+import type { SMSMessage } from "@/types/collections"
 
 export const Route = createFileRoute("/_layout/sms")({
   component: Sms,
@@ -35,7 +36,7 @@ function SMSTableContent({ messageType }: { messageType: SMSMessageType }) {
     )
   }
 
-  return <SMSTable data={sms.data} />
+  return <SMSTable data={sms.data as unknown as SMSMessage[]} />
 }
 
 function Sms() {

@@ -8,12 +8,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { ScheduledSMS } from "@/types/collections"
 import DeleteScheduledSMS from "./DeleteScheduledSMS"
 import EditScheduledSMS from "./EditScheduledSMS"
 import PauseScheduledSMS from "./PauseScheduledSMS"
 
 interface ScheduledSMSActionsMenuProps {
-  schedule: Record<string, any>
+  schedule: ScheduledSMS
 }
 
 export const ScheduledSMSActionsMenu = ({

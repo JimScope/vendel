@@ -3,7 +3,6 @@ import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
-
 import { MultiSelect } from "@/components/Common/MultiSelect"
 import { TemplateSelect } from "@/components/Templates/TemplateSelect"
 import { Button } from "@/components/ui/button"
@@ -39,23 +38,8 @@ import { TagInput } from "@/components/ui/tag-input"
 import { Textarea } from "@/components/ui/textarea"
 import { useDeviceList } from "@/hooks/useDeviceList"
 import { useUpdateScheduledSMS } from "@/hooks/useScheduledSMSMutations"
-
-const COMMON_TIMEZONES = [
-  "UTC",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Havana",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Europe/Madrid",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "Asia/Kolkata",
-  "Australia/Sydney",
-]
+import { COMMON_TIMEZONES } from "@/lib/constants"
+import type { ScheduledSMS } from "@/types/collections"
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -81,7 +65,7 @@ function toLocalDatetime(isoString: string | undefined | null): string {
 }
 
 interface EditScheduledSMSProps {
-  schedule: Record<string, any>
+  schedule: ScheduledSMS
   onSuccess: () => void
 }
 

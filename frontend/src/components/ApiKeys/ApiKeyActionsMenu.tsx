@@ -8,12 +8,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { ApiKey } from "@/types/collections"
 import DeleteApiKey from "./DeleteApiKey"
 import RevokeApiKey from "./RevokeApiKey"
 import RotateApiKey from "./RotateApiKey"
 
 interface ApiKeyActionsMenuProps {
-  apiKey: Record<string, any>
+  apiKey: ApiKey
 }
 
 export const ApiKeyActionsMenu = ({ apiKey }: ApiKeyActionsMenuProps) => {

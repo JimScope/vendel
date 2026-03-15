@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { Payment } from "@/types/collections"
 
 function formatDate(dateString: string): string {
   if (!dateString) return "-"
@@ -27,7 +28,7 @@ const statusStyles: Record<string, string> = {
     "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
 }
 
-export const columns: ColumnDef<Record<string, any>>[] = [
+export const columns: ColumnDef<Payment>[] = [
   {
     accessorKey: "paid_at",
     header: "Date",

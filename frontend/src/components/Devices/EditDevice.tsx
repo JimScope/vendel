@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { useUpdateDevice } from "@/hooks/useDeviceMutations"
+import type { Device } from "@/types/collections"
 
 const formSchema = z.object({
   name: z
@@ -41,7 +42,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 interface EditDeviceProps {
-  device: Record<string, any>
+  device: Device
   onSuccess: () => void
 }
 
@@ -60,7 +61,7 @@ const EditDevice = ({ device, onSuccess }: EditDeviceProps) => {
 
   const updateDeviceMutation = useUpdateDevice(device.id)
 
-  const onSubmit = (data: Record<string, any>) => {
+  const onSubmit = (data: FormData) => {
     updateDeviceMutation.mutate(data, {
       onSuccess: () => {
         setIsOpen(false)

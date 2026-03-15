@@ -3,10 +3,11 @@ import { Smartphone, Usb } from "lucide-react"
 
 import { DeviceActionsMenu } from "@/components/Devices/DeviceActionsMenu"
 import { formatDate } from "@/lib/utils"
+import type { Device } from "@/types/collections"
 
 export function getColumns(
   modemStatus?: Record<string, boolean>,
-): ColumnDef<Record<string, any>>[] {
+): ColumnDef<Device>[] {
   return [
     {
       accessorKey: "name",
@@ -51,11 +52,11 @@ export function getColumns(
       ),
     },
     {
-      accessorKey: "created_at",
+      accessorKey: "created",
       header: "Created",
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {formatDate(row.original.created_at)}
+          {formatDate(row.original.created)}
         </span>
       ),
     },

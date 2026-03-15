@@ -2,9 +2,10 @@ import { Pause, Play } from "lucide-react"
 
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { useUpdateScheduledSMS } from "@/hooks/useScheduledSMSMutations"
+import type { ScheduledSMS } from "@/types/collections"
 
 interface PauseScheduledSMSProps {
-  schedule: Record<string, any>
+  schedule: ScheduledSMS
   onSuccess: () => void
 }
 

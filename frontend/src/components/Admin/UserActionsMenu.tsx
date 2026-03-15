@@ -8,11 +8,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import useAuth from "@/hooks/useAuth"
+import type { User } from "@/types/collections"
 import DeleteUser from "./DeleteUser"
 import EditUser from "./EditUser"
 
 interface UserActionsMenuProps {
-  user: Record<string, any>
+  user: User
 }
 
 export const UserActionsMenu = ({ user }: UserActionsMenuProps) => {

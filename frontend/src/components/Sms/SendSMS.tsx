@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { LoadingButton } from "@/components/Common/LoadingButton"
+import { LoadingButton } from "@/components/ui/loading-button"
 import { MultiSelect } from "@/components/Common/MultiSelect"
 import { TemplateSelect } from "@/components/Templates/TemplateSelect"
 import { Button } from "@/components/ui/button"

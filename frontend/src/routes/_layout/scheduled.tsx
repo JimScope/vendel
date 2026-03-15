@@ -8,6 +8,7 @@ import AddScheduledSMS from "@/components/ScheduledSMS/AddScheduledSMS"
 import { columns } from "@/components/ScheduledSMS/columns"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useScheduledSMSListSuspense } from "@/hooks/useScheduledSMSList"
+import type { ScheduledSMS } from "@/types/collections"
 
 export const Route = createFileRoute("/_layout/scheduled")({
   component: Scheduled,
@@ -34,7 +35,7 @@ function ScheduledTableContent() {
   return (
     <DataTable
       columns={columns}
-      data={scheduled?.data ?? []}
+      data={(scheduled?.data ?? []) as unknown as ScheduledSMS[]}
       caption="Scheduled messages"
     />
   )

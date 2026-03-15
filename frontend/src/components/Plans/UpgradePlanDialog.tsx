@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { Check, ExternalLink } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -24,19 +24,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import useAppConfig from "@/hooks/useAppConfig"
 import useCustomToast from "@/hooks/useCustomToast"
 import { usePlanList } from "@/hooks/usePlanList"
-import pb from "@/lib/pocketbase"
+import { type UpgradeResponse, useUpgradePlan } from "@/hooks/usePlanMutations"
+import type { Plan } from "@/types/collections"
 
 interface UpgradePlanDialogProps {
   currentPlan?: string
-}
-
-// Response type from the upgrade API
-interface UpgradeResponse {
-  status: "activated" | "pending_payment" | "pending_authorization"
-  plan: string
-  message: string
-  payment_url?: string
-  authorization_url?: string
 }
 
 function PlanCard({
@@ -45,7 +37,7 @@ function PlanCard({
   isSelected,
   onSelect,
 }: {
-  plan: Record<string, any>
+  plan: Plan
   isCurrentPlan: boolean
   isSelected: boolean
   onSelect: () => void
@@ -100,7 +92,8 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
   const { data: plansData, isLoading } = usePlanList()
   const { config } = useAppConfig()
   const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast, showInfoToast } = useCustomToast()
+  const { showSuccessToast, showInfoToast } = useCustomToast()
+  const mutation = useUpgradePlan()
 
   const providers = config.paymentProviders
   const selectedPlan = plansData?.data?.find((p) => p.id === selectedPlanId)
@@ -111,47 +104,38 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
   const effectiveProvider =
     providers.length === 1 ? providers[0].name : selectedProvider
 
-  const mutation = useMutation({
-    mutationFn: (planId: string) =>
-      pb.send("/api/plans/upgrade", {
-        method: "POST",
-        body: { plan_id: planId, provider: effectiveProvider },
-      }),
-    onSuccess: (response) => {
-      const data = response as UpgradeResponse
-
-      if (data.status === "activated") {
-        // Free plan - activated immediately
-        queryClient.invalidateQueries({ queryKey: ["quota"] })
-        showSuccessToast("Plan activated successfully")
-        setIsOpen(false)
-        setSelectedPlanId(null)
-        setSelectedProvider(null)
-      } else if (data.status === "pending_payment" && data.payment_url) {
-        // Paid plan - show payment link
-        const providerInfo = providers.find((p) => p.name === effectiveProvider)
-        setPendingPayment({
-          url: data.payment_url,
-          plan: data.plan,
-          providerDisplayName: providerInfo?.display_name ?? "Payment Provider",
-        })
-        showInfoToast("Please complete payment to activate your plan")
-      } else if (
-        data.status === "pending_authorization" &&
-        data.authorization_url
-      ) {
-        // Authorization flow - redirect to provider
-        window.location.href = data.authorization_url
-      }
-    },
-    onError: () => {
-      showErrorToast("Failed to upgrade plan. Please try again.")
-    },
-  })
-
   const handleSubmit = () => {
     if (selectedPlanId) {
-      mutation.mutate(selectedPlanId)
+      mutation.mutate(
+        { plan_id: selectedPlanId, provider: effectiveProvider },
+        {
+          onSuccess: (data: UpgradeResponse) => {
+            if (data.status === "activated") {
+              queryClient.invalidateQueries({ queryKey: ["quota"] })
+              showSuccessToast("Plan activated successfully")
+              setIsOpen(false)
+              setSelectedPlanId(null)
+              setSelectedProvider(null)
+            } else if (data.status === "pending_payment" && data.payment_url) {
+              const providerInfo = providers.find(
+                (p) => p.name === effectiveProvider,
+              )
+              setPendingPayment({
+                url: data.payment_url,
+                plan: data.plan,
+                providerDisplayName:
+                  providerInfo?.display_name ?? "Payment Provider",
+              })
+              showInfoToast("Please complete payment to activate your plan")
+            } else if (
+              data.status === "pending_authorization" &&
+              data.authorization_url
+            ) {
+              window.location.href = data.authorization_url
+            }
+          },
+        },
+      )
     }
   }
 
@@ -224,7 +208,7 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
         ) : (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 py-4">
-              {plansData?.data?.map((plan) => (
+              {(plansData?.data as unknown as Plan[])?.map((plan) => (
                 <PlanCard
                   key={plan.id}
                   plan={plan}

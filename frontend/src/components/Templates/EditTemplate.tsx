@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Textarea } from "@/components/ui/textarea"
 import { useUpdateTemplate } from "@/hooks/useTemplateMutations"
+import type { SMSTemplate } from "@/types/collections"
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -36,7 +37,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 interface EditTemplateProps {
-  template: Record<string, any>
+  template: SMSTemplate
   onSuccess: () => void
 }
 
@@ -55,7 +56,7 @@ const EditTemplate = ({ template, onSuccess }: EditTemplateProps) => {
 
   const updateTemplateMutation = useUpdateTemplate(template.id)
 
-  const onSubmit = (data: Record<string, any>) => {
+  const onSubmit = (data: FormData) => {
     updateTemplateMutation.mutate(data, {
       onSuccess: () => {
         setIsOpen(false)

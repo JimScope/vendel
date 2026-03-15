@@ -4,6 +4,7 @@ import { Check, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
 import { cn } from "@/lib/utils"
+import type { Item } from "@/types/collections"
 import { ItemActionsMenu } from "./ItemActionsMenu"
 
 function CopyId({ id }: { id: string }) {
@@ -30,7 +31,7 @@ function CopyId({ id }: { id: string }) {
   )
 }
 
-export const columns: ColumnDef<Record<string, any>>[] = [
+export const columns: ColumnDef<Item>[] = [
   {
     accessorKey: "id",
     header: "ID",

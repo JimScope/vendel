@@ -22,7 +22,7 @@ import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import pb from "@/lib/pocketbase"
-import { handleError } from "@/utils"
+import { handleError } from "@/lib/utils"
 
 const searchSchema = z.object({
   token: z.string().catch(""),

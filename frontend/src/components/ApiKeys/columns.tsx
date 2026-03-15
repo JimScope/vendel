@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
 import { cn, formatDate } from "@/lib/utils"
+import type { ApiKey } from "@/types/collections"
 import { ApiKeyActionsMenu } from "./ApiKeyActionsMenu"
 
 function formatRelativeDate(dateString: string): string {
@@ -28,7 +29,7 @@ function isExpiringSoon(dateString: string): boolean {
   return diffDays > 0 && diffDays <= 7
 }
 
-export const columns: ColumnDef<Record<string, any>>[] = [
+export const columns: ColumnDef<ApiKey>[] = [
   {
     accessorKey: "name",
     header: "Name",
@@ -107,11 +108,11 @@ export const columns: ColumnDef<Record<string, any>>[] = [
     },
   },
   {
-    accessorKey: "created_at",
+    accessorKey: "created",
     header: "Created",
     cell: ({ row }) => (
       <span className="text-muted-foreground">
-        {formatDate(row.original.created_at)}
+        {formatDate(row.original.created)}
       </span>
     ),
   },

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { COMMON_TIMEZONES } from "@/lib/constants"
 import { MultiSelect } from "@/components/Common/MultiSelect"
 import { TemplateSelect } from "@/components/Templates/TemplateSelect"
 import { Button } from "@/components/ui/button"
@@ -39,23 +40,6 @@ import { TagInput } from "@/components/ui/tag-input"
 import { Textarea } from "@/components/ui/textarea"
 import { useDeviceList } from "@/hooks/useDeviceList"
 import { useCreateScheduledSMS } from "@/hooks/useScheduledSMSMutations"
-
-const COMMON_TIMEZONES = [
-  "UTC",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Havana",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Europe/Madrid",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "Asia/Kolkata",
-  "Australia/Sydney",
-]
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
