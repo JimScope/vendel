@@ -223,6 +223,16 @@ func seedAppSuperuser(app core.App, email, password string) {
 	}
 
 	if existing, _ := app.FindAuthRecordByEmail(users, email); existing != nil {
+		// Ensure the existing record has superuser privileges
+		if !existing.GetBool("is_superuser") || !existing.GetBool("verified") {
+			existing.Set("is_superuser", true)
+			existing.Set("verified", true)
+			if err := app.Save(existing); err != nil {
+				app.Logger().Warn("could not update app superuser", slog.Any("error", err))
+			} else {
+				app.Logger().Info("Updated app superuser flags", slog.String("email", email))
+			}
+		}
 		return
 	}
 
