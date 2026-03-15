@@ -180,9 +180,9 @@ func configureRateLimits(app core.App) {
 	}
 }
 
-// seedSuperuser creates the first superuser from environment variables.
-// It creates both a PocketBase _superusers record (for the /_/ admin dashboard)
-// and a users record with is_superuser=true (for the Vendel dashboard login).
+// seedSuperuser ensures both a PocketBase _superusers record (for /_/ admin)
+// and a users record with is_superuser=true (for /login) exist.
+// Each check is independent so a missing record is created even if the other exists.
 func seedSuperuser(app core.App) {
 	email := os.Getenv("FIRST_SUPERUSER")
 	password := os.Getenv("FIRST_SUPERUSER_PASSWORD")
@@ -190,41 +190,50 @@ func seedSuperuser(app core.App) {
 		return
 	}
 
-	// 1. PocketBase superuser (for /_/ admin dashboard)
+	seedPBSuperuser(app, email, password)
+	seedAppSuperuser(app, email, password)
+}
+
+func seedPBSuperuser(app core.App, email, password string) {
 	superusers, err := app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
 	if err != nil {
 		app.Logger().Warn("could not find superusers collection", slog.Any("error", err))
 		return
 	}
 
-	if existing, _ := app.FindAuthRecordByEmail(superusers, email); existing == nil {
-		record := core.NewRecord(superusers)
-		record.SetEmail(email)
-		record.SetPassword(password)
-		if err := app.Save(record); err != nil {
-			app.Logger().Warn("could not create PB superuser", slog.Any("error", err))
-		} else {
-			app.Logger().Info("Created PB superuser", slog.String("email", email))
-		}
+	if existing, _ := app.FindAuthRecordByEmail(superusers, email); existing != nil {
+		return
 	}
 
-	// 2. App user with is_superuser flag (for Vendel dashboard login)
+	record := core.NewRecord(superusers)
+	record.SetEmail(email)
+	record.SetPassword(password)
+	if err := app.Save(record); err != nil {
+		app.Logger().Warn("could not create PB superuser", slog.Any("error", err))
+	} else {
+		app.Logger().Info("Created PB superuser", slog.String("email", email))
+	}
+}
+
+func seedAppSuperuser(app core.App, email, password string) {
 	users, err := app.FindCollectionByNameOrId("users")
 	if err != nil {
 		app.Logger().Warn("could not find users collection", slog.Any("error", err))
 		return
 	}
 
-	if existing, _ := app.FindAuthRecordByEmail(users, email); existing == nil {
-		record := core.NewRecord(users)
-		record.SetEmail(email)
-		record.SetPassword(password)
-		record.Set("is_superuser", true)
-		record.Set("verified", true)
-		if err := app.Save(record); err != nil {
-			app.Logger().Warn("could not create app superuser", slog.Any("error", err))
-		} else {
-			app.Logger().Info("Created app superuser", slog.String("email", email))
-		}
+	if existing, _ := app.FindAuthRecordByEmail(users, email); existing != nil {
+		return
+	}
+
+	record := core.NewRecord(users)
+	record.SetEmail(email)
+	record.SetPassword(password)
+	record.Set("is_superuser", true)
+	record.Set("verified", true)
+	if err := app.Save(record); err != nil {
+		app.Logger().Warn("could not create app superuser", slog.Any("error", err))
+	} else {
+		app.Logger().Info("Created app superuser", slog.String("email", email))
 	}
 }
