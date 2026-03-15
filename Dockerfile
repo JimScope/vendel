@@ -1,6 +1,5 @@
 # Stage 1: Build frontend
-FROM dhi.io/bun:1 AS frontend-builder
-SHELL ["/usr/local/bin/bun", "exec"]
+FROM oven/bun:1 AS frontend-builder
 WORKDIR /app/frontend
 
 COPY frontend/package.json frontend/bun.lock ./
