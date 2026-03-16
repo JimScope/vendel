@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Pencil } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 import { MultiSelect } from "@/components/Common/MultiSelect"
@@ -88,6 +88,12 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
       timezone: schedule.timezone || "UTC",
     },
   })
+
+  useEffect(() => {
+    if (devices?.data?.length === 1 && !form.getValues("device_id")?.length) {
+      form.setValue("device_id", [devices.data[0].id])
+    }
+  }, [devices, form])
 
   const scheduleType = form.watch("schedule_type")
   const updateScheduledSMSMutation = useUpdateScheduledSMS(schedule.id)

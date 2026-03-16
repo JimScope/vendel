@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -75,6 +75,12 @@ const AddScheduledSMS = () => {
       timezone: "UTC",
     },
   })
+
+  useEffect(() => {
+    if (devices?.data?.length === 1 && !form.getValues("device_id")?.length) {
+      form.setValue("device_id", [devices.data[0].id])
+    }
+  }, [devices, form])
 
   const scheduleType = form.watch("schedule_type")
   const createScheduledSMSMutation = useCreateScheduledSMS()

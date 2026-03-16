@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -47,6 +47,12 @@ const SendSMS = () => {
       body: "",
     },
   })
+
+  useEffect(() => {
+    if (devices?.data?.length === 1 && form.getValues("from").length === 0) {
+      form.setValue("from", [devices.data[0].id])
+    }
+  }, [devices, form])
 
   const sendSMSMutation = useSendSMS()
 
