@@ -7,6 +7,8 @@
 <p align="center">SMS Gateway Platform</p>
 
 <p align="center">
+  <a href="https://vendel.cc">Website</a> &middot;
+  <a href="https://app.vendel.cc">Dashboard Demo</a> &middot;
   <a href="./README.es.md">Leer en Español</a>
 </p>
 
