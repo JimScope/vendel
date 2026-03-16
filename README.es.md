@@ -1,6 +1,14 @@
-# Vendel - Plataforma SMS Gateway
+<p align="center">
+  <img src="frontend/public/assets/images/vendel-icon.svg" alt="Vendel" width="80" height="80" />
+</p>
 
-[Read in English](./README.md)
+<h1 align="center">Vendel</h1>
+
+<p align="center">Plataforma SMS Gateway</p>
+
+<p align="center">
+  <a href="./README.md">Read in English</a>
+</p>
 
 Vendel es una plataforma full-stack para gestión y envío de SMS a través de dispositivos conectados. Permite enviar mensajes SMS usando dispositivos registrados (teléfonos Android o módems) como gateways, con gestión de cuotas, webhooks y soporte para múltiples usuarios.
 
