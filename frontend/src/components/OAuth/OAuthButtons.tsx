@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query"
 import { FaGithub, FaGoogle } from "react-icons/fa"
 import { Button } from "@/components/ui/button"
 import useCustomToast from "@/hooks/useCustomToast"
+import { useOAuthProviders } from "@/hooks/useOAuthProviders"
 import pb from "@/lib/pocketbase"
 
 interface OAuthButtonsProps {
@@ -10,20 +10,7 @@ interface OAuthButtonsProps {
 
 export function OAuthButtons({ disabled }: OAuthButtonsProps) {
   const { showErrorToast } = useCustomToast()
-  const { data: providers, isLoading } = useQuery({
-    queryKey: ["oauth-providers"],
-    queryFn: async () => {
-      const methods = await pb.collection("users").listAuthMethods()
-      return {
-        providers:
-          methods.oauth2?.providers?.map((p: any) => ({
-            name: p.name,
-            enabled: true,
-          })) ?? [],
-      }
-    },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  })
+  const { data: providers, isLoading } = useOAuthProviders()
 
   const handleOAuthLogin = async (providerName: string) => {
     try {
@@ -34,8 +21,7 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
     }
   }
 
-  const enabledProviders =
-    providers?.providers?.filter((p: Record<string, any>) => p.enabled) ?? []
+  const enabledProviders = providers?.filter((p) => p.enabled) ?? []
 
   if (isLoading || enabledProviders.length === 0) {
     return null
@@ -43,7 +29,7 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
 
   return (
     <div className="grid gap-3">
-      {enabledProviders.map((provider: Record<string, any>) => (
+      {enabledProviders.map((provider) => (
         <Button
           key={provider.name}
           variant="outline"

@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
 import {
   createFileRoute,
   Link as RouterLink,
@@ -21,7 +20,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
-import pb from "@/lib/pocketbase"
+import { useResetPassword } from "@/hooks/usePasswordMutations"
 import { handleError } from "@/lib/utils"
 
 const searchSchema = z.object({
@@ -80,21 +79,20 @@ function ResetPassword() {
     },
   })
 
-  const mutation = useMutation({
-    mutationFn: (data: { new_password: string; token: string }) =>
-      pb
-        .collection("users")
-        .confirmPasswordReset(data.token, data.new_password, data.new_password),
-    onSuccess: () => {
-      showSuccessToast("Password updated successfully")
-      form.reset()
-      navigate({ to: "/login" })
-    },
-    onError: handleError.bind(showErrorToast),
-  })
+  const mutation = useResetPassword()
 
   const onSubmit = (data: FormData) => {
-    mutation.mutate({ new_password: data.new_password, token })
+    mutation.mutate(
+      { token, newPassword: data.new_password },
+      {
+        onSuccess: () => {
+          showSuccessToast("Password updated successfully")
+          form.reset()
+          navigate({ to: "/login" })
+        },
+        onError: handleError.bind(showErrorToast),
+      },
+    )
   }
 
   return (
