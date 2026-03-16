@@ -13,8 +13,7 @@ func init() {
 		}
 
 		users.Fields.Add(&core.BoolField{
-			Name:   "is_superuser",
-			Hidden: true,
+			Name: "is_superuser",
 		})
 
 		// Allow superusers to list and view all users
