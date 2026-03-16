@@ -24,10 +24,12 @@ export function useLatestApks() {
     queryKey: ["github", "android-release"],
     queryFn: async (): Promise<Map<string, string>> => {
       const res = await fetch(
-        "https://api.github.com/repos/JimScope/vendel-android/releases/latest",
+        "https://api.github.com/repos/JimScope/vendel-android/releases?per_page=1",
       )
       if (!res.ok) throw new Error("Failed to fetch release")
-      const release: GitHubRelease = await res.json()
+      const releases: GitHubRelease[] = await res.json()
+      if (releases.length === 0) throw new Error("No releases found")
+      const release = releases[0]
       const map = new Map<string, string>()
       for (const asset of release.assets) {
         if (!asset.name.endsWith(".apk")) continue
