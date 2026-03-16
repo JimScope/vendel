@@ -30,13 +30,18 @@ const PLATFORMS = [
 
 function detectPlatform(): string {
   const ua = navigator.userAgent.toLowerCase()
+  const uaData = (navigator as { userAgentData?: { architecture?: string } })
+    .userAgentData
+  const arch = uaData?.architecture?.toLowerCase() ?? ""
   const isArm =
-    /arm|aarch64/i.test(navigator.userAgent) ||
-    // eslint-disable-next-line -- navigator.platform is the only reliable way to detect Apple Silicon
-    ((navigator as { platform?: string }).platform === "MacIntel" &&
-      navigator.maxTouchPoints > 1)
+    arch === "arm" || /arm|aarch64/i.test(navigator.userAgent)
 
-  if (ua.includes("mac")) return isArm ? "darwin_arm64" : "darwin_amd64"
+  if (ua.includes("mac")) {
+    // Chromium exposes architecture via userAgentData
+    // Safari does not — default to Apple Silicon (most modern Macs)
+    if (arch === "x86") return "darwin_amd64"
+    return "darwin_arm64"
+  }
   if (ua.includes("win")) return isArm ? "windows_arm64" : "windows_amd64"
   if (ua.includes("linux")) return isArm ? "linux_arm64" : "linux_amd64"
   return "linux_amd64"
