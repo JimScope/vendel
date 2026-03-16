@@ -162,7 +162,7 @@ export function DataTable<TData, TValue>({
         </TableBody>
       </Table>
 
-      {totalPages > 1 && (
+      {data.length > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border-t">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="text-sm text-muted-foreground">
@@ -204,75 +204,77 @@ export function DataTable<TData, TValue>({
             </div>
           </div>
 
-          <Pagination className="mx-0 w-auto">
-            <PaginationContent>
-              <PaginationItem>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => table.setPageIndex(0)}
-                  disabled={!table.getCanPreviousPage()}
-                  aria-label="Go to first page"
-                >
-                  <ChevronsLeft className="size-4" />
-                </Button>
-              </PaginationItem>
-              <PaginationItem>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  aria-label="Go to previous page"
-                >
-                  <ChevronLeftIcon className="size-4" />
-                </Button>
-              </PaginationItem>
+          {totalPages > 1 && (
+            <Pagination className="mx-0 w-auto">
+              <PaginationContent>
+                <PaginationItem>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => table.setPageIndex(0)}
+                    disabled={!table.getCanPreviousPage()}
+                    aria-label="Go to first page"
+                  >
+                    <ChevronsLeft className="size-4" />
+                  </Button>
+                </PaginationItem>
+                <PaginationItem>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                    aria-label="Go to previous page"
+                  >
+                    <ChevronLeftIcon className="size-4" />
+                  </Button>
+                </PaginationItem>
 
-              {paginationItems.map((item, index) =>
-                item === "ellipsis" ? (
-                  <PaginationItem key={`ellipsis-${index}`}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={item}>
-                    <Button
-                      variant={currentPage === item ? "outline" : "ghost"}
-                      size="icon"
-                      onClick={() => table.setPageIndex(item - 1)}
-                      aria-label={`Go to page ${item}`}
-                      aria-current={currentPage === item ? "page" : undefined}
-                    >
-                      {item}
-                    </Button>
-                  </PaginationItem>
-                ),
-              )}
+                {paginationItems.map((item, index) =>
+                  item === "ellipsis" ? (
+                    <PaginationItem key={`ellipsis-${index}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={item}>
+                      <Button
+                        variant={currentPage === item ? "outline" : "ghost"}
+                        size="icon"
+                        onClick={() => table.setPageIndex(item - 1)}
+                        aria-label={`Go to page ${item}`}
+                        aria-current={currentPage === item ? "page" : undefined}
+                      >
+                        {item}
+                      </Button>
+                    </PaginationItem>
+                  ),
+                )}
 
-              <PaginationItem>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  aria-label="Go to next page"
-                >
-                  <ChevronRightIcon className="size-4" />
-                </Button>
-              </PaginationItem>
-              <PaginationItem>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => table.setPageIndex(totalPages - 1)}
-                  disabled={!table.getCanNextPage()}
-                  aria-label="Go to last page"
-                >
-                  <ChevronsRight className="size-4" />
-                </Button>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                <PaginationItem>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                    aria-label="Go to next page"
+                  >
+                    <ChevronRightIcon className="size-4" />
+                  </Button>
+                </PaginationItem>
+                <PaginationItem>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => table.setPageIndex(totalPages - 1)}
+                    disabled={!table.getCanNextPage()}
+                    aria-label="Go to last page"
+                  >
+                    <ChevronsRight className="size-4" />
+                  </Button>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       )}
     </div>
