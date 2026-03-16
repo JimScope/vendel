@@ -1,9 +1,19 @@
 <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" fill="#edf5f1"/>
+  <style>
+    .bg { fill: #edf5f1; }
+    .v { fill: #181c1b; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #222826; }
+      .v { fill: #ffffff; }
+    }
+  </style>
+  <rect width="32" height="32" class="bg"/>
   <!-- Left colon -->
-  <circle cx="6" cy="10" r="3" fill="#2dd4a8"/>
-  <circle cx="6" cy="22" r="3" fill="#2dd4a8"/>
+  <circle cx="9" cy="10" r="2" fill="#2dd4a8"/>
+  <circle cx="9" cy="22" r="2" fill="#2dd4a8"/>
+  <!-- Capital V (Libre Baskerville Bold) -->
+  <path d="M14.25 12.55L16.65 19.12L18.60 14.12Q18.99 13.13 19.17 12.61Q19.35 12.08 19.41 11.81Q19.47 11.54 19.47 11.33Q19.47 10.97 19.20 10.86Q18.93 10.75 18.12 10.75L18.12 10.15L22.38 10.15L22.38 10.75Q21.14 10.75 20.66 11.96L16.71 21.85L15.60 21.85L12.02 13.09Q11.63 12.14 11.30 11.64Q10.98 11.14 10.59 10.95Q10.20 10.77 9.62 10.77L9.62 10.15L15.29 10.15L15.29 10.77Q14.51 10.78 14.23 10.91Q13.95 11.04 13.95 11.37Q13.95 11.56 14.03 11.85Q14.10 12.14 14.25 12.55Z" class="v"/>
   <!-- Right colon -->
-  <circle cx="26" cy="10" r="3" fill="#2dd4a8"/>
-  <circle cx="26" cy="22" r="3" fill="#2dd4a8"/>
+  <circle cx="23" cy="10" r="2" fill="#2dd4a8"/>
+  <circle cx="23" cy="22" r="2" fill="#2dd4a8"/>
 </svg>
