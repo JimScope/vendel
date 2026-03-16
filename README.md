@@ -38,9 +38,11 @@ Vendel is a full-stack platform for SMS management and delivery through connecte
 - **E2E Tests**: Playwright
 
 ### Infrastructure
+- **Backend Hosting**: Render
+- **Frontend Hosting**: Cloudflare Pages
 - **Containers**: Docker & Docker Compose
 - **CI/CD**: GitHub Actions
-- **Deployment**: Single binary (~50MB Docker image)
+- **Releases**: Tag `v*` → GHCR Docker image + Go binaries via GoReleaser
 
 ## Main Features
 
@@ -216,12 +218,10 @@ npx playwright test --ui
 
 ## Deployment
 
-See [deployment.md](./deployment.md) for detailed production deployment instructions.
-
-## Additional Documentation
-
-- [Development](./development.md) - Local development guide
-- [Deployment](./deployment.md) - Production instructions
+- **Backend**: Automatically deployed to [Render](https://render.com) on push to `main`
+- **Frontend**: Automatically deployed to [Cloudflare Pages](https://pages.cloudflare.com) on push to `main`
+- **Releases**: Create a tag (`git tag v0.1.0 && git push --tags`) to publish a Docker image to GHCR and build Go binaries via GoReleaser
+- **Modem Agent**: Create a tag (`git tag modem-agent/v0.1.0 && git push --tags`) to build modem agent binaries
 
 ## License
 
