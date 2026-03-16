@@ -10,6 +10,10 @@
   <a href="./README.md">Read in English</a>
 </p>
 
+<p align="center">
+  <img src="img/homepage.png" alt="Vendel Homepage" width="800" />
+</p>
+
 Vendel es una plataforma full-stack para gestión y envío de SMS a través de dispositivos conectados. Permite enviar mensajes SMS usando dispositivos registrados (teléfonos Android o módems) como gateways, con gestión de cuotas, webhooks y soporte para múltiples usuarios.
 
 ## Stack Tecnológico
