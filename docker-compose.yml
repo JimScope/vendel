@@ -16,22 +16,9 @@ services:
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-}
       - QVAPAY_APP_ID=${QVAPAY_APP_ID:-}
       - QVAPAY_APP_SECRET=${QVAPAY_APP_SECRET:-}
+      - WEBHOOK_ENCRYPTION_KEY=${WEBHOOK_ENCRYPTION_KEY:?WEBHOOK_ENCRYPTION_KEY is required}
       - APP_URL=${APP_URL:-http://localhost:8090}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
-    restart: unless-stopped
-
-  modem-agent:
-    build: ./modem-agent
-    environment:
-      - VENDEL_URL=http://app:8090
-      - MODEMS=${MODEMS:?MODEMS is required}
-    devices:
-      - "${MODEM_DEVICE_0:-/dev/ttyUSB0}:/dev/ttyUSB0"
-    depends_on:
-      app:
-        condition: service_started
-    profiles:
-      - modem
     restart: unless-stopped
 
   mailcatcher:
