@@ -1,3 +1,5 @@
+version: 2
+
 project_name: vendel-modem-agent
 
 builds:
@@ -22,11 +24,13 @@ builds:
         goarch: arm
 
 archives:
-  - format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+  - formats:
+      - tar.gz
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
   name_template: checksums.txt
