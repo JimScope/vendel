@@ -84,8 +84,7 @@ const columns: ColumnDef<SMSMessage>[] = [
 export function SMSTable({ data }: SMSTableProps) {
   // Sort by created_at descending
   const sortedData = [...data].sort(
-    (a, b) =>
-      new Date(b.created).getTime() - new Date(a.created).getTime(),
+    (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime(),
   )
 
   return (

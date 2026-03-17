@@ -16,7 +16,12 @@ const DeleteApiKey = ({ id, onSuccess }: DeleteApiKeyProps) => {
       description="Are you sure you want to permanently delete this API key? This action cannot be undone."
       isPending={mutation.isPending}
       onConfirm={(close) => {
-        mutation.mutate(id, { onSuccess: () => { close(); onSuccess() } })
+        mutation.mutate(id, {
+          onSuccess: () => {
+            close()
+            onSuccess()
+          },
+        })
       }}
     />
   )

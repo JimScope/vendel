@@ -16,7 +16,12 @@ const DeleteItem = ({ id, onSuccess }: DeleteItemProps) => {
       description="This item will be permanently deleted. Are you sure? You will not be able to undo this action."
       isPending={mutation.isPending}
       onConfirm={(close) => {
-        mutation.mutate(id, { onSuccess: () => { close(); onSuccess() } })
+        mutation.mutate(id, {
+          onSuccess: () => {
+            close()
+            onSuccess()
+          },
+        })
       }}
     />
   )

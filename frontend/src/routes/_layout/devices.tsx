@@ -17,8 +17,8 @@ import {
 import { Separator } from "@/components/ui/separator"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useDeviceListSuspense } from "@/hooks/useDeviceList"
-import type { Device } from "@/types/collections"
 import { useModemStatus } from "@/hooks/useModemStatus"
+import type { Device } from "@/types/collections"
 
 export const Route = createFileRoute("/_layout/devices")({
   component: Devices,

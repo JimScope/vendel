@@ -22,7 +22,12 @@ const DeleteUser = ({ id, onSuccess }: DeleteUserProps) => {
       }
       isPending={mutation.isPending}
       onConfirm={(close) => {
-        mutation.mutate(id, { onSuccess: () => { close(); onSuccess() } })
+        mutation.mutate(id, {
+          onSuccess: () => {
+            close()
+            onSuccess()
+          },
+        })
       }}
     />
   )

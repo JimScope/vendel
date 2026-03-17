@@ -3,8 +3,6 @@ import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { z } from "zod"
-
-import { COMMON_TIMEZONES } from "@/lib/constants"
 import { MultiSelect } from "@/components/Common/MultiSelect"
 import { TemplateSelect } from "@/components/Templates/TemplateSelect"
 import { Button } from "@/components/ui/button"
@@ -40,6 +38,7 @@ import { TagInput } from "@/components/ui/tag-input"
 import { Textarea } from "@/components/ui/textarea"
 import { useDeviceList } from "@/hooks/useDeviceList"
 import { useCreateScheduledSMS } from "@/hooks/useScheduledSMSMutations"
+import { COMMON_TIMEZONES } from "@/lib/constants"
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),

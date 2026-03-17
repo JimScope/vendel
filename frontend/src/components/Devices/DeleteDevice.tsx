@@ -16,7 +16,12 @@ const DeleteDevice = ({ id, onSuccess }: DeleteDeviceProps) => {
       description="Are you sure you want to delete this device? This action cannot be undone."
       isPending={mutation.isPending}
       onConfirm={(close) => {
-        mutation.mutate(id, { onSuccess: () => { close(); onSuccess() } })
+        mutation.mutate(id, {
+          onSuccess: () => {
+            close()
+            onSuccess()
+          },
+        })
       }}
     />
   )

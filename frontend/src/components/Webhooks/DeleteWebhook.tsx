@@ -16,7 +16,12 @@ const DeleteWebhook = ({ id, onSuccess }: DeleteWebhookProps) => {
       description="Are you sure you want to delete this webhook? You will no longer receive notifications at this endpoint."
       isPending={mutation.isPending}
       onConfirm={(close) => {
-        mutation.mutate(id, { onSuccess: () => { close(); onSuccess() } })
+        mutation.mutate(id, {
+          onSuccess: () => {
+            close()
+            onSuccess()
+          },
+        })
       }}
     />
   )
