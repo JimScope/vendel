@@ -101,7 +101,10 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
           Create API Key
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         {createdKey ? (
           <>
             <DialogHeader>

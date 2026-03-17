@@ -113,7 +113,10 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
           Add Device
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         {apiKey ? (
           <>
             <DialogHeader>

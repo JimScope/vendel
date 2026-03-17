@@ -73,7 +73,10 @@ const RotateApiKey = ({ id, onSuccess }: RotateApiKeyProps) => {
         <RefreshCw />
         Rotate
       </DropdownMenuItem>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         {newKey ? (
           <>
             <DialogHeader>
