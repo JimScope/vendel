@@ -17,6 +17,12 @@ builds:
       - amd64
       - arm64
       - arm
+    goamd64:
+      - v1
+    goarm64:
+      - v8.0
+    goarm:
+      - "6"
     ignore:
       - goos: darwin
         goarch: arm
