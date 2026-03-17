@@ -1,4 +1,6 @@
-export const COMMON_TIMEZONES = [
+import { getBrowserTimezone } from "./datetime"
+
+const BASE_TIMEZONES = [
   "UTC",
   "America/New_York",
   "America/Chicago",
@@ -13,4 +15,11 @@ export const COMMON_TIMEZONES = [
   "Asia/Shanghai",
   "Asia/Kolkata",
   "Australia/Sydney",
-] as const
+]
+
+/** Timezone list that always includes the browser's timezone. */
+export const COMMON_TIMEZONES: string[] = BASE_TIMEZONES.includes(
+  getBrowserTimezone(),
+)
+  ? BASE_TIMEZONES
+  : [getBrowserTimezone(), ...BASE_TIMEZONES]

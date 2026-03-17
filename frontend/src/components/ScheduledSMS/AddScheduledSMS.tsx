@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useDeviceList } from "@/hooks/useDeviceList"
 import { useCreateScheduledSMS } from "@/hooks/useScheduledSMSMutations"
 import { COMMON_TIMEZONES } from "@/lib/constants"
+import { getBrowserTimezone, naiveDatetimeToUTC } from "@/lib/datetime"
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -71,7 +72,7 @@ const AddScheduledSMS = () => {
       schedule_type: "one_time",
       scheduled_at: "",
       cron_expression: "",
-      timezone: "UTC",
+      timezone: getBrowserTimezone(),
     },
   })
 
@@ -94,7 +95,7 @@ const AddScheduledSMS = () => {
         schedule_type: data.schedule_type,
         scheduled_at:
           data.schedule_type === "one_time"
-            ? new Date(data.scheduled_at!).toISOString()
+            ? naiveDatetimeToUTC(data.scheduled_at!, data.timezone)
             : undefined,
         cron_expression:
           data.schedule_type === "recurring" ? data.cron_expression : undefined,

@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useDeviceList } from "@/hooks/useDeviceList"
 import { useUpdateScheduledSMS } from "@/hooks/useScheduledSMSMutations"
 import { COMMON_TIMEZONES } from "@/lib/constants"
+import { naiveDatetimeToUTC, utcToDatetimeInTZ } from "@/lib/datetime"
 import type { ScheduledSMS } from "@/types/collections"
 
 const formSchema = z.object({
@@ -55,14 +56,6 @@ const formSchema = z.object({
 })
 
 type FormData = z.infer<typeof formSchema>
-
-function toLocalDatetime(isoString: string | undefined | null): string {
-  if (!isoString) return ""
-  const date = new Date(isoString)
-  const offset = date.getTimezoneOffset()
-  const local = new Date(date.getTime() - offset * 60000)
-  return local.toISOString().slice(0, 16)
-}
 
 interface EditScheduledSMSProps {
   schedule: ScheduledSMS
@@ -83,7 +76,10 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
       body: schedule.body,
       device_id: schedule.device_id ? [schedule.device_id] : [],
       schedule_type: schedule.schedule_type,
-      scheduled_at: toLocalDatetime(schedule.scheduled_at),
+      scheduled_at: utcToDatetimeInTZ(
+        schedule.scheduled_at,
+        schedule.timezone || "UTC",
+      ),
       cron_expression: schedule.cron_expression ?? "",
       timezone: schedule.timezone || "UTC",
     },
@@ -108,7 +104,7 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
         schedule_type: data.schedule_type,
         scheduled_at:
           data.schedule_type === "one_time" && data.scheduled_at
-            ? new Date(data.scheduled_at).toISOString()
+            ? naiveDatetimeToUTC(data.scheduled_at, data.timezone)
             : undefined,
         cron_expression:
           data.schedule_type === "recurring"
