@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Smartphone } from "lucide-react"
+import { Download, Smartphone } from "lucide-react"
 import { Suspense, useMemo } from "react"
 
 import { DataTable } from "@/components/Common/DataTable"
@@ -8,6 +8,13 @@ import { getColumns } from "@/components/Devices/columns"
 import AndroidAppDownload from "@/components/Devices/AndroidAppDownload"
 import ModemAgentDownload from "@/components/Devices/ModemAgentDownload"
 import PendingDevices from "@/components/Pending/PendingDevices"
+import { Button } from "@/components/ui/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useDeviceListSuspense } from "@/hooks/useDeviceList"
 import type { Device } from "@/types/collections"
@@ -67,11 +74,22 @@ function Devices() {
             Manage your registered SMS devices
           </p>
         </div>
-        <AddDevice />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <AndroidAppDownload />
-        <ModemAgentDownload />
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                <Download className="size-4" />
+                Downloads
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 space-y-4">
+              <AndroidAppDownload />
+              <Separator />
+              <ModemAgentDownload />
+            </PopoverContent>
+          </Popover>
+          <AddDevice />
+        </div>
       </div>
       <DevicesTable />
     </div>
