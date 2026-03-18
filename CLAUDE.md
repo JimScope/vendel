@@ -63,6 +63,7 @@ npx playwright test --ui      # Interactive UI mode
   - `services/payment/` - Payment provider abstraction (QvaPay)
   - `middleware/` - API key auth, maintenance mode
   - `migrations/` - PocketBase collection definitions + seed data
+  - `ui/` - Embedded frontend via `go:embed` (build output in `ui/dist/`)
   - `main.go` - Thin wiring layer: env, app init, OnServe config, Register* calls
 
 ### Frontend (`frontend/`)

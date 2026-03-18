@@ -202,7 +202,7 @@ LITESTREAM_SECRET_ACCESS_KEY=
 
 # URLs
 APP_URL=http://localhost:8090
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173    # Use APP_URL value in production
 ```
 
 ## Testing

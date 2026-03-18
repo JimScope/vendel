@@ -18,7 +18,7 @@ services:
       - QVAPAY_APP_SECRET=${QVAPAY_APP_SECRET:-}
       - WEBHOOK_ENCRYPTION_KEY=${WEBHOOK_ENCRYPTION_KEY:?WEBHOOK_ENCRYPTION_KEY is required}
       - APP_URL=${APP_URL:-http://localhost:8090}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8090}
     restart: unless-stopped
 
   mailcatcher:

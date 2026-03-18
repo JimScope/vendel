@@ -134,7 +134,7 @@ Copy `.env.example` to `.env` at the project root. See the file for all availabl
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` | SMTP configuration | No |
 | `LITESTREAM_REPLICA_URL` | S3 URL for continuous backup | No |
 | `APP_URL` | Public app URL | No (default: `http://localhost:8090`) |
-| `FRONTEND_URL` | Frontend URL | No (default: `http://localhost:5173`) |
+| `FRONTEND_URL` | Frontend URL for payment redirects | No (default: `http://localhost:5173` for dev, use `APP_URL` in production) |
 
 ## Development URLs
 

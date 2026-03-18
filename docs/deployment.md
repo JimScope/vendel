@@ -58,7 +58,7 @@ Best for minimal setups, VPS, or ARM devices (Raspberry Pi, etc.).
 
 Go to [GitHub Releases](https://github.com/JimScope/vendel/releases) and download the archive for your platform:
 
-**Server** (includes backend + frontend):
+**Server** (single self-contained binary):
 - `vendel_linux_amd64.tar.gz` — Linux x86_64
 - `vendel_linux_arm64.tar.gz` — Linux ARM64 (Raspberry Pi 4+, Oracle Cloud)
 - `vendel_linux_arm.tar.gz` — Linux ARMv7
@@ -76,8 +76,7 @@ Go to [GitHub Releases](https://github.com/JimScope/vendel/releases) and downloa
 tar xzf vendel_linux_amd64.tar.gz
 
 # The archive contains:
-#   vendel          <- server binary
-#   pb_public/      <- frontend assets
+#   vendel          <- server binary (frontend embedded)
 
 # Set required environment variables
 export WEBHOOK_ENCRYPTION_KEY="your-random-32-char-key"
