@@ -37,8 +37,6 @@ archives:
         formats:
           - zip
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-    files:
-      - pb_public/**/*
 
 checksum:
   name_template: checksums.txt

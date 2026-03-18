@@ -6,6 +6,7 @@ import (
 	"vendel/hooks"
 	"vendel/middleware"
 	"vendel/services"
+	"vendel/ui"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
@@ -56,6 +58,9 @@ func main() {
 		// Global middleware
 		se.Router.BindFunc(middleware.SecurityHeadersMiddleware)
 		se.Router.BindFunc(middleware.MaintenanceMiddleware(se.App))
+
+		// Serve embedded frontend (SPA catch-all, must be last)
+		se.Router.GET("/{path...}", apis.Static(ui.DistDirFS, true))
 
 		return se.Next()
 	})

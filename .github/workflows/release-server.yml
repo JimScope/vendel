@@ -29,7 +29,7 @@ jobs:
         run: npm ci --prefix frontend && npm run build --prefix frontend
 
       - name: Copy frontend to backend
-        run: cp -r frontend/dist backend/pb_public
+        run: cp -r frontend/dist backend/ui/dist
 
       - name: Set up Go
         uses: actions/setup-go@v6

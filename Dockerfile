@@ -17,6 +17,7 @@ COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
 COPY backend/ .
+COPY --from=frontend-builder /app/frontend/dist ./ui/dist/
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/vendel -ldflags="-s -w" .
 
 # Stage 3: Runtime
@@ -26,7 +27,6 @@ WORKDIR /app
 
 COPY --from=go-builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=go-builder /app/vendel /app/vendel
-COPY --from=frontend-builder /app/frontend/dist /app/pb_public
 
 EXPOSE 8090
 

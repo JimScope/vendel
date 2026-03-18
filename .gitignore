@@ -10,6 +10,8 @@ frontend/dist/
 backend/ender
 backend/vendel
 backend/pb_public/
+backend/ui/dist/*
+!backend/ui/dist/.gitkeep
 
 # Modem agent binary
 modem-agent/vendel-modem-agent
