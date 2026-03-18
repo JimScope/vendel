@@ -12,6 +12,10 @@ import (
 // for scheduled_sms records.
 func RegisterScheduledSMSHooks(app *pocketbase.PocketBase) {
 	app.OnRecordCreate("scheduled_sms").BindFunc(func(e *core.RecordEvent) error {
+		userId := e.Record.GetString("user")
+		if err := services.CheckScheduledSMSQuota(e.App, userId); err != nil {
+			return err
+		}
 		if e.Record.GetString("timezone") == "" {
 			e.Record.Set("timezone", "UTC")
 		}

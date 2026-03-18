@@ -43,13 +43,20 @@ func GetUserQuota(app core.App, userId string) (map[string]any, error) {
 		resetDate = time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
 	}
 
+	scheduledCount, _ := countActiveScheduledSMS(app, userId)
+	integrationCount, _ := countIntegrations(app, userId)
+
 	return map[string]any{
-		"plan":                plan.GetString("name"),
-		"sms_sent_this_month": quota.GetInt("sms_sent_this_month"),
-		"max_sms_per_month":   plan.GetInt("max_sms_per_month"),
-		"devices_registered":  quota.GetInt("devices_registered"),
-		"max_devices":         plan.GetInt("max_devices"),
-		"reset_date":          resetDate,
+		"plan":                  plan.GetString("name"),
+		"sms_sent_this_month":  quota.GetInt("sms_sent_this_month"),
+		"max_sms_per_month":    plan.GetInt("max_sms_per_month"),
+		"devices_registered":   quota.GetInt("devices_registered"),
+		"max_devices":          plan.GetInt("max_devices"),
+		"reset_date":           resetDate,
+		"scheduled_sms_active": scheduledCount,
+		"max_scheduled_sms":    plan.GetInt("max_scheduled_sms"),
+		"integrations_created": integrationCount,
+		"max_integrations":     plan.GetInt("max_integrations"),
 	}, nil
 }
 
@@ -111,6 +118,78 @@ func CheckDeviceQuota(app core.App, userId string) error {
 				"quota_type":  "devices",
 				"limit":       limit,
 				"used":        registered,
+				"available":   0,
+				"upgrade_url": "/api/plans/upgrade",
+			},
+		}
+	}
+
+	return nil
+}
+
+// CheckScheduledSMSQuota verifies the user can create another scheduled SMS.
+func CheckScheduledSMSQuota(app core.App, userId string) error {
+	quota, err := getOrCreateQuota(app, userId)
+	if err != nil {
+		return err
+	}
+
+	plan, err := app.FindRecordById("user_plans", quota.GetString("plan"))
+	if err != nil {
+		return fmt.Errorf("plan not found")
+	}
+
+	used, err := countActiveScheduledSMS(app, userId)
+	if err != nil {
+		return err
+	}
+
+	limit := plan.GetInt("max_scheduled_sms")
+	if used >= limit {
+		return &QuotaError{
+			StatusCode: 429,
+			Body: map[string]any{
+				"detail":      fmt.Sprintf("Scheduled SMS limit of %d reached", limit),
+				"error":       "quota_exceeded",
+				"quota_type":  "scheduled_sms",
+				"limit":       limit,
+				"used":        used,
+				"available":   0,
+				"upgrade_url": "/api/plans/upgrade",
+			},
+		}
+	}
+
+	return nil
+}
+
+// CheckIntegrationQuota verifies the user can create another webhook integration.
+func CheckIntegrationQuota(app core.App, userId string) error {
+	quota, err := getOrCreateQuota(app, userId)
+	if err != nil {
+		return err
+	}
+
+	plan, err := app.FindRecordById("user_plans", quota.GetString("plan"))
+	if err != nil {
+		return fmt.Errorf("plan not found")
+	}
+
+	used, err := countIntegrations(app, userId)
+	if err != nil {
+		return err
+	}
+
+	limit := plan.GetInt("max_integrations")
+	if used >= limit {
+		return &QuotaError{
+			StatusCode: 429,
+			Body: map[string]any{
+				"detail":      fmt.Sprintf("Integration limit of %d reached", limit),
+				"error":       "quota_exceeded",
+				"quota_type":  "integrations",
+				"limit":       limit,
+				"used":        used,
 				"available":   0,
 				"upgrade_url": "/api/plans/upgrade",
 			},
@@ -225,6 +304,24 @@ func getOrCreateQuota(app core.App, userId string) (*core.Record, error) {
 	return quota, nil
 }
 
+func countActiveScheduledSMS(app core.App, userId string) (int, error) {
+	var count int
+	err := app.DB().
+		NewQuery("SELECT COUNT(*) FROM scheduled_sms WHERE user = {:userId} AND status IN ('active', 'paused')").
+		Bind(dbx.Params{"userId": userId}).
+		Row(&count)
+	return count, err
+}
+
+func countIntegrations(app core.App, userId string) (int, error) {
+	var count int
+	err := app.DB().
+		NewQuery("SELECT COUNT(*) FROM webhook_configs WHERE user = {:userId}").
+		Bind(dbx.Params{"userId": userId}).
+		Row(&count)
+	return count, err
+}
+
 func findFreePlan(app core.App) (*core.Record, error) {
 	record, err := app.FindFirstRecordByFilter(
 		"user_plans",
@@ -244,6 +341,8 @@ func findFreePlan(app core.App) (*core.Record, error) {
 	plan.Set("name", "Free")
 	plan.Set("max_sms_per_month", 50)
 	plan.Set("max_devices", 1)
+	plan.Set("max_scheduled_sms", 1)
+	plan.Set("max_integrations", 1)
 	plan.Set("price", 0)
 	plan.Set("price_yearly", 0)
 	plan.Set("is_public", true)
