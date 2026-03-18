@@ -37,6 +37,7 @@ func main() {
 		seedSuperuser(se.App)
 		configureOAuth(se.App)
 		configureSMTP(se.App)
+		configureEmailTemplates(se.App)
 		configureAuthSecurity(se.App)
 		configureRateLimits(se.App)
 

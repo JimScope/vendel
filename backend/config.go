@@ -1,10 +1,11 @@
 package main
 
 import (
-	"vendel/services"
 	"log/slog"
 	"os"
 	"strconv"
+	"vendel/services"
+	"vendel/templates"
 
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -212,6 +213,25 @@ func seedPBSuperuser(app core.App, email, password string) {
 		app.Logger().Warn("could not create PB superuser", slog.Any("error", err))
 	} else {
 		app.Logger().Info("Created PB superuser", slog.String("email", email))
+	}
+}
+
+// configureEmailTemplates applies branded email templates to the users collection.
+func configureEmailTemplates(app core.App) {
+	users, err := app.FindCollectionByNameOrId("users")
+	if err != nil {
+		return
+	}
+
+	users.VerificationTemplate = core.EmailTemplate{
+		Subject: templates.VerificationSubject,
+		Body:    templates.VerificationBody,
+	}
+
+	if err := app.Save(users); err != nil {
+		app.Logger().Warn("could not save email templates", slog.Any("error", err))
+	} else {
+		app.Logger().Info("Configured branded email templates")
 	}
 }
 
