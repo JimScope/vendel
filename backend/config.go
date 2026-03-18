@@ -231,6 +231,10 @@ func configureEmailTemplates(app core.App) {
 		Subject: templates.ResetPasswordSubject,
 		Body:    templates.ResetPasswordBody,
 	}
+	users.ConfirmEmailChangeTemplate = core.EmailTemplate{
+		Subject: templates.ConfirmEmailChangeSubject,
+		Body:    templates.ConfirmEmailChangeBody,
+	}
 
 	if err := app.Save(users); err != nil {
 		app.Logger().Warn("could not save email templates", slog.Any("error", err))

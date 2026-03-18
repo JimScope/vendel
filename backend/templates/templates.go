@@ -11,3 +11,8 @@ const VerificationSubject = "Verify your {APP_NAME} email"
 var ResetPasswordBody string
 
 const ResetPasswordSubject = "Reset your {APP_NAME} password"
+
+//go:embed confirm-email-change.html
+var ConfirmEmailChangeBody string
+
+const ConfirmEmailChangeSubject = "Confirm your {APP_NAME} new email address"
