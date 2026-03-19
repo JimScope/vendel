@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { Check, ExternalLink } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -42,6 +43,7 @@ function PlanCard({
   isSelected: boolean
   onSelect: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <Card
       className={`relative cursor-pointer transition-colors hover:bg-accent/50 ${
@@ -51,7 +53,7 @@ function PlanCard({
     >
       {isCurrentPlan && (
         <div className="absolute -top-3 left-4 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-          Current Plan
+          {t("plans.currentPlan")}
         </div>
       )}
       <CardHeader className="pb-2">
@@ -60,19 +62,18 @@ function PlanCard({
           <span className="text-2xl font-bold text-foreground">
             ${plan.price?.toFixed(2) ?? "0.00"}
           </span>
-          <span className="text-muted-foreground">/month</span>
+          <span className="text-muted-foreground">{t("plans.perMonth")}</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="space-y-2 text-sm">
           <li className="flex items-center gap-2">
             <Check className="h-4 w-4 text-primary" />
-            {plan.max_sms_per_month?.toLocaleString() ?? 0} SMS per month
+            {t("plans.smsPerMonth", { count: plan.max_sms_per_month ?? 0 })}
           </li>
           <li className="flex items-center gap-2">
             <Check className="h-4 w-4 text-primary" />
-            {plan.max_devices ?? 0} device
-            {(plan.max_devices ?? 0) !== 1 ? "s" : ""}
+            {t("plans.device", { count: plan.max_devices ?? 0 })}
           </li>
         </ul>
       </CardContent>
@@ -81,6 +82,7 @@ function PlanCard({
 }
 
 function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
@@ -112,7 +114,7 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
           onSuccess: (data: UpgradeResponse) => {
             if (data.status === "activated") {
               queryClient.invalidateQueries({ queryKey: ["quota"] })
-              showSuccessToast("Plan activated successfully")
+              showSuccessToast(t("plans.planActivated"))
               setIsOpen(false)
               setSelectedPlanId(null)
               setSelectedProvider(null)
@@ -126,7 +128,7 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
                 providerDisplayName:
                   providerInfo?.display_name ?? "Payment Provider",
               })
-              showInfoToast("Please complete payment to activate your plan")
+              showInfoToast(t("plans.completePaymentInfo"))
             } else if (
               data.status === "pending_authorization" &&
               data.authorization_url
@@ -165,17 +167,19 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm">Upgrade Plan</Button>
+        <Button size="sm">{t("plans.upgradePlan")}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>
-            {pendingPayment ? "Complete Payment" : "Upgrade Your Plan"}
+            {pendingPayment
+              ? t("plans.completePayment")
+              : t("plans.changePlan")}
           </DialogTitle>
           <DialogDescription>
             {pendingPayment
-              ? `Complete payment to activate ${pendingPayment.plan} plan`
-              : "Choose the plan that best fits your needs"}
+              ? t("plans.completePaymentDesc", { plan: pendingPayment.plan })
+              : t("plans.choosePlanDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -186,17 +190,20 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
               <ExternalLink className="h-8 w-8 text-primary" />
             </div>
             <p className="text-muted-foreground">
-              Click the button below to complete your payment on{" "}
-              {pendingPayment.providerDisplayName}. Once payment is confirmed,
-              your plan will be activated automatically.
+              {t("plans.paymentRedirectMsg", {
+                provider: pendingPayment.providerDisplayName,
+              })}
             </p>
             <Button onClick={handlePaymentRedirect} size="lg" className="gap-2">
               <ExternalLink className="h-4 w-4" />
-              Pay with {pendingPayment.providerDisplayName}
+              {t("plans.payWith", {
+                provider: pendingPayment.providerDisplayName,
+              })}
             </Button>
             <p className="text-xs text-muted-foreground">
-              You will be redirected to {pendingPayment.providerDisplayName} to
-              complete the payment securely.
+              {t("plans.secureRedirectMsg", {
+                provider: pendingPayment.providerDisplayName,
+              })}
             </p>
           </div>
         ) : isLoading ? (
@@ -226,7 +233,9 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
 
             {needsProviderSelection && (
               <div className="space-y-2">
-                <p className="text-sm font-medium">Payment method</p>
+                <p className="text-sm font-medium">
+                  {t("plans.paymentMethod")}
+                </p>
                 <div className="flex gap-2">
                   {providers.map((provider) => (
                     <Button
@@ -251,13 +260,13 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
         <DialogFooter>
           {pendingPayment ? (
             <Button variant="outline" onClick={() => setPendingPayment(null)}>
-              Choose Different Plan
+              {t("plans.chooseDifferent")}
             </Button>
           ) : (
             <>
               <DialogClose asChild>
                 <Button variant="outline" disabled={mutation.isPending}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
@@ -265,7 +274,9 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
                 loading={mutation.isPending}
                 disabled={!canSubmit}
               >
-                {isCurrentPlanSelected ? "Current Plan" : "Confirm Upgrade"}
+                {isCurrentPlanSelected
+                  ? t("plans.currentPlan")
+                  : t("plans.confirmUpgrade")}
               </LoadingButton>
             </>
           )}

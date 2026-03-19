@@ -1,8 +1,10 @@
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { useExportData } from "@/hooks/useAccountMutations"
 import DeleteConfirmation from "./DeleteConfirmation"
 
 const ExportData = () => {
+  const { t } = useTranslation()
   const mutation = useExportData()
 
   const handleExport = () => {
@@ -23,10 +25,9 @@ const ExportData = () => {
 
   return (
     <div className="max-w-md mt-4 rounded-lg border p-4">
-      <h3 className="font-semibold">Export Your Data</h3>
+      <h3 className="font-semibold">{t("settings.exportData")}</h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Download a copy of all your data including messages, devices, webhooks,
-        and account information.
+        {t("settings.exportDataDesc")}
       </p>
       <Button
         variant="outline"
@@ -34,20 +35,25 @@ const ExportData = () => {
         onClick={handleExport}
         disabled={mutation.isPending}
       >
-        {mutation.isPending ? "Exporting..." : "Export Data"}
+        {mutation.isPending
+          ? t("settings.exporting")
+          : t("settings.exportButton")}
       </Button>
     </div>
   )
 }
 
 const DeleteAccount = () => {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-4">
       <ExportData />
       <div className="max-w-md rounded-lg border border-destructive/50 p-4">
-        <h3 className="font-semibold text-destructive">Delete Account</h3>
+        <h3 className="font-semibold text-destructive">
+          {t("settings.deleteAccount")}
+        </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Permanently delete your account and all associated data.
+          {t("settings.deleteAccountDesc")}
         </p>
         <DeleteConfirmation />
       </div>

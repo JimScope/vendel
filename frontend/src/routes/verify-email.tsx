@@ -1,5 +1,6 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 import { CheckCircle, Loader2, XCircle } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
 import pb from "@/lib/pocketbase"
@@ -23,39 +24,41 @@ export const Route = createFileRoute("/verify-email")({
     if (!token) {
       return {
         status: "error" as const,
-        errorMessage: "No verification token provided",
+        errorKey: "auth.noVerificationToken" as const,
       }
     }
     try {
       await pb.collection("users").confirmVerification(token)
-      return { status: "success" as const, errorMessage: "" }
+      return { status: "success" as const, errorKey: "" as const }
     } catch (error: any) {
       return {
         status: "error" as const,
-        errorMessage:
-          error?.response?.data?.detail ||
-          "Failed to verify email. The link may be invalid or expired.",
+        errorMessage: error?.response?.data?.detail,
+        errorKey: "auth.verificationFailedMsg" as const,
       }
     }
   },
 })
 
 function VerifyEmailPending() {
+  const { t } = useTranslation()
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-6 text-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        <h1 className="text-2xl">Verifying your email...</h1>
-        <p className="text-muted-foreground">
-          Please wait while we verify your email address.
-        </p>
+        <h1 className="text-2xl">{t("auth.verifyingEmail")}</h1>
+        <p className="text-muted-foreground">{t("auth.pleaseWait")}</p>
       </div>
     </AuthLayout>
   )
 }
 
 function VerifyEmail() {
-  const { status, errorMessage } = Route.useLoaderData()
+  const { t } = useTranslation()
+  const loaderData = Route.useLoaderData()
+  const { status, errorKey } = loaderData
+  const errorMessage =
+    "errorMessage" in loaderData ? loaderData.errorMessage : undefined
 
   return (
     <AuthLayout>
@@ -63,13 +66,12 @@ function VerifyEmail() {
         {status === "success" && (
           <>
             <CheckCircle className="h-16 w-16 text-green-500" />
-            <h1 className="text-2xl">Email Verified!</h1>
+            <h1 className="text-2xl">{t("auth.emailVerified")}</h1>
             <p className="text-muted-foreground">
-              Your email has been successfully verified. You can now log in to
-              your account.
+              {t("auth.emailVerifiedSuccess")}
             </p>
             <Button asChild className="mt-4">
-              <RouterLink to="/login">Go to Login</RouterLink>
+              <RouterLink to="/login">{t("auth.goToLogin")}</RouterLink>
             </Button>
           </>
         )}
@@ -77,14 +79,16 @@ function VerifyEmail() {
         {status === "error" && (
           <>
             <XCircle className="h-16 w-16 text-destructive" />
-            <h1 className="text-2xl">Verification Failed</h1>
-            <p className="text-muted-foreground">{errorMessage}</p>
+            <h1 className="text-2xl">{t("auth.verificationFailed")}</h1>
+            <p className="text-muted-foreground">
+              {errorMessage || t(errorKey)}
+            </p>
             <div className="flex gap-4 mt-4">
               <Button variant="outline" asChild>
-                <RouterLink to="/login">Go to Login</RouterLink>
+                <RouterLink to="/login">{t("auth.goToLogin")}</RouterLink>
               </Button>
               <Button asChild>
-                <RouterLink to="/signup">Sign Up Again</RouterLink>
+                <RouterLink to="/signup">{t("auth.signUpAgain")}</RouterLink>
               </Button>
             </div>
           </>

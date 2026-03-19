@@ -15,6 +15,7 @@ import {
   ChevronsRight,
 } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -87,6 +88,7 @@ export function DataTable<TData, TValue>({
   data,
   caption,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation()
   const [sorting, setSorting] = useState<SortingState>([])
 
   const table = useReactTable({
@@ -118,7 +120,12 @@ export function DataTable<TData, TValue>({
                         size="sm"
                         className="-ml-3 h-8"
                         onClick={header.column.getToggleSortingHandler()}
-                        aria-label={`Sort by ${typeof header.column.columnDef.header === "string" ? header.column.columnDef.header : header.column.id}`}
+                        aria-label={t("common.sortBy", {
+                          column:
+                            typeof header.column.columnDef.header === "string"
+                              ? header.column.columnDef.header
+                              : header.column.id,
+                        })}
                       >
                         {flexRender(
                           header.column.columnDef.header,
@@ -155,7 +162,7 @@ export function DataTable<TData, TValue>({
                 colSpan={columns.length}
                 className="h-32 text-center text-muted-foreground"
               >
-                No results found.
+                {t("common.noResults")}
               </TableCell>
             </TableRow>
           )}
@@ -166,22 +173,24 @@ export function DataTable<TData, TValue>({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border-t">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="text-sm text-muted-foreground">
-              Showing{" "}
+              {t("common.showing")}{" "}
               {table.getState().pagination.pageIndex *
                 table.getState().pagination.pageSize +
                 1}{" "}
-              to{" "}
+              {t("common.to")}{" "}
               {Math.min(
                 (table.getState().pagination.pageIndex + 1) *
                   table.getState().pagination.pageSize,
                 data.length,
               )}{" "}
-              of{" "}
+              {t("common.of")}{" "}
               <span className="font-medium text-foreground">{data.length}</span>{" "}
-              entries
+              {t("common.entries")}
             </div>
             <div className="flex items-center gap-x-2">
-              <p className="text-sm text-muted-foreground">Rows per page</p>
+              <p className="text-sm text-muted-foreground">
+                {t("common.rowsPerPage")}
+              </p>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
@@ -213,7 +222,7 @@ export function DataTable<TData, TValue>({
                     size="icon"
                     onClick={() => table.setPageIndex(0)}
                     disabled={!table.getCanPreviousPage()}
-                    aria-label="Go to first page"
+                    aria-label={t("common.goToFirstPage")}
                   >
                     <ChevronsLeft className="size-4" />
                   </Button>
@@ -224,7 +233,7 @@ export function DataTable<TData, TValue>({
                     size="icon"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
-                    aria-label="Go to previous page"
+                    aria-label={t("common.goToPreviousPage")}
                   >
                     <ChevronLeftIcon className="size-4" />
                   </Button>
@@ -256,7 +265,7 @@ export function DataTable<TData, TValue>({
                     size="icon"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
-                    aria-label="Go to next page"
+                    aria-label={t("common.goToNextPage")}
                   >
                     <ChevronRightIcon className="size-4" />
                   </Button>
@@ -267,7 +276,7 @@ export function DataTable<TData, TValue>({
                     size="icon"
                     onClick={() => table.setPageIndex(totalPages - 1)}
                     disabled={!table.getCanNextPage()}
-                    aria-label="Go to last page"
+                    aria-label={t("common.goToLastPage")}
                   >
                     <ChevronsRight className="size-4" />
                   </Button>

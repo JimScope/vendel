@@ -7,6 +7,7 @@ import {
   Smartphone,
   Webhook,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import QuotaCard from "@/components/Plans/QuotaCard"
 import {
@@ -68,6 +69,7 @@ function StatCard({
 }
 
 function GettingStartedCard() {
+  const { t } = useTranslation()
   return (
     <Link
       to="/devices"
@@ -80,9 +82,9 @@ function GettingStartedCard() {
               <CheckCircle2 className="h-5 w-5 text-brand" />
             </div>
             <div>
-              <CardTitle>Getting Started</CardTitle>
+              <CardTitle>{t("dashboard.gettingStarted")}</CardTitle>
               <CardDescription>
-                Set up your first device and start sending SMS
+                {t("dashboard.setupFirstDevice")}
               </CardDescription>
             </div>
           </div>
@@ -94,6 +96,7 @@ function GettingStartedCard() {
 }
 
 function Dashboard() {
+  const { t } = useTranslation()
   const { user: currentUser } = useAuth()
   const { config } = useAppConfig()
   const { data: smsData, isLoading: smsLoading } = useSMSList("outgoing")
@@ -104,44 +107,44 @@ function Dashboard() {
 
   return (
     <div className="flex flex-col gap-8">
-      <title>{`Dashboard - ${config.appName}`}</title>
+      <title>{`${t("sidebar.dashboard")} - ${config.appName}`}</title>
       <div>
         <h1 className="text-2xl truncate max-w-md lg:max-w-lg">
-          Hi, {currentUser?.full_name || currentUser?.email}
+          {t("dashboard.greeting", {
+            name: currentUser?.full_name || currentUser?.email,
+          })}
         </h1>
-        <p className="text-muted-foreground">
-          Welcome back, nice to see you again!
-        </p>
+        <p className="text-muted-foreground">{t("dashboard.welcomeBack")}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="SMS Sent"
-          description="Total messages sent"
+          title={t("dashboard.smsSent")}
+          description={t("dashboard.totalSent")}
           value={smsData?.count}
           icon={MessageSquare}
           href="/sms"
           isLoading={smsLoading}
         />
         <StatCard
-          title="SMS Received"
-          description="Total messages received"
+          title={t("dashboard.smsReceived")}
+          description={t("dashboard.totalReceived")}
           value={incomingSmsData?.count}
           icon={MessageSquareText}
           href="/sms"
           isLoading={incomingSmsLoading}
         />
         <StatCard
-          title="Devices"
-          description="Connected devices"
+          title={t("dashboard.devices")}
+          description={t("dashboard.connectedDevices")}
           value={devicesData?.count}
           icon={Smartphone}
           href="/devices"
           isLoading={devicesLoading}
         />
         <StatCard
-          title="Webhooks"
-          description="Active webhooks"
+          title={t("dashboard.webhooks")}
+          description={t("dashboard.activeWebhooks")}
           value={webhooksData?.count}
           icon={Webhook}
           href="/webhooks"

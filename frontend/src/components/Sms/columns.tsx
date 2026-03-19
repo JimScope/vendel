@@ -1,11 +1,12 @@
 import type { ColumnDef } from "@tanstack/react-table"
+import type { TFunction } from "i18next"
 import { Check, Copy } from "lucide-react"
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
 import type { SMSMessage } from "@/types/collections"
 import { Button } from "../ui/button"
 import { SMSActionsMenu } from "./SMSActionsMenu"
 
-function CopyId({ id }: { id: string }) {
+function CopyId({ id, t }: { id: string; t: TFunction }) {
   const [copiedText, copy] = useCopyToClipboard()
   const isCopied = copiedText === id
 
@@ -23,51 +24,53 @@ function CopyId({ id }: { id: string }) {
         ) : (
           <Copy className="size-3" />
         )}
-        <span className="sr-only">Copy ID</span>
+        <span className="sr-only">{t("sms.copyId")}</span>
       </Button>
     </div>
   )
 }
 
-export const columns: ColumnDef<SMSMessage>[] = [
-  {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <CopyId id={row.original.id} />,
-  },
-  {
-    accessorKey: "device",
-    header: "Device ID",
-    cell: ({ row }) => (
-      <span className="font-medium">{row.original.device}</span>
-    ),
-  },
-  {
-    accessorKey: "to",
-    header: "To",
-    cell: ({ row }) => <span className="font-medium">{row.original.to}</span>,
-  },
-  {
-    accessorKey: "message_type",
-    header: "Message Type",
-    cell: ({ row }) => (
-      <span className="font-medium">{row.original.message_type}</span>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <span className="font-medium">{row.original.status}</span>
-    ),
-  },
-  {
-    id: "actions",
-    header: () => <span className="sr-only">Actions</span>,
-    cell: ({ row }) => (
-      <div className="flex justify-end">
-        <SMSActionsMenu sms={row.original} />
-      </div>
-    ),
-  },
-]
+export function getColumns(t: TFunction): ColumnDef<SMSMessage>[] {
+  return [
+    {
+      accessorKey: "id",
+      header: t("sms.id"),
+      cell: ({ row }) => <CopyId id={row.original.id} t={t} />,
+    },
+    {
+      accessorKey: "device",
+      header: t("sms.deviceId"),
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.device}</span>
+      ),
+    },
+    {
+      accessorKey: "to",
+      header: t("sms.to"),
+      cell: ({ row }) => <span className="font-medium">{row.original.to}</span>,
+    },
+    {
+      accessorKey: "message_type",
+      header: t("sms.messageType"),
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.message_type}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: t("common.status"),
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.status}</span>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <span className="sr-only">{t("common.actions")}</span>,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <SMSActionsMenu sms={row.original} />
+        </div>
+      ),
+    },
+  ]
+}

@@ -1,4 +1,5 @@
 import { Calendar, CreditCard } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import {
   Card,
   CardContent,
@@ -32,6 +33,7 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
 }
 
 function QuotaCard() {
+  const { t } = useTranslation()
   const { data: quota, isLoading } = useQuota()
 
   const formatDate = (dateStr: string | null) => {
@@ -44,9 +46,9 @@ function QuotaCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
           <CreditCard className="h-5 w-5 text-brand" />
-          Current Plan
+          {t("plans.currentPlan")}
         </CardTitle>
-        <CardDescription>Your usage and limits</CardDescription>
+        <CardDescription>{t("dashboard.yourUsage")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading ? (
@@ -59,7 +61,7 @@ function QuotaCard() {
           <>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-2xl font-bold capitalize">
-                {quota?.plan || "Free"}
+                {quota?.plan || t("plans.free")}
               </span>
               <UpgradePlanDialog currentPlan={quota?.plan} />
             </div>
@@ -67,7 +69,9 @@ function QuotaCard() {
             <div className="space-y-3">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">SMS Usage</span>
+                  <span className="text-muted-foreground">
+                    {t("dashboard.smsUsage")}
+                  </span>
                   <span>
                     {quota?.sms_sent_this_month ?? 0} /{" "}
                     {quota?.max_sms_per_month ?? 0}
@@ -81,7 +85,9 @@ function QuotaCard() {
 
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">Devices</span>
+                  <span className="text-muted-foreground">
+                    {t("dashboard.devices")}
+                  </span>
                   <span>
                     {quota?.devices_registered ?? 0} / {quota?.max_devices ?? 0}
                   </span>
@@ -94,7 +100,11 @@ function QuotaCard() {
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
                 <Calendar className="h-4 w-4" />
-                <span>Resets on {formatDate(quota?.reset_date ?? null)}</span>
+                <span>
+                  {t("dashboard.resetsOn", {
+                    date: formatDate(quota?.reset_date ?? null),
+                  })}
+                </span>
               </div>
             </div>
           </>

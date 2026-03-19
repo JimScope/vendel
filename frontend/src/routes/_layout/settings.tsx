@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import ChangePassword from "@/components/UserSettings/ChangePassword"
@@ -9,10 +10,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import useAuth from "@/hooks/useAuth"
 
 const tabsConfig = [
-  { value: "my-profile", title: "My profile", component: UserInformation },
-  { value: "password", title: "Password", component: ChangePassword },
-  { value: "plan", title: "Plan & Usage", component: PlanSettings },
-  { value: "danger-zone", title: "Danger zone", component: DeleteAccount },
+  {
+    value: "my-profile",
+    titleKey: "settings.myProfile" as const,
+    component: UserInformation,
+  },
+  {
+    value: "password",
+    titleKey: "settings.password" as const,
+    component: ChangePassword,
+  },
+  {
+    value: "plan",
+    titleKey: "settings.planUsage" as const,
+    component: PlanSettings,
+  },
+  {
+    value: "danger-zone",
+    titleKey: "settings.dangerZone" as const,
+    component: DeleteAccount,
+  },
 ]
 
 const searchSchema = z.object({
@@ -32,6 +49,7 @@ export const Route = createFileRoute("/_layout/settings")({
 })
 
 function UserSettings() {
+  const { t } = useTranslation()
   const { user: currentUser } = useAuth()
   const { tab } = Route.useSearch()
   const navigate = useNavigate()
@@ -39,7 +57,9 @@ function UserSettings() {
     ? tabsConfig.slice(0, 4)
     : tabsConfig
 
-  const activeTab = finalTabs.some((t) => t.value === tab) ? tab : "my-profile"
+  const activeTab = finalTabs.some((tb) => tb.value === tab)
+    ? tab
+    : "my-profile"
 
   if (!currentUser) {
     return null
@@ -48,10 +68,8 @@ function UserSettings() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl">User Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
+        <h1 className="text-2xl">{t("settings.title")}</h1>
+        <p className="text-muted-foreground">{t("settings.description")}</p>
       </div>
 
       <Tabs
@@ -65,9 +83,9 @@ function UserSettings() {
         }
       >
         <TabsList>
-          {finalTabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.title}
+          {finalTabs.map((tb) => (
+            <TabsTrigger key={tb.value} value={tb.value}>
+              {t(tb.titleKey)}
             </TabsTrigger>
           ))}
         </TabsList>

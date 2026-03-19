@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import ConfirmDeleteDialog from "@/components/Common/ConfirmDeleteDialog"
 import { useDeleteTemplate } from "@/hooks/useTemplateMutations"
 
@@ -7,13 +9,14 @@ interface DeleteTemplateProps {
 }
 
 const DeleteTemplate = ({ id, onSuccess }: DeleteTemplateProps) => {
+  const { t } = useTranslation()
   const mutation = useDeleteTemplate()
 
   return (
     <ConfirmDeleteDialog
-      triggerLabel="Delete Template"
-      title="Delete Template"
-      description="Are you sure you want to delete this template? This action cannot be undone."
+      triggerLabel={t("templates.deleteTemplate")}
+      title={t("templates.deleteTemplate")}
+      description={t("templates.deleteMsg")}
       isPending={mutation.isPending}
       onConfirm={(close) => {
         mutation.mutate(id, {

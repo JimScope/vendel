@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table"
+import type { TFunction } from "i18next"
 import { Smartphone, Usb } from "lucide-react"
 
 import { DeviceActionsMenu } from "@/components/Devices/DeviceActionsMenu"
@@ -6,19 +7,20 @@ import { formatDate } from "@/lib/utils"
 import type { Device } from "@/types/collections"
 
 export function getColumns(
+  t: TFunction,
   modemStatus?: Record<string, boolean>,
 ): ColumnDef<Device>[] {
   return [
     {
       accessorKey: "name",
-      header: "Name",
+      header: t("common.name"),
       cell: ({ row }) => (
         <span className="font-medium">{row.original.name}</span>
       ),
     },
     {
       accessorKey: "device_type",
-      header: "Type",
+      header: t("devices.type"),
       cell: ({ row }) => {
         const type = row.original.device_type || "android"
         const isModem = type === "modem"
@@ -31,11 +33,11 @@ export function getColumns(
             ) : (
               <Smartphone className="h-4 w-4" />
             )}
-            {isModem ? "USB Modem" : "Android"}
+            {isModem ? t("devices.usbModem") : t("devices.androidPhone")}
             {isModem && (
               <span
                 className={`ml-1 inline-block h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-neutral-300"}`}
-                title={isOnline ? "Online" : "Offline"}
+                title={isOnline ? t("devices.online") : t("devices.offline")}
               />
             )}
           </span>
@@ -44,7 +46,7 @@ export function getColumns(
     },
     {
       accessorKey: "phone_number",
-      header: "Phone Number",
+      header: t("devices.phoneNumber"),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {row.original.phone_number}
@@ -53,7 +55,7 @@ export function getColumns(
     },
     {
       accessorKey: "created",
-      header: "Created",
+      header: t("common.created"),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
           {formatDate(row.original.created)}
@@ -62,7 +64,7 @@ export function getColumns(
     },
     {
       id: "actions",
-      header: () => <span className="sr-only">Actions</span>,
+      header: () => <span className="sr-only">{t("common.actions")}</span>,
       cell: ({ row }) => (
         <div className="flex justify-end">
           <DeviceActionsMenu device={row.original} />

@@ -1,20 +1,21 @@
 import type { ColumnDef } from "@tanstack/react-table"
+import type { TFunction } from "i18next"
 
 import { Badge } from "@/components/ui/badge"
 import { cn, formatDate } from "@/lib/utils"
 import type { ApiKey } from "@/types/collections"
 import { ApiKeyActionsMenu } from "./ApiKeyActionsMenu"
 
-function formatRelativeDate(dateString: string): string {
+function formatRelativeDate(dateString: string, t: TFunction): string {
   const date = new Date(dateString)
   const now = new Date()
   const diffMs = date.getTime() - now.getTime()
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
 
-  if (diffDays < 0) return `${Math.abs(diffDays)}d ago`
-  if (diffDays === 0) return "Today"
-  if (diffDays === 1) return "Tomorrow"
-  if (diffDays < 30) return `${diffDays}d`
+  if (diffDays < 0) return t("common.daysAgo", { count: Math.abs(diffDays) })
+  if (diffDays === 0) return t("common.today")
+  if (diffDays === 1) return t("common.inDays", { count: 1 })
+  if (diffDays < 30) return t("common.inDays", { count: diffDays })
   return date.toLocaleDateString()
 }
 
@@ -29,15 +30,15 @@ function isExpiringSoon(dateString: string): boolean {
   return diffDays > 0 && diffDays <= 7
 }
 
-export const columns: ColumnDef<ApiKey>[] = [
+export const getColumns = (t: TFunction): ColumnDef<ApiKey>[] => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: t("common.name"),
     cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
   },
   {
     accessorKey: "key_prefix",
-    header: "Key",
+    header: t("apiKeys.key"),
     cell: ({ row }) => (
       <span className="font-mono text-sm text-muted-foreground">
         {row.original.key_prefix}
@@ -46,7 +47,7 @@ export const columns: ColumnDef<ApiKey>[] = [
   },
   {
     accessorKey: "is_active",
-    header: "Status",
+    header: t("common.status"),
     cell: ({ row }) => {
       const isActive = row.original.is_active
       return (
@@ -58,7 +59,7 @@ export const columns: ColumnDef<ApiKey>[] = [
             )}
           />
           <span className={isActive ? "" : "text-muted-foreground"}>
-            {isActive ? "Active" : "Revoked"}
+            {isActive ? t("apiKeys.statusActive") : t("apiKeys.statusRevoked")}
           </span>
         </div>
       )
@@ -66,27 +67,29 @@ export const columns: ColumnDef<ApiKey>[] = [
   },
   {
     accessorKey: "last_used_at",
-    header: "Last Used",
+    header: t("apiKeys.lastUsed"),
     cell: ({ row }) => (
       <span className="text-muted-foreground">
         {row.original.last_used_at
           ? formatDate(row.original.last_used_at)
-          : "Never"}
+          : t("apiKeys.never")}
       </span>
     ),
   },
   {
     accessorKey: "expires_at",
-    header: "Expires",
+    header: t("apiKeys.expires"),
     cell: ({ row }) => {
       const expiresAt = row.original.expires_at
       if (!expiresAt) {
-        return <span className="text-muted-foreground">Never</span>
+        return (
+          <span className="text-muted-foreground">{t("apiKeys.never")}</span>
+        )
       }
       if (isExpired(expiresAt)) {
         return (
           <Badge variant="destructive" className="text-[10px]">
-            Expired {formatRelativeDate(expiresAt)}
+            {t("apiKeys.expired")} {formatRelativeDate(expiresAt, t)}
           </Badge>
         )
       }
@@ -96,20 +99,20 @@ export const columns: ColumnDef<ApiKey>[] = [
             variant="outline"
             className="text-[10px] border-yellow-500 text-yellow-600"
           >
-            {formatRelativeDate(expiresAt)}
+            {formatRelativeDate(expiresAt, t)}
           </Badge>
         )
       }
       return (
         <span className="text-muted-foreground">
-          {formatRelativeDate(expiresAt)}
+          {formatRelativeDate(expiresAt, t)}
         </span>
       )
     },
   },
   {
     accessorKey: "created",
-    header: "Created",
+    header: t("common.created"),
     cell: ({ row }) => (
       <span className="text-muted-foreground">
         {formatDate(row.original.created)}
@@ -118,7 +121,7 @@ export const columns: ColumnDef<ApiKey>[] = [
   },
   {
     id: "actions",
-    header: () => <span className="sr-only">Actions</span>,
+    header: () => <span className="sr-only">{t("common.actions")}</span>,
     cell: ({ row }) => (
       <div className="flex justify-end">
         <ApiKeyActionsMenu apiKey={row.original} />

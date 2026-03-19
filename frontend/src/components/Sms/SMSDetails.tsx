@@ -1,5 +1,6 @@
 import { InfoIcon } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -19,6 +20,7 @@ interface SMSDetailsProps {
 }
 
 export default function SMSDetails({ id }: SMSDetailsProps) {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const { showErrorToast } = useCustomToast()
 
@@ -37,15 +39,15 @@ export default function SMSDetails({ id }: SMSDetailsProps) {
         onClick={() => setIsOpen(true)}
       >
         <InfoIcon className="mr-2 h-4 w-4" />
-        Details
+        {t("sms.details")}
       </DropdownMenuItem>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>SMS Details</DialogTitle>
+            <DialogTitle>{t("sms.smsDetails")}</DialogTitle>
 
             {isLoading && (
-              <DialogDescription>Loading message…</DialogDescription>
+              <DialogDescription>{t("sms.loadingMessage")}</DialogDescription>
             )}
 
             {sms && <DialogDescription>{sms.body}</DialogDescription>}
@@ -53,7 +55,7 @@ export default function SMSDetails({ id }: SMSDetailsProps) {
 
           <DialogFooter className="mt-4">
             <DialogClose asChild>
-              <Button variant="outline">Close</Button>
+              <Button variant="outline">{t("common.close")}</Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>

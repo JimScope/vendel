@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Clock } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 
 import { DataTable } from "@/components/Common/DataTable"
 import PendingScheduledSMS from "@/components/Pending/PendingScheduledSMS"
 import AddScheduledSMS from "@/components/ScheduledSMS/AddScheduledSMS"
-import { columns } from "@/components/ScheduledSMS/columns"
+import { getColumns } from "@/components/ScheduledSMS/columns"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useScheduledSMSListSuspense } from "@/hooks/useScheduledSMSList"
 import type { ScheduledSMS } from "@/types/collections"
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/_layout/scheduled")({
 })
 
 function ScheduledTableContent() {
+  const { t } = useTranslation()
+  const columns = useMemo(() => getColumns(t), [t])
   const { data: scheduled } = useScheduledSMSListSuspense()
 
   if (!scheduled?.data || scheduled.data.length === 0) {
@@ -23,9 +26,9 @@ function ScheduledTableContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <Clock className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-lg font-semibold">No scheduled messages</h2>
+        <h2 className="text-lg font-semibold">{t("scheduled.noScheduled")}</h2>
         <p className="text-muted-foreground">
-          Schedule an SMS to be sent at a specific time or on a recurring basis
+          {t("scheduled.noScheduledDesc")}
         </p>
         <AddScheduledSMS />
       </div>
@@ -36,7 +39,7 @@ function ScheduledTableContent() {
     <DataTable
       columns={columns}
       data={(scheduled?.data ?? []) as unknown as ScheduledSMS[]}
-      caption="Scheduled messages"
+      caption={t("scheduled.title")}
     />
   )
 }
@@ -50,17 +53,16 @@ function ScheduledTable() {
 }
 
 function Scheduled() {
+  const { t } = useTranslation()
   const { config } = useAppConfig()
 
   return (
     <div className="flex flex-col gap-6">
-      <title>{`Scheduled - ${config.appName}`}</title>
+      <title>{`${t("scheduled.title")} - ${config.appName}`}</title>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl">Scheduled SMS</h1>
-          <p className="text-muted-foreground">
-            Schedule messages for one-time or recurring delivery
-          </p>
+          <h1 className="text-2xl">{t("scheduled.title")}</h1>
+          <p className="text-muted-foreground">{t("scheduled.description")}</p>
         </div>
         <AddScheduledSMS />
       </div>

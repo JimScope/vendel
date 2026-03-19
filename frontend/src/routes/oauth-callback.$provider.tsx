@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { useActionState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/oauth-callback/$provider")({
 })
 
 function OAuthCallback() {
+  const { t } = useTranslation()
   const { provider } = Route.useParams()
   const { access_token, is_new_user, requires_linking, existing_email, error } =
     Route.useSearch()
@@ -43,12 +45,12 @@ function OAuthCallback() {
           body: { email: existing_email, password: pwd },
         })
         if (response?.access_token) {
-          showSuccessToast(`Your ${provider} account has been linked.`)
+          showSuccessToast(t("toast.accountLinked", { provider }))
           navigate({ to: "/" })
         }
         return null
       } catch (err: any) {
-        const msg = err.message || "Failed to link account"
+        const msg = err.message || t("toast.oauthFailed")
         showErrorToast(msg)
         return msg
       }
@@ -67,9 +69,9 @@ function OAuthCallback() {
     // Handle successful OAuth (not requiring linking)
     if (access_token && !requires_linking) {
       if (is_new_user) {
-        showSuccessToast("Welcome! Your account has been created.")
+        showSuccessToast(t("toast.authWelcome"))
       } else {
-        showSuccessToast("Welcome back!")
+        showSuccessToast(t("toast.authWelcomeBack"))
       }
       navigate({ to: "/" })
     }
@@ -81,6 +83,7 @@ function OAuthCallback() {
     navigate,
     showSuccessToast,
     showErrorToast,
+    t,
   ])
 
   // Show linking form if required
@@ -89,28 +92,27 @@ function OAuthCallback() {
       <AuthLayout>
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl">Link Your Account</h1>
+            <h1 className="text-2xl">{t("auth.linkAccount")}</h1>
             <p className="text-muted-foreground text-sm">
-              An account with email <strong>{existing_email}</strong> already
-              exists. Enter your password to link your {provider} account.
+              {t("auth.linkAccountDesc", { email: existing_email, provider })}
             </p>
           </div>
 
           <form action={linkAction} className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("common.password")}</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t("auth.enterPassword")}
                 required
                 minLength={8}
               />
             </div>
 
             <LoadingButton type="submit" loading={isLinking}>
-              Link Account
+              {t("auth.linkAccountButton")}
             </LoadingButton>
 
             <Button
@@ -118,7 +120,7 @@ function OAuthCallback() {
               variant="outline"
               onClick={() => navigate({ to: "/login" })}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </form>
         </div>
@@ -130,9 +132,9 @@ function OAuthCallback() {
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-2xl">Signing in...</h1>
+        <h1 className="text-2xl">{t("auth.signingIn")}</h1>
         <p className="text-muted-foreground">
-          Please wait while we complete your sign in with {provider}.
+          {t("auth.signingInDesc", { provider })}
         </p>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>

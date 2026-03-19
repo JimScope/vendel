@@ -1,44 +1,47 @@
 import type { ColumnDef } from "@tanstack/react-table"
+import type { TFunction } from "i18next"
 
 import { Badge } from "@/components/ui/badge"
 import { cn, formatDate } from "@/lib/utils"
 import type { ScheduledSMS } from "@/types/collections"
 import { ScheduledSMSActionsMenu } from "./ScheduledSMSActionsMenu"
 
-export const columns: ColumnDef<ScheduledSMS>[] = [
+export const getColumns = (t: TFunction): ColumnDef<ScheduledSMS>[] => [
   {
     accessorKey: "name",
-    header: "Name",
+    header: t("common.name"),
     cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
   },
   {
     accessorKey: "schedule_type",
-    header: "Type",
+    header: t("sms.type"),
     cell: ({ row }) => {
       const type = row.original.schedule_type
       return (
         <Badge variant="secondary">
-          {type === "one_time" ? "One-time" : "Recurring"}
+          {type === "one_time"
+            ? t("scheduled.oneTime")
+            : t("scheduled.recurring")}
         </Badge>
       )
     },
   },
   {
     accessorKey: "recipients",
-    header: "Recipients",
+    header: t("scheduled.recipients"),
     cell: ({ row }) => {
       const recipients = row.original.recipients
       const count = Array.isArray(recipients) ? recipients.length : 0
       return (
         <span className="text-muted-foreground">
-          {count} {count === 1 ? "recipient" : "recipients"}
+          {t("scheduled.recipient", { count })}
         </span>
       )
     },
   },
   {
     accessorKey: "next_run_at",
-    header: "Next Run",
+    header: t("scheduled.nextRun"),
     cell: ({ row }) => (
       <span className="text-muted-foreground">
         {formatDate(row.original.next_run_at)}
@@ -47,7 +50,7 @@ export const columns: ColumnDef<ScheduledSMS>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t("common.status"),
     cell: ({ row }) => {
       const status = row.original.status
       return (
@@ -68,10 +71,10 @@ export const columns: ColumnDef<ScheduledSMS>[] = [
             }
           >
             {status === "active"
-              ? "Active"
+              ? t("scheduled.statusActive")
               : status === "paused"
-                ? "Paused"
-                : "Completed"}
+                ? t("scheduled.statusPaused")
+                : t("scheduled.statusCompleted")}
           </span>
         </div>
       )
@@ -79,7 +82,7 @@ export const columns: ColumnDef<ScheduledSMS>[] = [
   },
   {
     id: "actions",
-    header: () => <span className="sr-only">Actions</span>,
+    header: () => <span className="sr-only">{t("common.actions")}</span>,
     cell: ({ row }) => (
       <div className="flex justify-end">
         <ScheduledSMSActionsMenu schedule={row.original} />

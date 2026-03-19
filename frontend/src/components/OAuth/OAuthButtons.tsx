@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import { FaGithub, FaGoogle } from "react-icons/fa"
 import { Button } from "@/components/ui/button"
 import useCustomToast from "@/hooks/useCustomToast"
@@ -9,6 +10,7 @@ interface OAuthButtonsProps {
 }
 
 export function OAuthButtons({ disabled }: OAuthButtonsProps) {
+  const { t } = useTranslation()
   const { showErrorToast } = useCustomToast()
   const { data: providers, isLoading } = useOAuthProviders()
 
@@ -17,7 +19,7 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
       await pb.collection("users").authWithOAuth2({ provider: providerName })
       window.location.href = "/"
     } catch (error: any) {
-      showErrorToast(error?.message || "OAuth authentication failed")
+      showErrorToast(error?.message || t("toast.oauthFailed"))
     }
   }
 
@@ -29,21 +31,28 @@ export function OAuthButtons({ disabled }: OAuthButtonsProps) {
 
   return (
     <div className="grid gap-3">
-      {enabledProviders.map((provider) => (
-        <Button
-          key={provider.name}
-          variant="outline"
-          type="button"
-          disabled={disabled}
-          onClick={() => handleOAuthLogin(provider.name)}
-          className="w-full"
-        >
-          {provider.name === "google" && <FaGoogle className="mr-2 h-4 w-4" />}
-          {provider.name === "github" && <FaGithub className="mr-2 h-4 w-4" />}
-          Continue with{" "}
-          {provider.name.charAt(0).toUpperCase() + provider.name.slice(1)}
-        </Button>
-      ))}
+      {enabledProviders.map((provider) => {
+        const providerName =
+          provider.name.charAt(0).toUpperCase() + provider.name.slice(1)
+        return (
+          <Button
+            key={provider.name}
+            variant="outline"
+            type="button"
+            disabled={disabled}
+            onClick={() => handleOAuthLogin(provider.name)}
+            className="w-full"
+          >
+            {provider.name === "google" && (
+              <FaGoogle className="mr-2 h-4 w-4" />
+            )}
+            {provider.name === "github" && (
+              <FaGithub className="mr-2 h-4 w-4" />
+            )}
+            {t("auth.continueWith", { provider: providerName })}
+          </Button>
+        )
+      })}
     </div>
   )
 }

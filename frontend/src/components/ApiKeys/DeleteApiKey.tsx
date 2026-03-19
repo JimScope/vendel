@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import ConfirmDeleteDialog from "@/components/Common/ConfirmDeleteDialog"
 import { useDeleteApiKey } from "@/hooks/useApiKeyMutations"
 
@@ -7,13 +9,14 @@ interface DeleteApiKeyProps {
 }
 
 const DeleteApiKey = ({ id, onSuccess }: DeleteApiKeyProps) => {
+  const { t } = useTranslation()
   const mutation = useDeleteApiKey()
 
   return (
     <ConfirmDeleteDialog
-      triggerLabel="Delete"
-      title="Delete API Key"
-      description="Are you sure you want to permanently delete this API key? This action cannot be undone."
+      triggerLabel={t("common.delete")}
+      title={t("apiKeys.deleteKey")}
+      description={t("apiKeys.deleteMsg")}
       isPending={mutation.isPending}
       onConfirm={(close) => {
         mutation.mutate(id, {

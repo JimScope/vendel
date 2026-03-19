@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Select,
   SelectContent,
@@ -13,6 +14,7 @@ interface TemplateSelectProps {
 }
 
 export const TemplateSelect = ({ onSelect }: TemplateSelectProps) => {
+  const { t } = useTranslation()
   const { data: templates } = useTemplateList()
   const [selected, setSelected] = useState<string>("")
 
@@ -36,11 +38,11 @@ export const TemplateSelect = ({ onSelect }: TemplateSelectProps) => {
       }}
     >
       <SelectTrigger className="w-full">
-        <SelectValue placeholder="Use a template..." />
+        <SelectValue placeholder={t("templates.useTemplate")} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="__none__" className="text-muted-foreground">
-          None
+          {t("templates.none")}
         </SelectItem>
         {templates.data.map((template) => (
           <SelectItem key={template.id} value={template.id}>

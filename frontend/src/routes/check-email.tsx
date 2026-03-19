@@ -1,5 +1,6 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 import { ExternalLink, Mail } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { PiMicrosoftOutlookLogoDuotone } from "react-icons/pi"
 import { SiGmail, SiProtonmail } from "react-icons/si"
 import { AuthLayout } from "@/components/Common/AuthLayout"
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/check-email")({
 })
 
 function CheckEmail() {
+  const { t } = useTranslation()
   const { email } = Route.useSearch()
   const domain = getEmailDomain(email)
   const matchedProvider = EMAIL_PROVIDERS.find((p) =>
@@ -62,16 +64,15 @@ function CheckEmail() {
           <Mail className="h-12 w-12 text-brand" />
         </div>
 
-        <h1 className="text-2xl">Check your email</h1>
+        <h1 className="text-2xl">{t("auth.checkEmail")}</h1>
 
         <p className="text-muted-foreground">
-          We've sent a verification link to{" "}
+          {t("auth.verificationLink")}{" "}
           {email ? (
             <span className="font-medium text-foreground">{email}</span>
           ) : (
-            "your email address"
+            t("auth.clickLink")
           )}
-          . Click the link in the email to verify your account.
         </p>
 
         {matchedProvider ? (
@@ -90,7 +91,7 @@ function CheckEmail() {
               className="size-5"
               style={{ color: matchedProvider.color }}
             />
-            Open {matchedProvider.name}
+            {t("auth.openProvider", { provider: matchedProvider.name })}
             <ExternalLink className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
           </a>
         ) : (
@@ -112,7 +113,7 @@ function CheckEmail() {
                   className="size-4"
                   style={{ color: provider.color }}
                 />
-                Open {provider.name}
+                {t("auth.openProvider", { provider: provider.name })}
                 <ExternalLink className="size-3 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </a>
             ))}
@@ -120,16 +121,16 @@ function CheckEmail() {
         )}
 
         <div className="text-sm text-muted-foreground">
-          <p>Didn't receive the email?</p>
-          <p>Check your spam folder or try signing up again.</p>
+          <p>{t("auth.didNotReceiveEmail")}</p>
+          <p>{t("auth.checkSpamFolder")}</p>
         </div>
 
         <div className="flex gap-4">
           <Button variant="outline" asChild>
-            <RouterLink to="/login">Go to Login</RouterLink>
+            <RouterLink to="/login">{t("auth.goToLogin")}</RouterLink>
           </Button>
           <Button variant="outline" asChild>
-            <RouterLink to="/signup">Sign Up Again</RouterLink>
+            <RouterLink to="/signup">{t("auth.signUpAgain")}</RouterLink>
           </Button>
         </div>
       </div>

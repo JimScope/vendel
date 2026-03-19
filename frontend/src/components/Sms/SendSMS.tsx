@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { MultiSelect } from "@/components/Common/MultiSelect"
 import { TemplateSelect } from "@/components/Templates/TemplateSelect"
@@ -34,6 +35,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 const SendSMS = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const { data: devices } = useDeviceList()
 
@@ -76,15 +78,13 @@ const SendSMS = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="h-4 w-4" />
-          Send SMS
+          {t("sms.sendSms")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Send SMS</DialogTitle>
-          <DialogDescription>
-            Fill in the form below to add a sms to be sent.
-          </DialogDescription>
+          <DialogTitle>{t("sms.sendSms")}</DialogTitle>
+          <DialogDescription>{t("sms.sendSmsDesc")}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -95,12 +95,12 @@ const SendSMS = () => {
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name}>
-                  To <span className="text-destructive">*</span>
+                  {t("sms.to")} <span className="text-destructive">*</span>
                 </FieldLabel>
                 <TagInput
                   {...field}
                   id={field.name}
-                  placeholder="Phone numbers (space separated)"
+                  placeholder={t("sms.recipientPlaceholder")}
                   aria-invalid={fieldState.invalid}
                 />
                 {fieldState.invalid && (
@@ -117,7 +117,7 @@ const SendSMS = () => {
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name}>
-                  Devices <span className="text-destructive">*</span>
+                  {t("sms.device")} <span className="text-destructive">*</span>
                 </FieldLabel>
                 <MultiSelect
                   options={(devices?.data || []).map((device) => ({
@@ -144,12 +144,12 @@ const SendSMS = () => {
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name}>
-                  SMS Body <span className="text-destructive">*</span>
+                  {t("sms.body")} <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Textarea
                   {...field}
                   id={field.name}
-                  placeholder="Message Body"
+                  placeholder={t("sms.bodyPlaceholder")}
                   rows={3}
                   aria-invalid={fieldState.invalid}
                 />
@@ -167,11 +167,11 @@ const SendSMS = () => {
                 type="button"
                 disabled={sendSMSMutation.isPending}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
             </DialogClose>
             <LoadingButton type="submit" loading={sendSMSMutation.isPending}>
-              Send
+              {t("common.send")}
             </LoadingButton>
           </DialogFooter>
         </form>

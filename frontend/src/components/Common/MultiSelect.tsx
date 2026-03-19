@@ -1,5 +1,6 @@
 import { Check, ChevronDown, X } from "lucide-react"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -41,6 +42,7 @@ function MultiSelect({
   maxVisibleBadges = 2,
   className,
 }: MultiSelectProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const selectedValues = defaultValue
 
@@ -117,7 +119,7 @@ function MultiSelect({
                 })}
                 {remainingCount > 0 && (
                   <Badge variant="outline" className="shrink-0">
-                    +{remainingCount} more
+                    {t("common.nMore", { count: remainingCount })}
                   </Badge>
                 )}
               </div>
@@ -131,9 +133,9 @@ function MultiSelect({
         align="start"
       >
         <Command>
-          <CommandInput placeholder="Search..." />
+          <CommandInput placeholder={`${t("common.search")}...`} />
           <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandEmpty>{t("common.noResults")}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
                 const isSelected = selectedValues.includes(option.value)
@@ -170,7 +172,7 @@ function MultiSelect({
               className="w-full justify-center"
               onClick={() => onValueChange([])}
             >
-              Clear selection
+              {t("common.clearSelection")}
             </Button>
           </div>
         )}

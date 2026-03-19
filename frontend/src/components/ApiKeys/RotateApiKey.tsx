@@ -1,6 +1,7 @@
 import { Cuer } from "cuer"
 import { Check, Copy, RefreshCw } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +28,7 @@ interface RotateApiKeyProps {
 const QR_PAYLOAD_VERSION = "0.1"
 
 const RotateApiKey = ({ id, onSuccess }: RotateApiKeyProps) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [expiresAt, setExpiresAt] = useState("")
   const [newKey, setNewKey] = useState<string | null>(null)
@@ -71,7 +73,7 @@ const RotateApiKey = ({ id, onSuccess }: RotateApiKeyProps) => {
         onClick={() => setIsOpen(true)}
       >
         <RefreshCw />
-        Rotate
+        {t("apiKeys.rotateKey")}
       </DropdownMenuItem>
       <DialogContent
         className="sm:max-w-md"
@@ -80,10 +82,9 @@ const RotateApiKey = ({ id, onSuccess }: RotateApiKeyProps) => {
         {newKey ? (
           <>
             <DialogHeader>
-              <DialogTitle>Key Rotated</DialogTitle>
+              <DialogTitle>{t("apiKeys.keyRotated")}</DialogTitle>
               <DialogDescription>
-                Your old key has been revoked. Copy your new API key now — you
-                won't be able to see it again.
+                {t("apiKeys.keyRotatedMsg")}
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4 py-4">
@@ -95,7 +96,7 @@ const RotateApiKey = ({ id, onSuccess }: RotateApiKeyProps) => {
                   </Cuer.Root>
                 </div>
                 <p className="text-sm text-muted-foreground text-center">
-                  Scan this QR code with the app to connect automatically
+                  {t("apiKeys.scanQrCode")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -115,22 +116,21 @@ const RotateApiKey = ({ id, onSuccess }: RotateApiKeyProps) => {
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button>Done</Button>
+                <Button>{t("common.done")}</Button>
               </DialogClose>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Rotate API Key</DialogTitle>
-              <DialogDescription>
-                This will revoke the current key and generate a new one. Any
-                integrations using the old key will stop working.
-              </DialogDescription>
+              <DialogTitle>{t("apiKeys.rotateTitle")}</DialogTitle>
+              <DialogDescription>{t("apiKeys.rotateDesc")}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="expires_at">Expiration (optional)</Label>
+                <Label htmlFor="expires_at">
+                  {t("apiKeys.expirationOptional")}
+                </Label>
                 <Input
                   id="expires_at"
                   type="date"
@@ -139,21 +139,21 @@ const RotateApiKey = ({ id, onSuccess }: RotateApiKeyProps) => {
                   min={new Date().toISOString().split("T")[0]}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Leave empty for a key that never expires
+                  {t("apiKeys.expirationDesc")}
                 </p>
               </div>
             </div>
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" disabled={rotateMutation.isPending}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
                 onClick={handleRotate}
                 loading={rotateMutation.isPending}
               >
-                Rotate Key
+                {t("apiKeys.rotateKeyButton")}
               </LoadingButton>
             </DialogFooter>
           </>

@@ -7,19 +7,19 @@ export const WEBHOOK_EVENTS = [
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number]
 
-export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
-  sms_received: "SMS Received",
-  sms_sent: "SMS Sent",
-  sms_delivered: "SMS Delivered",
-  sms_failed: "SMS Failed",
-}
+export const WEBHOOK_EVENT_LABELS = {
+  sms_received: "webhookEvents.sms_received",
+  sms_sent: "webhookEvents.sms_sent",
+  sms_delivered: "webhookEvents.sms_delivered",
+  sms_failed: "webhookEvents.sms_failed",
+} as const satisfies Record<WebhookEvent, string>
 
-export const WEBHOOK_EVENT_DESCRIPTIONS: Record<WebhookEvent, string> = {
-  sms_received: "Triggered when an incoming SMS arrives on a device",
-  sms_sent: "Triggered when an outgoing SMS is confirmed as sent",
-  sms_delivered: "Triggered when an outgoing SMS is confirmed as delivered",
-  sms_failed: "Triggered when an SMS fails to send or deliver",
-}
+export const WEBHOOK_EVENT_DESCRIPTIONS = {
+  sms_received: "webhookEvents.sms_received_desc",
+  sms_sent: "webhookEvents.sms_sent_desc",
+  sms_delivered: "webhookEvents.sms_delivered_desc",
+  sms_failed: "webhookEvents.sms_failed_desc",
+} as const satisfies Record<WebhookEvent, string>
 
 export const WEBHOOK_EVENT_PAYLOADS: Record<WebhookEvent, object> = {
   sms_received: {

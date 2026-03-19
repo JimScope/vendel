@@ -1,5 +1,6 @@
 import { Download, ExternalLink, Loader2, Smartphone } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -11,14 +12,17 @@ import {
 } from "@/components/ui/select"
 import { useLatestApks } from "@/hooks/useLatestApks"
 
-const ABIS = [
-  { value: "arm64-v8a", label: "ARM64 (most devices)" },
-  { value: "armeabi-v7a", label: "ARM 32-bit" },
-  { value: "x86_64", label: "x86_64 (emulators)" },
-  { value: "universal", label: "Universal" },
-] as const
+const ABI_VALUES = ["arm64-v8a", "armeabi-v7a", "x86_64", "universal"] as const
+
+const ABI_LABEL_KEYS = {
+  "arm64-v8a": "devices.arm64",
+  "armeabi-v7a": "devices.arm32",
+  x86_64: "devices.x86_64",
+  universal: "devices.universal",
+} as const
 
 export default function AndroidAppDownload() {
+  const { t } = useTranslation()
   const [abi, setAbi] = useState("arm64-v8a")
   const { data: apks, isLoading } = useLatestApks()
   const downloadUrl = apks?.get(abi)
@@ -27,7 +31,7 @@ export default function AndroidAppDownload() {
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Smartphone className="size-4 text-brand" />
-        Android App
+        {t("devices.androidApp")}
         <a
           href="https://github.com/JimScope/vendel-android/releases"
           target="_blank"
@@ -45,9 +49,9 @@ export default function AndroidAppDownload() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {ABIS.map((a) => (
-              <SelectItem key={a.value} value={a.value}>
-                {a.label}
+            {ABI_VALUES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {t(ABI_LABEL_KEYS[value])}
               </SelectItem>
             ))}
           </SelectContent>
@@ -64,7 +68,7 @@ export default function AndroidAppDownload() {
             ) : (
               <Download className="size-3.5" />
             )}
-            Download APK
+            {t("devices.downloadApk")}
           </Button>
         </a>
       </div>

@@ -3,6 +3,7 @@ import { Cuer } from "cuer"
 import { Check, Copy, Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -59,6 +60,7 @@ interface AddDeviceProps {
 }
 
 const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
+  const { t } = useTranslation()
   const [internalOpen, setInternalOpen] = useState(false)
   const isOpen = open ?? internalOpen
   const setIsOpen = onOpenChange ?? setInternalOpen
@@ -110,7 +112,7 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus />
-          Add Device
+          {t("devices.addDevice")}
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -120,10 +122,9 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
         {apiKey ? (
           <>
             <DialogHeader>
-              <DialogTitle>Device Created</DialogTitle>
+              <DialogTitle>{t("devices.deviceCreated")}</DialogTitle>
               <DialogDescription>
-                Your device has been created. Save the API key below - it will
-                only be shown once.
+                {t("devices.deviceCreatedMsg")}
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4 py-4">
@@ -139,8 +140,8 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
                   </Cuer.Root>
                 </div>
                 <p className="text-sm text-muted-foreground text-center">
-                  Scan this QR code with the {config.appName} Modem app to
-                  connect automatically
+                  {t("devices.scanQrCode")} {config.appName}{" "}
+                  {t("devices.toConnectAutomatically")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -149,7 +150,9 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
                   variant="outline"
                   size="icon"
                   onClick={() => copyToClipboard(apiKey)}
-                  aria-label={copiedText ? "Copied" : "Copy API key"}
+                  aria-label={
+                    copiedText ? t("common.copied") : t("devices.copyApiKey")
+                  }
                 >
                   {copiedText ? (
                     <Check className="h-4 w-4" />
@@ -160,16 +163,16 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={() => handleClose(false)}>Done</Button>
+              <Button onClick={() => handleClose(false)}>
+                {t("common.done")}
+              </Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Add Device</DialogTitle>
-              <DialogDescription>
-                Register a new device to send SMS messages.
-              </DialogDescription>
+              <DialogTitle>{t("devices.addDevice")}</DialogTitle>
+              <DialogDescription>{t("devices.description")}</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -179,21 +182,25 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
                     name="device_type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Device Type</FormLabel>
+                        <FormLabel>{t("devices.deviceType")}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select device type" />
+                              <SelectValue
+                                placeholder={t("devices.selectType")}
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="android">
-                              Android Phone
+                              {t("devices.androidPhone")}
                             </SelectItem>
-                            <SelectItem value="modem">USB Modem</SelectItem>
+                            <SelectItem value="modem">
+                              {t("devices.usbModem")}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -207,11 +214,12 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Name <span className="text-destructive">*</span>
+                          {t("common.name")}{" "}
+                          <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="My Android Phone"
+                            placeholder={t("devices.namePlaceholder")}
                             type="text"
                             {...field}
                             required
@@ -228,12 +236,12 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Phone Number{" "}
+                          {t("devices.phoneNumber")}{" "}
                           <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="+1234567890"
+                            placeholder={t("devices.phonePlaceholder")}
                             type="tel"
                             {...field}
                             required
@@ -251,14 +259,14 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
                       variant="outline"
                       disabled={createDeviceMutation.isPending}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                   </DialogClose>
                   <LoadingButton
                     type="submit"
                     loading={createDeviceMutation.isPending}
                   >
-                    Create Device
+                    {t("devices.createDevice")}
                   </LoadingButton>
                 </DialogFooter>
               </form>

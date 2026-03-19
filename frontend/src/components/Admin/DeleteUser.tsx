@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import ConfirmDeleteDialog from "@/components/Common/ConfirmDeleteDialog"
 import { useDeleteUser } from "@/hooks/useUserMutations"
 
@@ -7,19 +9,14 @@ interface DeleteUserProps {
 }
 
 const DeleteUser = ({ id, onSuccess }: DeleteUserProps) => {
+  const { t } = useTranslation()
   const mutation = useDeleteUser()
 
   return (
     <ConfirmDeleteDialog
-      triggerLabel="Delete User"
-      title="Delete User"
-      description={
-        <>
-          All items associated with this user will also be{" "}
-          <strong>permanently deleted.</strong> Are you sure? You will not be
-          able to undo this action.
-        </>
-      }
+      triggerLabel={t("admin.deleteUser")}
+      title={t("admin.deleteUser")}
+      description={t("admin.deleteUserMsg")}
       isPending={mutation.isPending}
       onConfirm={(close) => {
         mutation.mutate(id, {
