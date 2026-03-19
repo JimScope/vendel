@@ -6,14 +6,14 @@ import useCustomToast from "./useCustomToast"
 interface WebhookConfigCreate {
   url: string
   secret_key?: string
-  events?: string
+  events?: string[]
   active?: boolean
 }
 
 interface WebhookConfigUpdate {
   url?: string
   secret_key?: string
-  events?: string
+  events?: string[]
   active?: boolean
 }
 

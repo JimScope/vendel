@@ -104,13 +104,14 @@ function MultiSelect({
                       <span className="truncate max-w-[150px]">
                         {option.label}
                       </span>
-                      <span
+                      <button
+                        type="button"
                         data-badge-remove
                         onClick={(e) => handleRemove(value, e)}
                         className="hover:bg-muted rounded-sm cursor-pointer inline-flex shrink-0"
                       >
                         <X className="size-3" />
-                      </span>
+                      </button>
                     </Badge>
                   ) : null
                 })}
@@ -125,7 +126,10 @@ function MultiSelect({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+      >
         <Command>
           <CommandInput placeholder="Search..." />
           <CommandList>
@@ -175,5 +179,5 @@ function MultiSelect({
   )
 }
 
-export { MultiSelect }
 export type { MultiSelectOption, MultiSelectProps }
+export { MultiSelect }

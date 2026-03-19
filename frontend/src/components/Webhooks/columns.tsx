@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
 import { cn, formatDate } from "@/lib/utils"
+import { WEBHOOK_EVENT_LABELS, type WebhookEvent } from "@/lib/webhook-events"
 import type { WebhookConfig } from "@/types/collections"
 import { WebhookActionsMenu } from "./WebhookActionsMenu"
 
@@ -19,8 +20,19 @@ export const columns: ColumnDef<WebhookConfig>[] = [
     accessorKey: "events",
     header: "Events",
     cell: ({ row }) => {
-      const events = row.original.events || "all"
-      return <Badge variant="secondary">{events}</Badge>
+      const events = row.original.events
+      if (!events || events.length === 0) {
+        return <Badge variant="secondary">None</Badge>
+      }
+      return (
+        <div className="flex gap-1 flex-wrap">
+          {events.map((event) => (
+            <Badge key={event} variant="secondary">
+              {WEBHOOK_EVENT_LABELS[event as WebhookEvent] ?? event}
+            </Badge>
+          ))}
+        </div>
+      )
     },
   },
   {

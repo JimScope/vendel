@@ -57,7 +57,6 @@ function RecoverPassword() {
 
   const mutation = useRecoverPassword()
 
-
   const onSubmit = (data: FormData) => {
     if (mutation.isPending) return
     mutation.mutate(data.email, {

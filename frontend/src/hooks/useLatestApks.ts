@@ -1,11 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 
-const ABIS = [
-  "arm64-v8a",
-  "armeabi-v7a",
-  "x86_64",
-  "universal",
-] as const
+const ABIS = ["arm64-v8a", "armeabi-v7a", "x86_64", "universal"] as const
 
 export type AndroidAbi = (typeof ABIS)[number]
 

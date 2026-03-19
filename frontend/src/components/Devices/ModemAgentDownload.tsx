@@ -25,8 +25,7 @@ function detectPlatform(): string {
   const uaData = (navigator as { userAgentData?: { architecture?: string } })
     .userAgentData
   const arch = uaData?.architecture?.toLowerCase() ?? ""
-  const isArm =
-    arch === "arm" || /arm|aarch64/i.test(navigator.userAgent)
+  const isArm = arch === "arm" || /arm|aarch64/i.test(navigator.userAgent)
 
   if (ua.includes("mac")) {
     // Chromium exposes architecture via userAgentData
