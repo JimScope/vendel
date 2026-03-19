@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next"
 import ConfirmDeleteDialog from "@/components/Common/ConfirmDeleteDialog"
 import { useDeleteScheduledSMS } from "@/hooks/useScheduledSMSMutations"
 
@@ -7,13 +8,14 @@ interface DeleteScheduledSMSProps {
 }
 
 const DeleteScheduledSMS = ({ id, onSuccess }: DeleteScheduledSMSProps) => {
+  const { t } = useTranslation()
   const mutation = useDeleteScheduledSMS()
 
   return (
     <ConfirmDeleteDialog
-      triggerLabel="Delete Schedule"
-      title="Delete Scheduled SMS"
-      description="Are you sure you want to delete this scheduled SMS? This action cannot be undone."
+      triggerLabel={t("scheduled.deleteScheduled")}
+      title={t("scheduled.deleteScheduled")}
+      description={t("scheduled.deleteMsg")}
       isPending={mutation.isPending}
       onConfirm={(close) => {
         mutation.mutate(id, {

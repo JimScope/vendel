@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -36,6 +37,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 const AddTemplate = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
 
   const form = useForm<FormData>({
@@ -64,15 +66,13 @@ const AddTemplate = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus />
-          Add Template
+          {t("templates.addTemplate")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Template</DialogTitle>
-          <DialogDescription>
-            Create a reusable SMS template for quick message composition.
-          </DialogDescription>
+          <DialogTitle>{t("templates.createTitle")}</DialogTitle>
+          <DialogDescription>{t("templates.createDesc")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -83,10 +83,15 @@ const AddTemplate = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Name <span className="text-destructive">*</span>
+                      {t("common.name")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Template name" {...field} required />
+                      <Input
+                        placeholder={t("templates.nameLabel")}
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -99,11 +104,12 @@ const AddTemplate = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Body <span className="text-destructive">*</span>
+                      {t("templates.body")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Message template text"
+                        placeholder={t("templates.bodyLabel")}
                         rows={4}
                         {...field}
                         required
@@ -121,14 +127,14 @@ const AddTemplate = () => {
                   variant="outline"
                   disabled={createTemplateMutation.isPending}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
                 type="submit"
                 loading={createTemplateMutation.isPending}
               >
-                Create Template
+                {t("templates.createTemplate")}
               </LoadingButton>
             </DialogFooter>
           </form>

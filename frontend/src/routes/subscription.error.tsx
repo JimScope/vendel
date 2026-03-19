@@ -1,5 +1,6 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 import { XCircle } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
 
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/subscription/error")({
 })
 
 function SubscriptionError() {
+  const { t } = useTranslation()
+
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-6 text-center">
@@ -22,24 +25,21 @@ function SubscriptionError() {
           <XCircle className="h-12 w-12 text-destructive" />
         </div>
 
-        <h1 className="text-2xl">Subscription Failed</h1>
+        <h1 className="text-2xl">{t("subscription.failed")}</h1>
 
-        <p className="text-muted-foreground">
-          We couldn't complete your subscription. This could be because the
-          payment was cancelled or there was an issue with the authorization.
-        </p>
+        <p className="text-muted-foreground">{t("subscription.failedDesc")}</p>
 
         <div className="text-sm text-muted-foreground">
-          <p>Don't worry, no charges have been made.</p>
-          <p>You can try again or contact support if the problem persists.</p>
+          <p>{t("subscription.noCharges")}</p>
+          <p>{t("subscription.tryAgainOrContact")}</p>
         </div>
 
         <div className="flex gap-4 mt-4">
           <Button asChild>
-            <RouterLink to="/settings">Try Again</RouterLink>
+            <RouterLink to="/settings">{t("subscription.tryAgain")}</RouterLink>
           </Button>
           <Button variant="outline" asChild>
-            <RouterLink to="/">Go to Dashboard</RouterLink>
+            <RouterLink to="/">{t("subscription.goToDashboard")}</RouterLink>
           </Button>
         </div>
       </div>

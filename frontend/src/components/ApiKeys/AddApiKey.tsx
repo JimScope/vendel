@@ -3,6 +3,7 @@ import { Cuer } from "cuer"
 import { Check, Copy, Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -45,6 +46,7 @@ interface AddApiKeyProps {
 }
 
 const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
+  const { t } = useTranslation()
   const [internalOpen, setInternalOpen] = useState(false)
   const isOpen = open ?? internalOpen
   const setIsOpen = onOpenChange ?? setInternalOpen
@@ -98,7 +100,7 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus />
-          Create API Key
+          {t("apiKeys.createApiKey")}
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -108,10 +110,9 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
         {createdKey ? (
           <>
             <DialogHeader>
-              <DialogTitle>API Key Created</DialogTitle>
+              <DialogTitle>{t("apiKeys.apiKeyCreated")}</DialogTitle>
               <DialogDescription>
-                Make sure to copy your API key now. You won't be able to see it
-                again.
+                {t("apiKeys.apiKeyCreatedMsg")}
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4 py-4">
@@ -123,7 +124,7 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
                   </Cuer.Root>
                 </div>
                 <p className="text-sm text-muted-foreground text-center">
-                  Scan this QR code with the app to connect automatically
+                  {t("apiKeys.scanQrCode")}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -135,6 +136,9 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label={
+                    copiedText ? t("common.copied") : t("devices.copyApiKey")
+                  }
                   onClick={() => copyToClipboard(createdKey)}
                 >
                   {copiedText ? (
@@ -147,17 +151,15 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button>Done</Button>
+                <Button>{t("common.done")}</Button>
               </DialogClose>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Create API Key</DialogTitle>
-              <DialogDescription>
-                Create a new API key for programmatic access to the API.
-              </DialogDescription>
+              <DialogTitle>{t("apiKeys.createTitle")}</DialogTitle>
+              <DialogDescription>{t("apiKeys.createDesc")}</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -168,18 +170,19 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Name <span className="text-destructive">*</span>
+                          {t("apiKeys.nameLabel")}{" "}
+                          <span className="text-destructive">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="My API Key"
+                            placeholder={t("apiKeys.namePlaceholder")}
                             type="text"
                             {...field}
                             required
                           />
                         </FormControl>
                         <FormDescription>
-                          A descriptive name to identify this API key
+                          {t("apiKeys.nameDesc")}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -190,7 +193,7 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
                     name="expires_at"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Expiration</FormLabel>
+                        <FormLabel>{t("apiKeys.expiration")}</FormLabel>
                         <FormControl>
                           <Input
                             type="date"
@@ -199,7 +202,7 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
                           />
                         </FormControl>
                         <FormDescription>
-                          Optional. Leave empty for a key that never expires.
+                          {t("apiKeys.expirationDesc")}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -213,14 +216,14 @@ const AddApiKey = ({ open, onOpenChange }: AddApiKeyProps) => {
                       variant="outline"
                       disabled={createApiKeyMutation.isPending}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                   </DialogClose>
                   <LoadingButton
                     type="submit"
                     loading={createApiKeyMutation.isPending}
                   >
-                    Create
+                    {t("common.create")}
                   </LoadingButton>
                 </DialogFooter>
               </form>

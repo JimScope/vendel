@@ -5,6 +5,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router"
 import { Construction } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { Footer } from "@/components/Common/Footer"
 import { Logo } from "@/components/Common/Logo"
@@ -19,17 +20,17 @@ import {
 import useAppConfig from "@/hooks/useAppConfig"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
-const PAGE_TITLES: Record<string, string> = {
-  "/": "Dashboard",
-  "/sms": "SMS",
-  "/templates": "Templates",
-  "/scheduled": "Scheduled",
-  "/devices": "Devices",
-  "/webhooks": "Webhooks",
-  "/integrations": "Integrations",
-  "/billing": "Billing",
-  "/settings": "Settings",
-  "/admin": "Admin",
+const PAGE_TITLE_KEYS: Record<string, string> = {
+  "/": "sidebar.dashboard",
+  "/sms": "sidebar.sms",
+  "/templates": "sidebar.templates",
+  "/scheduled": "sidebar.scheduled",
+  "/devices": "sidebar.devices",
+  "/webhooks": "sidebar.webhooks",
+  "/integrations": "sidebar.integrations",
+  "/billing": "sidebar.billing",
+  "/settings": "sidebar.settings",
+  "/admin": "sidebar.admin",
 }
 
 export const Route = createFileRoute("/_layout")({
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/_layout")({
 })
 
 function MaintenancePage() {
+  const { t } = useTranslation()
   const { config } = useAppConfig()
 
   return (
@@ -53,20 +55,21 @@ function MaintenancePage() {
         <div className="flex size-16 items-center justify-center rounded-full bg-muted">
           <Construction className="size-8 text-muted-foreground" />
         </div>
-        <h1 className="text-2xl font-serif font-bold">Under Maintenance</h1>
+        <h1 className="text-2xl font-serif font-bold">
+          {t("maintenance.title")}
+        </h1>
         <p className="max-w-md text-muted-foreground">
-          We're performing scheduled maintenance to improve your experience.
-          Please check back shortly.
+          {t("maintenance.description")}
         </p>
         {config.supportEmail &&
           config.supportEmail !== "support@example.com" && (
             <p className="text-sm text-muted-foreground">
-              Need help?{" "}
+              {t("maintenance.needHelp")}{" "}
               <a
                 href={`mailto:${config.supportEmail}`}
                 className="text-brand underline underline-offset-4"
               >
-                Contact support
+                {t("maintenance.contactSupport")}
               </a>
             </p>
           )}
@@ -76,9 +79,11 @@ function MaintenancePage() {
 }
 
 function Layout() {
+  const { t } = useTranslation()
   const router = useRouterState()
   const currentPath = router.location.pathname
-  const pageTitle = PAGE_TITLES[currentPath] ?? ""
+  const pageTitleKey = PAGE_TITLE_KEYS[currentPath]
+  const pageTitle = pageTitleKey ? String(t(pageTitleKey as never)) : ""
   const { user } = useAuth()
   const { config } = useAppConfig()
 
@@ -92,7 +97,7 @@ function Layout() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none"
       >
-        Skip to content
+        {t("common.skipToContent")}
       </a>
       <AppSidebar />
       <SidebarInset>
@@ -107,7 +112,7 @@ function Layout() {
           {config.maintenanceMode && (
             <Badge variant="destructive" className="ml-auto gap-1.5">
               <Construction className="size-3" />
-              Maintenance Mode
+              {t("maintenance.maintenanceMode")}
             </Badge>
           )}
         </header>

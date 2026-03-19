@@ -5,6 +5,7 @@ import {
   redirect,
 } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { AuthLayout } from "@/components/Common/AuthLayout"
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/login")({
 })
 
 function Login() {
+  const { t } = useTranslation()
   const { loginMutation } = useAuth()
   const { config } = useAppConfig()
   const appName = config.appName
@@ -73,7 +75,7 @@ function Login() {
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl">Login to your account</h1>
+            <h1 className="text-2xl">{t("auth.loginTitle")}</h1>
           </div>
 
           <div className="grid gap-4">
@@ -82,7 +84,7 @@ function Login() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("common.email")}</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
@@ -102,12 +104,12 @@ function Login() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center">
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("common.password")}</FormLabel>
                     <RouterLink
                       to="/recover-password"
                       className="ml-auto text-sm underline-offset-4 hover:underline"
                     >
-                      Forgot your password?
+                      {t("auth.forgotPassword")}
                     </RouterLink>
                   </div>
                   <FormControl>
@@ -123,7 +125,7 @@ function Login() {
             />
 
             <LoadingButton type="submit" loading={loginMutation.isPending}>
-              Log In
+              {t("auth.logIn")}
             </LoadingButton>
 
             <div className="relative">
@@ -132,7 +134,7 @@ function Login() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+                  {t("auth.orContinueWith")}
                 </span>
               </div>
             </div>
@@ -141,9 +143,9 @@ function Login() {
           </div>
 
           <div className="text-center text-sm">
-            Don't have an account yet?{" "}
+            {t("auth.dontHaveAccount")}{" "}
             <RouterLink to="/signup" className="underline underline-offset-4">
-              Sign up
+              {t("auth.signUp")}
             </RouterLink>
           </div>
 
@@ -152,14 +154,14 @@ function Login() {
               to="/terms"
               className="underline underline-offset-4 hover:text-foreground"
             >
-              Terms of Service
+              {t("auth.termsOfService")}
             </RouterLink>
             {" · "}
             <RouterLink
               to="/privacy"
               className="underline underline-offset-4 hover:text-foreground"
             >
-              Privacy Policy
+              {t("auth.privacyPolicy")}
             </RouterLink>
           </p>
         </form>

@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, FileText, RefreshCw } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ function formatTimeUntil(dateString: string): string | null {
 }
 
 function RetryStatus({ log }: { log: WebhookDeliveryLog }) {
+  const { t } = useTranslation()
   const retryCount = log.retry_count ?? 0
   const nextRetryAt = log.next_retry_at
 
@@ -40,7 +42,7 @@ function RetryStatus({ log }: { log: WebhookDeliveryLog }) {
   if (retryCount >= maxRetries) {
     return (
       <span className="text-xs text-muted-foreground">
-        Max retries reached ({retryCount}/{maxRetries})
+        {t("webhooks.maxRetries", { count: retryCount, max: maxRetries })}
       </span>
     )
   }
@@ -50,13 +52,17 @@ function RetryStatus({ log }: { log: WebhookDeliveryLog }) {
     if (timeUntil) {
       return (
         <span className="text-xs text-muted-foreground">
-          Retry {retryCount}/{maxRetries} — next in {timeUntil}
+          {t("webhooks.retryNext", {
+            count: retryCount,
+            max: maxRetries,
+            time: timeUntil,
+          })}
         </span>
       )
     }
     return (
       <span className="text-xs text-muted-foreground">
-        Retry {retryCount}/{maxRetries} — retrying soon
+        {t("webhooks.retrySoon", { count: retryCount, max: maxRetries })}
       </span>
     )
   }
@@ -64,7 +70,7 @@ function RetryStatus({ log }: { log: WebhookDeliveryLog }) {
   if (retryCount > 0) {
     return (
       <span className="text-xs text-muted-foreground">
-        Retry {retryCount}/{maxRetries}
+        {t("webhooks.retryCount", { count: retryCount, max: maxRetries })}
       </span>
     )
   }
@@ -79,6 +85,7 @@ function LogEntry({
   log: WebhookDeliveryLog
   webhookId: string
 }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const isSuccess = log.delivery_status === "success"
   const retryMutation = useWebhookRetryMutation(webhookId)
@@ -101,7 +108,7 @@ function LogEntry({
               variant={isSuccess ? "default" : "destructive"}
               className="text-[10px]"
             >
-              {isSuccess ? "OK" : "FAIL"}
+              {isSuccess ? t("webhooks.ok") : t("webhooks.fail")}
             </Badge>
             <span className="text-sm font-medium">{log.event}</span>
             {log.response_status > 0 && (
@@ -122,7 +129,9 @@ function LogEntry({
         <div className="px-4 pb-3 space-y-2">
           {log.error_message && (
             <div>
-              <p className="text-xs font-medium text-destructive">Error</p>
+              <p className="text-xs font-medium text-destructive">
+                {t("webhooks.error")}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {log.error_message}
               </p>
@@ -142,11 +151,15 @@ function LogEntry({
                   retryMutation.isPending && "animate-spin",
                 )}
               />
-              {retryMutation.isPending ? "Retrying..." : "Retry"}
+              {retryMutation.isPending
+                ? t("webhooks.retrying")
+                : t("webhooks.retry")}
             </Button>
           )}
           <div>
-            <p className="text-xs font-medium mb-1">Request Body</p>
+            <p className="text-xs font-medium mb-1">
+              {t("webhooks.requestBody")}
+            </p>
             <pre className="text-xs bg-muted rounded p-2 overflow-x-auto max-h-40">
               {typeof log.request_body === "string"
                 ? log.request_body
@@ -155,7 +168,9 @@ function LogEntry({
           </div>
           {log.response_body && (
             <div>
-              <p className="text-xs font-medium mb-1">Response Body</p>
+              <p className="text-xs font-medium mb-1">
+                {t("webhooks.responseBody")}
+              </p>
               <pre className="text-xs bg-muted rounded p-2 overflow-x-auto max-h-40">
                 {log.response_body}
               </pre>
@@ -168,6 +183,7 @@ function LogEntry({
 }
 
 const WebhookLogs = ({ webhook, onSuccess }: WebhookLogsProps) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const { data, isLoading } = useWebhookLogs(webhook.id)
 
@@ -178,7 +194,7 @@ const WebhookLogs = ({ webhook, onSuccess }: WebhookLogsProps) => {
         onClick={() => setIsOpen(true)}
       >
         <FileText />
-        View Logs
+        {t("webhooks.viewLogs")}
       </DropdownMenuItem>
       <Sheet
         open={isOpen}
@@ -189,23 +205,21 @@ const WebhookLogs = ({ webhook, onSuccess }: WebhookLogsProps) => {
       >
         <SheetContent className={cn("sm:max-w-lg overflow-y-auto")}>
           <SheetHeader>
-            <SheetTitle>Delivery Logs</SheetTitle>
+            <SheetTitle>{t("webhooks.deliveryLogs")}</SheetTitle>
             <SheetDescription>
-              Recent webhook deliveries to {webhook.url}
+              {t("webhooks.recentDeliveries", { url: webhook.url })}
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-                Loading...
+                {t("common.loading")}
               </div>
             ) : !data?.data?.length ? (
               <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground gap-2">
                 <FileText className="size-8 opacity-50" />
-                <p>No delivery logs yet</p>
-                <p className="text-xs">
-                  Send a test or wait for an event to trigger
-                </p>
+                <p>{t("webhooks.noLogs")}</p>
+                <p className="text-xs">{t("webhooks.noLogsDesc")}</p>
               </div>
             ) : (
               <div className="border rounded-md">

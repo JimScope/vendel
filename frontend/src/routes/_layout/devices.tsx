@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Download, Plus, Smartphone } from "lucide-react"
 import { Suspense, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { DataTable } from "@/components/Common/DataTable"
 import AddDevice from "@/components/Devices/AddDevice"
@@ -25,27 +26,27 @@ export const Route = createFileRoute("/_layout/devices")({
 })
 
 function DevicesEmptyState({ onAddDevice }: { onAddDevice: () => void }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center text-center py-12">
       <div className="rounded-full bg-muted p-4 mb-4">
         <Smartphone className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h2 className="text-lg font-semibold">No devices registered</h2>
-      <p className="text-muted-foreground">
-        Add a device to start sending SMS messages
-      </p>
+      <h2 className="text-lg font-semibold">{t("devices.noDevices")}</h2>
+      <p className="text-muted-foreground">{t("devices.noDevicesDesc")}</p>
       <Button className="my-4" onClick={onAddDevice}>
         <Plus />
-        Add Device
+        {t("devices.addDevice")}
       </Button>
     </div>
   )
 }
 
 function DevicesTableContent({ onAddDevice }: { onAddDevice: () => void }) {
+  const { t } = useTranslation()
   const { data: devices } = useDeviceListSuspense()
   const { data: modemStatus } = useModemStatus()
-  const columns = useMemo(() => getColumns(modemStatus), [modemStatus])
+  const columns = useMemo(() => getColumns(t, modemStatus), [t, modemStatus])
 
   if (!devices?.data || devices.data.length === 0) {
     return <DevicesEmptyState onAddDevice={onAddDevice} />
@@ -55,7 +56,7 @@ function DevicesTableContent({ onAddDevice }: { onAddDevice: () => void }) {
     <DataTable
       columns={columns}
       data={(devices?.data ?? []) as unknown as Device[]}
-      caption="Registered devices"
+      caption={t("devices.registeredDevices")}
     />
   )
 }
@@ -69,25 +70,24 @@ function DevicesTable({ onAddDevice }: { onAddDevice: () => void }) {
 }
 
 function Devices() {
+  const { t } = useTranslation()
   const { config } = useAppConfig()
   const [addDeviceOpen, setAddDeviceOpen] = useState(false)
 
   return (
     <div className="flex flex-col gap-6">
-      <title>{`Devices - ${config.appName}`}</title>
+      <title>{`${t("sidebar.devices")} - ${config.appName}`}</title>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl">Devices</h1>
-          <p className="text-muted-foreground">
-            Manage your registered SMS devices
-          </p>
+          <h1 className="text-2xl">{t("sidebar.devices")}</h1>
+          <p className="text-muted-foreground">{t("devices.description")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline">
                 <Download className="size-4" />
-                Downloads
+                {t("devices.downloads")}
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 space-y-4">

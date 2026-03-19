@@ -23,21 +23,21 @@ import { type Item, Main } from "./Main"
 import { User } from "./User"
 
 const baseItems: Item[] = [
-  { icon: Home, title: "Dashboard", path: "/" },
-  { icon: MessageSquare, title: "SMS", path: "/sms" },
-  { icon: FileText, title: "Templates", path: "/templates" },
-  { icon: Clock, title: "Scheduled", path: "/scheduled" },
-  { icon: Smartphone, title: "Devices", path: "/devices" },
-  { icon: Webhook, title: "Webhooks", path: "/webhooks" },
-  { icon: Key, title: "Integrations", path: "/integrations" },
-  { icon: CreditCard, title: "Billing", path: "/billing" },
+  { icon: Home, title: "sidebar.dashboard", path: "/" },
+  { icon: MessageSquare, title: "sidebar.sms", path: "/sms" },
+  { icon: FileText, title: "sidebar.templates", path: "/templates" },
+  { icon: Clock, title: "sidebar.scheduled", path: "/scheduled" },
+  { icon: Smartphone, title: "sidebar.devices", path: "/devices" },
+  { icon: Webhook, title: "sidebar.webhooks", path: "/webhooks" },
+  { icon: Key, title: "sidebar.integrations", path: "/integrations" },
+  { icon: CreditCard, title: "sidebar.billing", path: "/billing" },
 ]
 
 export function AppSidebar() {
   const { user: currentUser } = useAuth()
 
   const items = currentUser?.is_superuser
-    ? [...baseItems, { icon: Users, title: "Admin", path: "/admin" }]
+    ? [...baseItems, { icon: Users, title: "sidebar.admin", path: "/admin" }]
     : baseItems
 
   return (

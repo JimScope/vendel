@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Webhook } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 
 import { DataTable } from "@/components/Common/DataTable"
 import PendingWebhooks from "@/components/Pending/PendingWebhooks"
 import AddWebhook from "@/components/Webhooks/AddWebhook"
-import { columns } from "@/components/Webhooks/columns"
+import { getColumns } from "@/components/Webhooks/columns"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useWebhookListSuspense } from "@/hooks/useWebhookList"
 import type { WebhookConfig } from "@/types/collections"
@@ -15,7 +16,9 @@ export const Route = createFileRoute("/_layout/webhooks")({
 })
 
 function WebhooksTableContent() {
+  const { t } = useTranslation()
   const { data: webhooks } = useWebhookListSuspense()
+  const columns = useMemo(() => getColumns(t), [t])
 
   if (!webhooks?.data || webhooks.data.length === 0) {
     return (
@@ -23,10 +26,8 @@ function WebhooksTableContent() {
         <div className="rounded-full bg-muted p-4 mb-4">
           <Webhook className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h2 className="text-lg font-semibold">No webhooks configured</h2>
-        <p className="text-muted-foreground">
-          Add a webhook to receive notifications when SMS messages arrive
-        </p>
+        <h2 className="text-lg font-semibold">{t("webhooks.noWebhooks")}</h2>
+        <p className="text-muted-foreground">{t("webhooks.noWebhooksDesc")}</p>
         <AddWebhook />
       </div>
     )
@@ -36,7 +37,7 @@ function WebhooksTableContent() {
     <DataTable
       columns={columns}
       data={(webhooks?.data ?? []) as unknown as WebhookConfig[]}
-      caption="Webhooks"
+      caption={t("webhooks.title")}
     />
   )
 }
@@ -50,17 +51,16 @@ function WebhooksTable() {
 }
 
 function Webhooks() {
+  const { t } = useTranslation()
   const { config } = useAppConfig()
 
   return (
     <div className="flex flex-col gap-6">
-      <title>{`Webhooks - ${config.appName}`}</title>
+      <title>{`${t("webhooks.title")} - ${config.appName}`}</title>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl">Webhooks</h1>
-          <p className="text-muted-foreground">
-            Configure webhooks to receive notifications for incoming SMS
-          </p>
+          <h1 className="text-2xl">{t("webhooks.title")}</h1>
+          <p className="text-muted-foreground">{t("webhooks.description")}</p>
         </div>
         <AddWebhook />
       </div>

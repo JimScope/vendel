@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Pencil } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { MultiSelect } from "@/components/Common/MultiSelect"
 import { TemplateSelect } from "@/components/Templates/TemplateSelect"
@@ -63,6 +64,7 @@ interface EditScheduledSMSProps {
 }
 
 const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const { data: devices } = useDeviceList()
 
@@ -128,16 +130,14 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
         onClick={() => setIsOpen(true)}
       >
         <Pencil />
-        Edit Schedule
+        {t("scheduled.editScheduled")}
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
-              <DialogTitle>Edit Scheduled SMS</DialogTitle>
-              <DialogDescription>
-                Update the scheduled SMS configuration below.
-              </DialogDescription>
+              <DialogTitle>{t("scheduled.editTitle")}</DialogTitle>
+              <DialogDescription>{t("scheduled.editDesc")}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField
@@ -146,10 +146,15 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Name <span className="text-destructive">*</span>
+                      {t("common.name")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Schedule name" {...field} required />
+                      <Input
+                        placeholder={t("scheduled.scheduleName")}
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -162,12 +167,13 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>
-                      Recipients <span className="text-destructive">*</span>
+                      {t("scheduled.recipients")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <TagInput
                       {...field}
                       id={field.name}
-                      placeholder="Phone numbers (space separated)"
+                      placeholder={t("sms.recipientPlaceholder")}
                       aria-invalid={fieldState.invalid}
                     />
                     {fieldState.error && (
@@ -189,11 +195,12 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Message Body <span className="text-destructive">*</span>
+                      {t("scheduled.bodyLabel")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Message body"
+                        placeholder={t("scheduled.bodyPlaceholder")}
                         rows={3}
                         {...field}
                       />
@@ -208,7 +215,7 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Device</FormLabel>
+                    <FormLabel>{t("sms.device")}</FormLabel>
                     <MultiSelect
                       options={(devices?.data || []).map((device) => ({
                         label: device.name || device.id,
@@ -218,7 +225,7 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                       defaultValue={field.value}
                     />
                     <FormDescription>
-                      Leave empty to use any available device
+                      {t("scheduled.leaveEmpty")}
                     </FormDescription>
                   </FormItem>
                 )}
@@ -230,7 +237,8 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Schedule Type <span className="text-destructive">*</span>
+                      {t("scheduled.scheduleType")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <Select
                       onValueChange={field.onChange}
@@ -242,8 +250,12 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="one_time">One-time</SelectItem>
-                        <SelectItem value="recurring">Recurring</SelectItem>
+                        <SelectItem value="one_time">
+                          {t("scheduled.oneTime")}
+                        </SelectItem>
+                        <SelectItem value="recurring">
+                          {t("scheduled.recurring")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -258,7 +270,8 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Send At <span className="text-destructive">*</span>
+                        {t("scheduled.sendAt")}{" "}
+                        <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -281,7 +294,7 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Cron Expression{" "}
+                        {t("scheduled.cronExpression")}{" "}
                         <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
@@ -293,7 +306,7 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                         />
                       </FormControl>
                       <FormDescription>
-                        5-field cron format: minute hour day month weekday
+                        {t("scheduled.cronFormat")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -306,7 +319,7 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                 name="timezone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Timezone</FormLabel>
+                    <FormLabel>{t("scheduled.timezone")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -336,14 +349,14 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
                   variant="outline"
                   disabled={updateScheduledSMSMutation.isPending}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
                 type="submit"
                 loading={updateScheduledSMSMutation.isPending}
               >
-                Save
+                {t("common.save")}
               </LoadingButton>
             </DialogFooter>
           </form>

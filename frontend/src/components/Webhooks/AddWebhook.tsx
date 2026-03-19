@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronDown, Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -56,6 +57,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 const AddWebhook = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [previewEvent, setPreviewEvent] = useState<WebhookEvent | null>(null)
 
@@ -98,15 +100,13 @@ const AddWebhook = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus />
-          Add Webhook
+          {t("webhooks.addWebhook")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add Webhook</DialogTitle>
-          <DialogDescription>
-            Configure a webhook to receive notifications for SMS events.
-          </DialogDescription>
+          <DialogTitle>{t("webhooks.createTitle")}</DialogTitle>
+          <DialogDescription>{t("webhooks.createDesc")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -117,19 +117,18 @@ const AddWebhook = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      URL <span className="text-destructive">*</span>
+                      {t("webhooks.url")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="https://your-server.com/webhook"
+                        placeholder={t("webhooks.urlPlaceholder")}
                         type="url"
                         {...field}
                         required
                       />
                     </FormControl>
-                    <FormDescription>
-                      The endpoint that will receive webhook notifications
-                    </FormDescription>
+                    <FormDescription>{t("webhooks.urlDesc")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -140,16 +139,16 @@ const AddWebhook = () => {
                 name="secret_key"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Secret Key</FormLabel>
+                    <FormLabel>{t("webhooks.secretKey")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Optional secret for signature verification"
+                        placeholder={t("webhooks.secretPlaceholder")}
                         type="text"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Used to sign webhook payloads for verification
+                      {t("webhooks.secretDesc")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -162,10 +161,11 @@ const AddWebhook = () => {
                 render={() => (
                   <FormItem>
                     <FormLabel>
-                      Events <span className="text-destructive">*</span>
+                      {t("webhooks.events")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormDescription>
-                      Choose which events will trigger this webhook
+                      {t("webhooks.eventsDesc")}
                     </FormDescription>
                     <div className="grid gap-2 pt-1">
                       {WEBHOOK_EVENTS.map((event) => (
@@ -190,10 +190,10 @@ const AddWebhook = () => {
                               </FormControl>
                               <div className="grid gap-0.5 leading-none">
                                 <FormLabel className="font-normal cursor-pointer">
-                                  {WEBHOOK_EVENT_LABELS[event]}
+                                  {t(WEBHOOK_EVENT_LABELS[event])}
                                 </FormLabel>
                                 <p className="text-xs text-muted-foreground">
-                                  {WEBHOOK_EVENT_DESCRIPTIONS[event]}
+                                  {t(WEBHOOK_EVENT_DESCRIPTIONS[event])}
                                 </p>
                               </div>
                             </FormItem>
@@ -216,7 +216,7 @@ const AddWebhook = () => {
                       className="gap-1.5 px-0 text-muted-foreground hover:text-foreground"
                     >
                       <ChevronDown className="size-4" />
-                      View payload structure
+                      {t("webhooks.viewPayload")}
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -234,7 +234,7 @@ const AddWebhook = () => {
                               className="h-6 text-xs"
                               onClick={() => setPreviewEvent(event)}
                             >
-                              {WEBHOOK_EVENT_LABELS[event]}
+                              {t(WEBHOOK_EVENT_LABELS[event])}
                             </Button>
                           ))}
                         </div>
@@ -267,7 +267,9 @@ const AddWebhook = () => {
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">Active</FormLabel>
+                    <FormLabel className="font-normal">
+                      {t("webhooks.statusActive")}
+                    </FormLabel>
                   </FormItem>
                 )}
               />
@@ -279,14 +281,14 @@ const AddWebhook = () => {
                   variant="outline"
                   disabled={createWebhookMutation.isPending}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
                 type="submit"
                 loading={createWebhookMutation.isPending}
               >
-                Create Webhook
+                {t("webhooks.createWebhook")}
               </LoadingButton>
             </DialogFooter>
           </form>

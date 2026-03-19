@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -42,6 +43,7 @@ interface EditTemplateProps {
 }
 
 const EditTemplate = ({ template, onSuccess }: EditTemplateProps) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
 
   const form = useForm<FormData>({
@@ -72,16 +74,14 @@ const EditTemplate = ({ template, onSuccess }: EditTemplateProps) => {
         onClick={() => setIsOpen(true)}
       >
         <Pencil />
-        Edit Template
+        {t("templates.editTemplate")}
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
-              <DialogTitle>Edit Template</DialogTitle>
-              <DialogDescription>
-                Update the template details below.
-              </DialogDescription>
+              <DialogTitle>{t("templates.editTemplate")}</DialogTitle>
+              <DialogDescription>{t("templates.updateDesc")}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField
@@ -90,10 +90,15 @@ const EditTemplate = ({ template, onSuccess }: EditTemplateProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Name <span className="text-destructive">*</span>
+                      {t("common.name")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Template name" {...field} required />
+                      <Input
+                        placeholder={t("templates.nameLabel")}
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -106,11 +111,12 @@ const EditTemplate = ({ template, onSuccess }: EditTemplateProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Body <span className="text-destructive">*</span>
+                      {t("templates.body")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Message template text"
+                        placeholder={t("templates.bodyLabel")}
                         rows={4}
                         {...field}
                       />
@@ -127,14 +133,14 @@ const EditTemplate = ({ template, onSuccess }: EditTemplateProps) => {
                   variant="outline"
                   disabled={updateTemplateMutation.isPending}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
                 type="submit"
                 loading={updateTemplateMutation.isPending}
               >
-                Save
+                {t("common.save")}
               </LoadingButton>
             </DialogFooter>
           </form>

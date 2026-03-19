@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -29,6 +30,7 @@ const ConfirmDeleteDialog = ({
   isPending,
   onConfirm,
 }: ConfirmDeleteDialogProps) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,7 +58,7 @@ const ConfirmDeleteDialog = ({
           <DialogFooter className="mt-4">
             <DialogClose asChild>
               <Button variant="outline" disabled={isPending}>
-                Cancel
+                {t("common.cancel")}
               </Button>
             </DialogClose>
             <LoadingButton
@@ -64,7 +66,7 @@ const ConfirmDeleteDialog = ({
               type="submit"
               loading={isPending}
             >
-              Delete
+              {t("common.delete")}
             </LoadingButton>
           </DialogFooter>
         </form>

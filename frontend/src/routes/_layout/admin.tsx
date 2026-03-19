@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Settings, Users } from "lucide-react"
-import { Suspense, useState } from "react"
+import { Suspense, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import AddUser from "@/components/Admin/AddUser"
-import { columns, type UserTableData } from "@/components/Admin/columns"
+import { getColumns, type UserTableData } from "@/components/Admin/columns"
 import SystemSettings from "@/components/Admin/SystemSettings"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
@@ -23,8 +24,11 @@ export const Route = createFileRoute("/_layout/admin")({
 })
 
 function UsersTableContent() {
+  const { t } = useTranslation()
   const { user: currentUser } = useAuth()
   const { data: users } = useUserListSuspense()
+
+  const columns = useMemo(() => getColumns(t), [t])
 
   const tableData = (users?.data ?? []).map((user) => ({
     ...user,
@@ -32,7 +36,7 @@ function UsersTableContent() {
   })) as unknown as UserTableData[]
 
   return (
-    <DataTable columns={columns} data={tableData} caption="User accounts" />
+    <DataTable columns={columns} data={tableData} caption={t("admin.users")} />
   )
 }
 
@@ -45,6 +49,7 @@ function UsersTable() {
 }
 
 function Admin() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState("users")
 
   return (
@@ -54,11 +59,11 @@ function Admin() {
           <TabsList>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
-              Users
+              {t("admin.users")}
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
-              Settings
+              {t("admin.settings")}
             </TabsTrigger>
           </TabsList>
 
@@ -67,19 +72,17 @@ function Admin() {
 
         <TabsContent value="users" className="mt-6">
           <div className="mb-4">
-            <h1 className="text-2xl">Users</h1>
-            <p className="text-muted-foreground">
-              Manage user accounts and permissions
-            </p>
+            <h1 className="text-2xl">{t("admin.users")}</h1>
+            <p className="text-muted-foreground">{t("admin.userManagement")}</p>
           </div>
           <UsersTable />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">
           <div className="mb-4">
-            <h1 className="text-2xl">System Settings</h1>
+            <h1 className="text-2xl">{t("admin.systemSettings")}</h1>
             <p className="text-muted-foreground">
-              Configure system-wide settings and payment options
+              {t("admin.systemSettingsDesc")}
             </p>
           </div>
           <SystemSettings />

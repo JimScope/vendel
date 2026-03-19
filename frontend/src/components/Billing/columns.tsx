@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table"
+import type { TFunction } from "i18next"
 import { ExternalLink } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -28,73 +29,83 @@ const statusStyles: Record<string, string> = {
     "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
 }
 
-export const columns: ColumnDef<Payment>[] = [
-  {
-    accessorKey: "paid_at",
-    header: "Date",
-    cell: ({ row }) => (
-      <span className="text-sm">
-        {formatDate(row.original.paid_at || row.original.created)}
-      </span>
-    ),
-  },
-  {
-    id: "period",
-    header: "Period",
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">
-        {formatDate(row.original.period_start)} &mdash;{" "}
-        {formatDate(row.original.period_end)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "amount",
-    header: "Amount",
-    cell: ({ row }) => (
-      <span className="font-medium">
-        {formatCurrency(
-          row.original.amount ?? 0,
-          row.original.currency ?? "USD",
-        )}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const status = row.original.status ?? "pending"
-      return (
-        <Badge variant="outline" className={cn(statusStyles[status])}>
-          {status}
-        </Badge>
-      )
+export function getColumns(t: TFunction): ColumnDef<Payment>[] {
+  return [
+    {
+      accessorKey: "paid_at",
+      header: t("billing.date"),
+      cell: ({ row }) => (
+        <span className="text-sm">
+          {formatDate(row.original.paid_at || row.original.created)}
+        </span>
+      ),
     },
-  },
-  {
-    accessorKey: "provider",
-    header: "Provider",
-    cell: ({ row }) => (
-      <span className="text-sm capitalize">{row.original.provider || "-"}</span>
-    ),
-  },
-  {
-    id: "actions",
-    header: () => <span className="sr-only">Actions</span>,
-    cell: ({ row }) => {
-      const invoiceUrl = row.original.provider_invoice_url
-      if (!invoiceUrl) return null
-      return (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="icon" asChild>
-            <a href={invoiceUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" />
-              <span className="sr-only">View invoice</span>
-            </a>
-          </Button>
-        </div>
-      )
+    {
+      id: "period",
+      header: t("billing.period"),
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDate(row.original.period_start)} &mdash;{" "}
+          {formatDate(row.original.period_end)}
+        </span>
+      ),
     },
-  },
-]
+    {
+      accessorKey: "amount",
+      header: t("billing.amount"),
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {formatCurrency(
+            row.original.amount ?? 0,
+            row.original.currency ?? "USD",
+          )}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: t("common.status"),
+      cell: ({ row }) => {
+        const status = row.original.status ?? "pending"
+        const statusLabels = {
+          completed: t("billing.statusCompleted"),
+          pending: t("billing.statusPending"),
+          failed: t("billing.statusFailed"),
+          refunded: t("billing.statusRefunded"),
+        } as Record<string, string>
+        return (
+          <Badge variant="outline" className={cn(statusStyles[status])}>
+            {statusLabels[status] ?? status}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "provider",
+      header: t("billing.provider"),
+      cell: ({ row }) => (
+        <span className="text-sm capitalize">
+          {row.original.provider || "-"}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <span className="sr-only">{t("common.actions")}</span>,
+      cell: ({ row }) => {
+        const invoiceUrl = row.original.provider_invoice_url
+        if (!invoiceUrl) return null
+        return (
+          <div className="flex justify-end">
+            <Button variant="ghost" size="icon" asChild>
+              <a href={invoiceUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                <span className="sr-only">{t("billing.viewInvoice")}</span>
+              </a>
+            </Button>
+          </div>
+        )
+      },
+    },
+  ]
+}

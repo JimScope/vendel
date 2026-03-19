@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { MultiSelect } from "@/components/Common/MultiSelect"
 import { TemplateSelect } from "@/components/Templates/TemplateSelect"
@@ -57,6 +58,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 const AddScheduledSMS = () => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const { data: devices } = useDeviceList()
 
@@ -115,16 +117,13 @@ const AddScheduledSMS = () => {
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus />
-          Schedule SMS
+          {t("scheduled.addScheduled")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Schedule SMS</DialogTitle>
-          <DialogDescription>
-            Schedule an SMS to be sent at a specific time or on a recurring
-            basis.
-          </DialogDescription>
+          <DialogTitle>{t("scheduled.createTitle")}</DialogTitle>
+          <DialogDescription>{t("scheduled.createDesc")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -135,10 +134,15 @@ const AddScheduledSMS = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Name <span className="text-destructive">*</span>
+                      {t("common.name")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Schedule name" {...field} required />
+                      <Input
+                        placeholder={t("scheduled.scheduleName")}
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -151,12 +155,13 @@ const AddScheduledSMS = () => {
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>
-                      Recipients <span className="text-destructive">*</span>
+                      {t("scheduled.recipients")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <TagInput
                       {...field}
                       id={field.name}
-                      placeholder="Phone numbers (space separated)"
+                      placeholder={t("sms.recipientPlaceholder")}
                       aria-invalid={fieldState.invalid}
                     />
                     {fieldState.error && (
@@ -178,11 +183,12 @@ const AddScheduledSMS = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Message Body <span className="text-destructive">*</span>
+                      {t("scheduled.bodyLabel")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Message body"
+                        placeholder={t("scheduled.bodyPlaceholder")}
                         rows={3}
                         {...field}
                         required
@@ -198,7 +204,7 @@ const AddScheduledSMS = () => {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Device</FormLabel>
+                    <FormLabel>{t("sms.device")}</FormLabel>
                     <MultiSelect
                       options={(devices?.data || []).map((device) => ({
                         label: device.name || device.id,
@@ -208,7 +214,7 @@ const AddScheduledSMS = () => {
                       defaultValue={field.value}
                     />
                     <FormDescription>
-                      Leave empty to use any available device
+                      {t("scheduled.leaveEmpty")}
                     </FormDescription>
                   </FormItem>
                 )}
@@ -220,7 +226,8 @@ const AddScheduledSMS = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Schedule Type <span className="text-destructive">*</span>
+                      {t("scheduled.scheduleType")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <Select
                       onValueChange={field.onChange}
@@ -232,8 +239,12 @@ const AddScheduledSMS = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="one_time">One-time</SelectItem>
-                        <SelectItem value="recurring">Recurring</SelectItem>
+                        <SelectItem value="one_time">
+                          {t("scheduled.oneTime")}
+                        </SelectItem>
+                        <SelectItem value="recurring">
+                          {t("scheduled.recurring")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -248,7 +259,8 @@ const AddScheduledSMS = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Send At <span className="text-destructive">*</span>
+                        {t("scheduled.sendAt")}{" "}
+                        <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input type="datetime-local" {...field} required />
@@ -266,14 +278,14 @@ const AddScheduledSMS = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Cron Expression{" "}
+                        {t("scheduled.cronExpression")}{" "}
                         <span className="text-destructive">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input placeholder="*/5 * * * *" {...field} required />
                       </FormControl>
                       <FormDescription>
-                        5-field cron format: minute hour day month weekday
+                        {t("scheduled.cronFormat")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -286,7 +298,7 @@ const AddScheduledSMS = () => {
                 name="timezone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Timezone</FormLabel>
+                    <FormLabel>{t("scheduled.timezone")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -316,14 +328,14 @@ const AddScheduledSMS = () => {
                   variant="outline"
                   disabled={createScheduledSMSMutation.isPending}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
                 type="submit"
                 loading={createScheduledSMSMutation.isPending}
               >
-                Create Schedule
+                {t("scheduled.createSchedule")}
               </LoadingButton>
             </DialogFooter>
           </form>

@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -47,6 +48,7 @@ interface EditDeviceProps {
 }
 
 const EditDevice = ({ device, onSuccess }: EditDeviceProps) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
 
   const form = useForm<FormData>({
@@ -77,15 +79,15 @@ const EditDevice = ({ device, onSuccess }: EditDeviceProps) => {
         onClick={() => setIsOpen(true)}
       >
         <Pencil />
-        Edit Device
+        {t("devices.editDevice")}
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
-              <DialogTitle>Edit Device</DialogTitle>
+              <DialogTitle>{t("devices.editDevice")}</DialogTitle>
               <DialogDescription>
-                Update the device details below.
+                {t("devices.updateDetails")}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -95,11 +97,12 @@ const EditDevice = ({ device, onSuccess }: EditDeviceProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Name <span className="text-destructive">*</span>
+                      {t("common.name")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="My Android Phone"
+                        placeholder={t("devices.namePlaceholder")}
                         type="text"
                         {...field}
                         required
@@ -116,11 +119,12 @@ const EditDevice = ({ device, onSuccess }: EditDeviceProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Phone Number <span className="text-destructive">*</span>
+                      {t("devices.phoneNumber")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="+1234567890"
+                        placeholder={t("devices.phonePlaceholder")}
                         type="tel"
                         {...field}
                         required
@@ -138,14 +142,14 @@ const EditDevice = ({ device, onSuccess }: EditDeviceProps) => {
                   variant="outline"
                   disabled={updateDeviceMutation.isPending}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
                 type="submit"
                 loading={updateDeviceMutation.isPending}
               >
-                Save
+                {t("common.save")}
               </LoadingButton>
             </DialogFooter>
           </form>

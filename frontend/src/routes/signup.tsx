@@ -5,6 +5,7 @@ import {
   redirect,
 } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { OAuthButtons } from "@/components/OAuth"
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/signup")({
 })
 
 function SignUp() {
+  const { t } = useTranslation()
   const { signUpMutation } = useAuth()
   const { config } = useAppConfig()
   const appName = config.appName
@@ -89,7 +91,7 @@ function SignUp() {
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl">Create an account</h1>
+            <h1 className="text-2xl">{t("auth.signupTitle")}</h1>
           </div>
 
           <div className="grid gap-4">
@@ -98,11 +100,11 @@ function SignUp() {
               name="full_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>{t("auth.fullName")}</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="full-name-input"
-                      placeholder="User"
+                      placeholder={t("auth.fullNamePlaceholder")}
                       type="text"
                       {...field}
                     />
@@ -117,7 +119,7 @@ function SignUp() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t("common.email")}</FormLabel>
                   <FormControl>
                     <Input
                       data-testid="email-input"
@@ -136,11 +138,11 @@ function SignUp() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t("common.password")}</FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="password-input"
-                      placeholder="Password"
+                      placeholder={t("common.password")}
                       {...field}
                     />
                   </FormControl>
@@ -154,11 +156,11 @@ function SignUp() {
               name="confirm_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel>{t("auth.confirmPassword")}</FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="confirm-password-input"
-                      placeholder="Confirm Password"
+                      placeholder={t("auth.confirmPassword")}
                       {...field}
                     />
                   </FormControl>
@@ -172,7 +174,7 @@ function SignUp() {
               className="w-full"
               loading={signUpMutation.isPending}
             >
-              Sign Up
+              {t("auth.signUp")}
             </LoadingButton>
 
             <div className="relative">
@@ -181,7 +183,7 @@ function SignUp() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+                  {t("auth.orContinueWith")}
                 </span>
               </div>
             </div>
@@ -190,26 +192,26 @@ function SignUp() {
           </div>
 
           <div className="text-center text-sm">
-            Already have an account?{" "}
+            {t("auth.haveAccount")}{" "}
             <RouterLink to="/login" className="underline underline-offset-4">
-              Log in
+              {t("auth.logIn")}
             </RouterLink>
           </div>
 
           <p className="text-center text-xs text-muted-foreground">
-            By signing up, you agree to our{" "}
+            {t("auth.bySigningUp")}{" "}
             <RouterLink
               to="/terms"
               className="underline underline-offset-4 hover:text-foreground"
             >
-              Terms of Service
+              {t("auth.termsOfService")}
             </RouterLink>{" "}
-            and{" "}
+            {t("auth.and")}{" "}
             <RouterLink
               to="/privacy"
               className="underline underline-offset-4 hover:text-foreground"
             >
-              Privacy Policy
+              {t("auth.privacyPolicy")}
             </RouterLink>
           </p>
         </form>

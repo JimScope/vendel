@@ -6,6 +6,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
@@ -65,6 +66,7 @@ export const Route = createFileRoute("/reset-password")({
 })
 
 function ResetPassword() {
+  const { t } = useTranslation()
   const { token } = Route.useSearch()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const navigate = useNavigate()
@@ -86,7 +88,7 @@ function ResetPassword() {
       { token, newPassword: data.new_password },
       {
         onSuccess: () => {
-          showSuccessToast("Password updated successfully")
+          showSuccessToast(t("toast.passwordUpdated"))
           form.reset()
           navigate({ to: "/login" })
         },
@@ -103,7 +105,7 @@ function ResetPassword() {
           className="flex flex-col gap-6"
         >
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl">Reset Password</h1>
+            <h1 className="text-2xl">{t("auth.resetPassword")}</h1>
           </div>
 
           <div className="grid gap-4">
@@ -112,11 +114,11 @@ function ResetPassword() {
               name="new_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New Password</FormLabel>
+                  <FormLabel>{t("auth.newPassword")}</FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="new-password-input"
-                      placeholder="New Password"
+                      placeholder={t("auth.newPassword")}
                       {...field}
                     />
                   </FormControl>
@@ -130,11 +132,11 @@ function ResetPassword() {
               name="confirm_password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel>{t("auth.confirmPassword")}</FormLabel>
                   <FormControl>
                     <PasswordInput
                       data-testid="confirm-password-input"
-                      placeholder="Confirm Password"
+                      placeholder={t("auth.confirmPassword")}
                       {...field}
                     />
                   </FormControl>
@@ -148,14 +150,14 @@ function ResetPassword() {
               className="w-full"
               loading={mutation.isPending}
             >
-              Reset Password
+              {t("auth.resetPassword")}
             </LoadingButton>
           </div>
 
           <div className="text-center text-sm">
-            Remember your password?{" "}
+            {t("auth.rememberPassword")}{" "}
             <RouterLink to="/login" className="underline underline-offset-4">
-              Log in
+              {t("auth.logIn")}
             </RouterLink>
           </div>
         </form>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import ConfirmDeleteDialog from "@/components/Common/ConfirmDeleteDialog"
 import { useDeleteWebhook } from "@/hooks/useWebhookMutations"
 
@@ -7,13 +9,14 @@ interface DeleteWebhookProps {
 }
 
 const DeleteWebhook = ({ id, onSuccess }: DeleteWebhookProps) => {
+  const { t } = useTranslation()
   const mutation = useDeleteWebhook()
 
   return (
     <ConfirmDeleteDialog
-      triggerLabel="Delete Webhook"
-      title="Delete Webhook"
-      description="Are you sure you want to delete this webhook? You will no longer receive notifications at this endpoint."
+      triggerLabel={t("webhooks.deleteWebhook")}
+      title={t("webhooks.deleteWebhook")}
+      description={t("webhooks.deleteMsg")}
       isPending={mutation.isPending}
       onConfirm={(close) => {
         mutation.mutate(id, {

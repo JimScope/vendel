@@ -1,4 +1,5 @@
 import { CreditCard, Loader2, Settings2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ import { useSystemConfig, useUpdateSystemConfig } from "@/hooks/useSystemConfig"
 import type { SystemConfig } from "@/types/collections"
 
 function SystemSettings() {
+  const { t } = useTranslation()
   const { data: configs, isLoading } = useSystemConfig()
   const updateConfigMutation = useUpdateSystemConfig()
 
@@ -51,29 +53,27 @@ function SystemSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings2 className="h-5 w-5" />
-            General
+            {t("admin.general")}
           </CardTitle>
-          <CardDescription>
-            Basic application settings and branding
-          </CardDescription>
+          <CardDescription>{t("admin.generalDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="app-name">Application Name</Label>
+            <Label htmlFor="app-name">{t("admin.appName")}</Label>
             <Input
               id="app-name"
               defaultValue={getConfigValue("app_name")}
               onBlur={(e) => handleConfigChange("app_name", e.target.value)}
-              placeholder="My App"
+              placeholder={t("admin.appNamePlaceholder")}
               className="w-[300px]"
             />
             <p className="text-sm text-muted-foreground">
-              The name displayed throughout the application
+              {t("admin.appNameDesc")}
             </p>
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="support-email">Support Email</Label>
+            <Label htmlFor="support-email">{t("admin.supportEmail")}</Label>
             <Input
               id="support-email"
               type="email"
@@ -81,19 +81,21 @@ function SystemSettings() {
               onBlur={(e) =>
                 handleConfigChange("support_email", e.target.value)
               }
-              placeholder="support@example.com"
+              placeholder={t("admin.supportEmailPlaceholder")}
               className="w-[300px]"
             />
             <p className="text-sm text-muted-foreground">
-              Contact email for user support requests
+              {t("admin.supportEmailDesc")}
             </p>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
-              <Label htmlFor="maintenance-mode">Maintenance Mode</Label>
+              <Label htmlFor="maintenance-mode">
+                {t("maintenance.maintenanceMode")}
+              </Label>
               <p className="text-sm text-muted-foreground">
-                When enabled, users will see a maintenance message
+                {t("admin.maintenanceDesc")}
               </p>
             </div>
             <Switch
@@ -111,15 +113,15 @@ function SystemSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Payments
+            {t("admin.payments")}
           </CardTitle>
-          <CardDescription>
-            Configure payment options for subscriptions
-          </CardDescription>
+          <CardDescription>{t("admin.paymentsDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="payment-method">Default Payment Method</Label>
+            <Label htmlFor="payment-method">
+              {t("admin.defaultPaymentMethod")}
+            </Label>
             <Select
               value={getConfigValue("default_payment_method")}
               onValueChange={(value) =>
@@ -128,30 +130,29 @@ function SystemSettings() {
               disabled={updateConfigMutation.isPending}
             >
               <SelectTrigger id="payment-method" className="w-[300px]">
-                <SelectValue placeholder="Select payment method" />
+                <SelectValue placeholder={t("admin.selectPaymentMethod")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="invoice">
                   <div className="flex flex-col items-start">
-                    <span>Pay per period</span>
+                    <span>{t("admin.payPerPeriod")}</span>
                     <span className="text-xs text-muted-foreground">
-                      User pays manually each billing cycle
+                      {t("admin.payPerPeriodDesc")}
                     </span>
                   </div>
                 </SelectItem>
                 <SelectItem value="authorized">
                   <div className="flex flex-col items-start">
-                    <span>Auto-renew</span>
+                    <span>{t("admin.autoRenew")}</span>
                     <span className="text-xs text-muted-foreground">
-                      Charged automatically on renewal
+                      {t("admin.autoRenewDesc")}
                     </span>
                   </div>
                 </SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
-              Determines whether new subscriptions use manual invoice payments
-              or automatic recurring charges
+              {t("admin.paymentMethodDesc")}
             </p>
           </div>
         </CardContent>

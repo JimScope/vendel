@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,6 +16,7 @@ import { useDeleteAccount } from "@/hooks/useAccountMutations"
 import useAuth from "@/hooks/useAuth"
 
 const DeleteConfirmation = () => {
+  const { t } = useTranslation()
   const { handleSubmit } = useForm()
   const { logout } = useAuth()
   const mutation = useDeleteAccount()
@@ -29,25 +31,22 @@ const DeleteConfirmation = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="destructive" className="mt-3">
-          Delete Account
+          {t("settings.deleteAccount")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>Confirmation Required</DialogTitle>
+            <DialogTitle>{t("settings.deleteAccount")}</DialogTitle>
             <DialogDescription>
-              All your account data will be{" "}
-              <strong>permanently deleted.</strong> If you are sure, please
-              click <strong>"Confirm"</strong> to proceed. This action cannot be
-              undone.
+              {t("settings.deleteAccountConfirm")}
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter className="mt-4">
             <DialogClose asChild>
               <Button variant="outline" disabled={mutation.isPending}>
-                Cancel
+                {t("common.cancel")}
               </Button>
             </DialogClose>
             <LoadingButton
@@ -55,7 +54,7 @@ const DeleteConfirmation = () => {
               type="submit"
               loading={mutation.isPending}
             >
-              Delete
+              {t("common.delete")}
             </LoadingButton>
           </DialogFooter>
         </form>

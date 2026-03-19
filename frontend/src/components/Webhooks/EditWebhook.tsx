@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronDown, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
@@ -62,6 +63,7 @@ interface EditWebhookProps {
 }
 
 const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [previewEvent, setPreviewEvent] = useState<WebhookEvent | null>(null)
 
@@ -109,16 +111,14 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
         onClick={() => setIsOpen(true)}
       >
         <Pencil />
-        Edit Webhook
+        {t("webhooks.editWebhook")}
       </DropdownMenuItem>
       <DialogContent className="sm:max-w-lg">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
-              <DialogTitle>Edit Webhook</DialogTitle>
-              <DialogDescription>
-                Update the webhook configuration below.
-              </DialogDescription>
+              <DialogTitle>{t("webhooks.editWebhook")}</DialogTitle>
+              <DialogDescription>{t("webhooks.editDesc")}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField
@@ -127,19 +127,18 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      URL <span className="text-destructive">*</span>
+                      {t("webhooks.url")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="https://your-server.com/webhook"
+                        placeholder={t("webhooks.urlPlaceholder")}
                         type="url"
                         {...field}
                         required
                       />
                     </FormControl>
-                    <FormDescription>
-                      The endpoint that will receive webhook notifications
-                    </FormDescription>
+                    <FormDescription>{t("webhooks.urlDesc")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -150,17 +149,17 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
                 name="secret_key"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Secret Key</FormLabel>
+                    <FormLabel>{t("webhooks.secretKey")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Optional secret for signature verification"
+                        placeholder={t("webhooks.secretPlaceholder")}
                         type="text"
                         {...field}
                         value={field.value ?? ""}
                       />
                     </FormControl>
                     <FormDescription>
-                      Used to sign webhook payloads for verification
+                      {t("webhooks.secretDesc")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -173,10 +172,11 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
                 render={() => (
                   <FormItem>
                     <FormLabel>
-                      Events <span className="text-destructive">*</span>
+                      {t("webhooks.events")}{" "}
+                      <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormDescription>
-                      Choose which events will trigger this webhook
+                      {t("webhooks.eventsDesc")}
                     </FormDescription>
                     <div className="grid gap-2 pt-1">
                       {WEBHOOK_EVENTS.map((event) => (
@@ -201,10 +201,10 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
                               </FormControl>
                               <div className="grid gap-0.5 leading-none">
                                 <FormLabel className="font-normal cursor-pointer">
-                                  {WEBHOOK_EVENT_LABELS[event]}
+                                  {t(WEBHOOK_EVENT_LABELS[event])}
                                 </FormLabel>
                                 <p className="text-xs text-muted-foreground">
-                                  {WEBHOOK_EVENT_DESCRIPTIONS[event]}
+                                  {t(WEBHOOK_EVENT_DESCRIPTIONS[event])}
                                 </p>
                               </div>
                             </FormItem>
@@ -227,7 +227,7 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
                       className="gap-1.5 px-0 text-muted-foreground hover:text-foreground"
                     >
                       <ChevronDown className="size-4" />
-                      View payload structure
+                      {t("webhooks.viewPayload")}
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -245,7 +245,7 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
                               className="h-6 text-xs"
                               onClick={() => setPreviewEvent(event)}
                             >
-                              {WEBHOOK_EVENT_LABELS[event]}
+                              {t(WEBHOOK_EVENT_LABELS[event])}
                             </Button>
                           ))}
                         </div>
@@ -278,7 +278,9 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">Active</FormLabel>
+                    <FormLabel className="font-normal">
+                      {t("webhooks.statusActive")}
+                    </FormLabel>
                   </FormItem>
                 )}
               />
@@ -290,14 +292,14 @@ const EditWebhook = ({ webhook, onSuccess }: EditWebhookProps) => {
                   variant="outline"
                   disabled={updateWebhookMutation.isPending}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </DialogClose>
               <LoadingButton
                 type="submit"
                 loading={updateWebhookMutation.isPending}
               >
-                Save
+                {t("common.save")}
               </LoadingButton>
             </DialogFooter>
           </form>

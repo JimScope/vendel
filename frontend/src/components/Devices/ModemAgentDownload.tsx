@@ -1,5 +1,6 @@
 import { Download, ExternalLink, Usb } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -45,13 +46,14 @@ function getDownloadUrl(platform: string): string {
 }
 
 export default function ModemAgentDownload() {
+  const { t } = useTranslation()
   const [platform, setPlatform] = useState(detectPlatform)
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Usb className="size-4 text-brand" />
-        Modem Agent
+        {t("devices.modemAgent")}
         <a
           href="https://github.com/JimScope/vendel/releases"
           target="_blank"
@@ -79,7 +81,7 @@ export default function ModemAgentDownload() {
         <a href={getDownloadUrl(platform)} download>
           <Button size="sm">
             <Download className="size-3.5" />
-            Download
+            {t("devices.download")}
           </Button>
         </a>
       </div>

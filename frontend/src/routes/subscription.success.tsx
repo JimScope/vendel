@@ -1,5 +1,6 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 import { CheckCircle } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
 
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/subscription/success")({
 })
 
 function SubscriptionSuccess() {
+  const { t } = useTranslation()
+
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-6 text-center">
@@ -22,24 +25,25 @@ function SubscriptionSuccess() {
           <CheckCircle className="h-12 w-12 text-green-500" />
         </div>
 
-        <h1 className="text-2xl">Subscription Activated!</h1>
+        <h1 className="text-2xl">{t("subscription.activated")}</h1>
 
         <p className="text-muted-foreground">
-          Your payment has been authorized successfully. Your subscription is
-          now active and you can start using all the features of your plan.
+          {t("subscription.activatedDesc")}
         </p>
 
         <div className="text-sm text-muted-foreground">
-          <p>Your first payment will be processed automatically.</p>
-          <p>You can manage your subscription in the settings.</p>
+          <p>{t("subscription.firstPayment")}</p>
+          <p>{t("subscription.manageInSettings")}</p>
         </div>
 
         <div className="flex gap-4 mt-4">
           <Button asChild>
-            <RouterLink to="/">Go to Dashboard</RouterLink>
+            <RouterLink to="/">{t("subscription.goToDashboard")}</RouterLink>
           </Button>
           <Button variant="outline" asChild>
-            <RouterLink to="/settings">View Settings</RouterLink>
+            <RouterLink to="/settings">
+              {t("subscription.viewSettings")}
+            </RouterLink>
           </Button>
         </div>
       </div>
