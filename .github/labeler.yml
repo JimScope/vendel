@@ -1,21 +1,22 @@
-docs:
-  - all:
-    - changed-files:
-      - any-glob-to-any-file:
-        - '**/*.md'
-      - all-globs-to-all-files:
-        - '!frontend/**'
-        - '!backend/**'
-        - '!.github/**'
-        - '!.gitignore'
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**'
 
-internal:
-  - all:
-    - changed-files:
-      - any-glob-to-any-file:
-        - .github/**
-        - .gitignore
-      - all-globs-to-all-files:
-        - '!./**/*.md'
-        - '!frontend/**'
-        - '!backend/**'
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'frontend/package.json'
+      - 'frontend/bun.lock'
+      - 'frontend/package-lock.json'
+      - 'backend/go.mod'
+      - 'backend/go.sum'
+      - 'modem-agent/go.mod'
+      - 'modem-agent/go.sum'
+
+go:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'backend/**/*.go'
+      - 'modem-agent/**/*.go'
