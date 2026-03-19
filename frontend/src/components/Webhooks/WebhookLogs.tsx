@@ -175,15 +175,18 @@ const WebhookLogs = ({ webhook, onSuccess }: WebhookLogsProps) => {
     <>
       <DropdownMenuItem
         onSelect={(e) => e.preventDefault()}
-        onClick={() => {
-          setIsOpen(true)
-          onSuccess()
-        }}
+        onClick={() => setIsOpen(true)}
       >
         <FileText />
         View Logs
       </DropdownMenuItem>
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <Sheet
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open)
+          if (!open) onSuccess()
+        }}
+      >
         <SheetContent className={cn("sm:max-w-lg overflow-y-auto")}>
           <SheetHeader>
             <SheetTitle>Delivery Logs</SheetTitle>
