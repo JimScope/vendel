@@ -1,7 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
-  CheckCircle2,
-  ChevronRight,
   MessageSquare,
   MessageSquareText,
   Smartphone,
@@ -9,6 +7,7 @@ import {
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
+import OnboardingChecklist from "@/components/Dashboard/OnboardingChecklist"
 import QuotaCard from "@/components/Plans/QuotaCard"
 import {
   Card,
@@ -63,33 +62,6 @@ function StatCard({
             <p className="text-3xl font-bold">{value ?? 0}</p>
           )}
         </CardContent>
-      </Card>
-    </Link>
-  )
-}
-
-function GettingStartedCard() {
-  const { t } = useTranslation()
-  return (
-    <Link
-      to="/devices"
-      className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <Card className="cursor-pointer group">
-        <CardHeader className="flex-row items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-brand/10 p-2">
-              <CheckCircle2 className="h-5 w-5 text-brand" />
-            </div>
-            <div>
-              <CardTitle>{t("dashboard.gettingStarted")}</CardTitle>
-              <CardDescription>
-                {t("dashboard.setupFirstDevice")}
-              </CardDescription>
-            </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-        </CardHeader>
       </Card>
     </Link>
   )
@@ -155,7 +127,7 @@ function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-3">
         <QuotaCard />
         <div className="lg:col-span-2">
-          <GettingStartedCard />
+          <OnboardingChecklist />
         </div>
       </div>
     </div>

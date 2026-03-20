@@ -567,6 +567,22 @@
     "viewInvoice": "View invoice",
     "paymentHistory": "Payment history"
   },
+  "onboarding": {
+    "title": "Getting Started",
+    "subtitle": "Complete these steps to start sending SMS",
+    "registerDevice": "Register a device",
+    "registerDeviceDesc": "Add an Android phone or USB modem as your SMS gateway",
+    "createApiKey": "Create an API key",
+    "createApiKeyDesc": "Generate a key for programmatic access to the SMS API",
+    "sendFirstSms": "Send your first SMS",
+    "sendFirstSmsDesc": "Send a test message from the dashboard or via the API",
+    "allDoneTitle": "You're all set!",
+    "allDoneSubtitle": "Explore the docs to get the most out of Vendel",
+    "viewDocs": "Documentation",
+    "viewDocsDesc": "Guides, setup instructions, and platform overview",
+    "viewApiRef": "API Reference",
+    "viewApiRefDesc": "Endpoints, parameters, and code examples for sending SMS"
+  },
   "errors": {
     "notFound": "404",
     "notFoundTitle": "Oops!",
