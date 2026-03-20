@@ -126,53 +126,17 @@ When changing visual styles (colors, fonts, spacing, component patterns), update
 - PocketBase JS SDK for all API calls (no auto-generated client)
 - All visual styles must follow the design system (see above)
 
-## SDKs (`sdks/`)
+## SDKs
 
-Official client libraries for the Vendel API. Each SDK lives in a subdirectory and is published independently.
+Official client libraries live in separate repos, each with its own publish workflow:
 
-| SDK | Directory | Registry | Package name |
-|-----|-----------|----------|-------------|
-| JavaScript/TypeScript | `sdks/javascript/` | npm | `vendel-sdk` |
-| Python | `sdks/python/` | PyPI | `vendel-sdk` |
-| Go | `sdks/go/` | GitHub (mirror) | `github.com/JimScope/vendel-sdk-go` |
+| SDK | Repository | Registry | Publish trigger |
+|-----|-----------|----------|----------------|
+| JavaScript/TypeScript | [vendel-sdk-js](https://github.com/JimScope/vendel-sdk-js) | npm (`vendel-sdk`) | `git tag v* && git push origin v*` |
+| Python | [vendel-sdk-python](https://github.com/JimScope/vendel-sdk-python) | PyPI (`vendel-sdk`) | `git tag v* && git push origin v*` |
+| Go | [vendel-sdk-go](https://github.com/JimScope/vendel-sdk-go) | Go modules | `git tag v* && git push origin v*` |
 
-### Publishing SDKs
-
-Each SDK has a GitHub Actions workflow triggered by a prefixed tag:
-
-```bash
-# JavaScript → npm
-# 1. Update version in sdks/javascript/package.json
-git tag sdk-js/v0.2.0 && git push origin sdk-js/v0.2.0
-
-# Python → PyPI
-# 1. Update version in sdks/python/pyproject.toml
-git tag sdk-py/v0.2.0 && git push origin sdk-py/v0.2.0
-
-# Go → mirrors to github.com/JimScope/vendel-sdk-go
-git tag sdk-go/v0.2.0 && git push origin sdk-go/v0.2.0
-```
-
-### Testing SDKs Locally
-
-```bash
-# Python
-cd sdks/python && pip install -e .
-
-# JavaScript/TypeScript
-cd sdks/javascript && bun install && bun run build
-# Then in test file: import { VendelClient } from "./sdks/javascript/dist/index.js"
-```
-
-### Required Secrets (GitHub → Settings → Secrets)
-
-| Secret | For | How to get |
-|--------|-----|-----------|
-| `NPM_TOKEN` | JS SDK | npmjs.com → Access Tokens |
-| `SDK_GO_PAT` | Go SDK mirror | GitHub → Fine-grained PAT with Contents:RW on `vendel-sdk-go` |
-| _(none)_ | Python SDK | Uses OIDC Trusted Publishers (configure on pypi.org) |
-
-The Python workflow also requires a GitHub environment named `pypi` (Settings → Environments).
+The `sdks/` directory in this monorepo is the development source. Changes should be synced to the individual repos before publishing.
 
 ## Development URLs
 | Service | URL |
