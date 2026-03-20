@@ -114,6 +114,11 @@ func configureSMTP(app core.App) {
 		}
 	}
 
+	// AppURL is used by PocketBase email templates ({APP_URL} placeholder)
+	if appURL := os.Getenv("APP_URL"); appURL != "" {
+		settings.Meta.AppURL = appURL
+	}
+
 	if err := app.Save(settings); err != nil {
 		app.Logger().Warn("could not save SMTP config", slog.Any("error", err))
 	} else {
