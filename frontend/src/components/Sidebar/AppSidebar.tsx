@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
+import { SidebarLanguage } from "@/components/Common/LanguageSwitcher"
 import { Logo } from "@/components/Common/Logo"
 import {
   Sidebar,
@@ -49,6 +50,7 @@ export function AppSidebar() {
         <Main items={items} />
       </SidebarContent>
       <SidebarFooter>
+        <SidebarLanguage />
         <SidebarAppearance />
         <User user={currentUser} />
       </SidebarFooter>
