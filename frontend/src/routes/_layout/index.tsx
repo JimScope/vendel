@@ -86,7 +86,13 @@ function Dashboard() {
             name: currentUser?.full_name || currentUser?.email,
           })}
         </h1>
-        <p className="text-muted-foreground">{t("dashboard.welcomeBack")}</p>
+        <p className="text-muted-foreground">
+          {currentUser?.created &&
+          Date.now() - new Date(currentUser.created).getTime() <
+            24 * 60 * 60 * 1000
+            ? t("dashboard.welcome")
+            : t("dashboard.welcomeBack")}
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

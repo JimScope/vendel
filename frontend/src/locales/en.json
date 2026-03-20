@@ -230,6 +230,7 @@
   },
   "dashboard": {
     "greeting": "Hi, {{name}}!",
+    "welcome": "Welcome! Let's get you started.",
     "welcomeBack": "Welcome back, nice to see you again!",
     "smsSent": "SMS Sent",
     "totalSent": "Total messages sent",

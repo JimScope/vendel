@@ -230,6 +230,7 @@
   },
   "dashboard": {
     "greeting": "¡Hola, {{name}}!",
+    "welcome": "¡Bienvenido! Vamos a configurar todo.",
     "welcomeBack": "¡Bienvenido de vuelta, nos alegra verte!",
     "smsSent": "SMS enviados",
     "totalSent": "Total de mensajes enviados",
