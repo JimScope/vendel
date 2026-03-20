@@ -209,10 +209,3 @@ export interface SystemConfig extends BaseRecord {
   value: string
   description: string
 }
-
-// ── Items (User-defined) ─────────────────────────────────────────────
-
-export interface Item extends BaseRecord {
-  title: string
-  description: string
-}
