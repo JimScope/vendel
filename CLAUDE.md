@@ -136,8 +136,6 @@ Official client libraries live in separate repos, each with its own publish work
 | Python | [vendel-sdk-python](https://github.com/JimScope/vendel-sdk-python) | PyPI (`vendel-sdk`) | `git tag v* && git push origin v*` |
 | Go | [vendel-sdk-go](https://github.com/JimScope/vendel-sdk-go) | Go modules | `git tag v* && git push origin v*` |
 
-The `sdks/` directory in this monorepo is the development source. Changes should be synced to the individual repos before publishing.
-
 ## Development URLs
 | Service | URL |
 |---------|-----|
