@@ -443,7 +443,7 @@
     "expirationDesc": "Optional. Leave empty for a key that never expires.",
     "apiKeyCreated": "API Key Created",
     "apiKeyCreatedMsg": "Make sure to copy your API key now. You won't be able to see it again.",
-    "scanQrCode": "Scan this QR code with the app to connect automatically",
+    "scanQrCode": "Scan or share this QR code to configure your integration",
     "key": "Key",
     "lastUsed": "Last Used",
     "expires": "Expires",

@@ -443,7 +443,7 @@
     "expirationDesc": "Opcional. Deja vacío para una clave que nunca expire.",
     "apiKeyCreated": "Clave API creada",
     "apiKeyCreatedMsg": "Asegúrate de copiar tu clave API ahora. No podrás verla de nuevo.",
-    "scanQrCode": "Escanea este código QR con la app para conectar automáticamente",
+    "scanQrCode": "Escanea o comparte este código QR para configurar tu integración",
     "key": "Clave",
     "lastUsed": "Último uso",
     "expires": "Expira",
