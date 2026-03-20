@@ -1,0 +1,52 @@
+# Publishes the Python SDK to PyPI using Trusted Publishers (OIDC).
+#
+# Setup:
+#   1. Create the "pypi" environment in GitHub: Settings → Environments → New
+#   2. On pypi.org, go to your project → Publishing → Add a new publisher:
+#        - Owner: JimScope
+#        - Repository: vendel
+#        - Workflow: publish-sdk-python.yml
+#        - Environment: pypi
+#   For the first publish, configure a "pending publisher" at:
+#     https://pypi.org/manage/account/publishing/
+#
+# Usage:
+#   1. Update "version" in sdks/python/pyproject.toml
+#   2. Commit and push
+#   3. git tag sdk-py/v0.2.0 && git push origin sdk-py/v0.2.0
+
+name: Publish SDK - Python
+
+on:
+  push:
+    tags:
+      - "sdk-py/v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build package
+        working-directory: sdks/python
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: sdks/python/dist/
