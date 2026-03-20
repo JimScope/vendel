@@ -26,6 +26,17 @@ function extractErrorMessage(err: unknown): string {
       if (data.detail && typeof data.detail === "string") {
         return data.detail
       }
+      // PocketBase field-level validation errors: { fieldName: { code, message } }
+      const fieldError = Object.values(data).find(
+        (v): v is { message: string } =>
+          typeof v === "object" &&
+          v !== null &&
+          "message" in v &&
+          typeof (v as { message: unknown }).message === "string",
+      )
+      if (fieldError) {
+        return fieldError.message
+      }
     }
     if (pbError.response?.message) {
       return pbError.response.message
