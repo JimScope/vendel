@@ -37,6 +37,15 @@ export const getColumns = (t: TFunction): ColumnDef<ApiKey>[] => [
     cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
   },
   {
+    accessorKey: "key_prefix",
+    header: t("apiKeys.key"),
+    cell: ({ row }) => (
+      <span className="font-mono text-sm text-muted-foreground">
+        {row.original.key_prefix}
+      </span>
+    ),
+  },
+  {
     accessorKey: "is_active",
     header: t("common.status"),
     cell: ({ row }) => {
