@@ -223,6 +223,17 @@ npx playwright test --ui
 - **Releases**: Crear un tag (`git tag v0.1.0 && git push --tags`) para publicar imagen Docker en GHCR y compilar binarios Go vía GoReleaser
 - **Modem Agent**: Crear un tag (`git tag modem-agent/v0.1.0 && git push --tags`) para compilar binarios del modem agent
 
+## Repositorios Relacionados
+
+| Repositorio | Descripción |
+|-------------|-------------|
+| [vendel-homepage](https://github.com/JimScope/vendel-homepage) | Landing page y sistema de diseño |
+| [vendel-android](https://github.com/JimScope/vendel-android) | App Android (gateway de dispositivo) |
+| [vendel-mcp](https://github.com/JimScope/vendel-mcp) | Servidor MCP para asistentes de IA |
+| [vendel-sdk-js](https://github.com/JimScope/vendel-sdk-js) | SDK JavaScript/TypeScript (`vendel-sdk` en npm) |
+| [vendel-sdk-python](https://github.com/JimScope/vendel-sdk-python) | SDK Python (`vendel-sdk` en PyPI) |
+| [vendel-sdk-go](https://github.com/JimScope/vendel-sdk-go) | SDK Go (Go modules) |
+
 ## Licencia
 
 MIT License
