@@ -99,6 +99,7 @@ vendel/
 │   │   ├── hooks/              # Hooks custom (PocketBase SDK)
 │   │   └── lib/pocketbase.ts   # Cliente PocketBase
 │   └── tests/                  # Tests Playwright
+├── modem-agent/                # Agente Go para módems USB (AT commands)
 ├── Dockerfile                  # Multi-stage (node + go + alpine)
 ├── docker-compose.yml
 ├── litestream.yml              # Config de replicación Litestream (opt-in)
@@ -159,6 +160,21 @@ npm run build
 
 # Tests E2E
 npx playwright test
+```
+
+#### Modem Agent
+
+El modem agent permite usar módems USB LTE/4G/5G con tarjeta SIM física como gateways de SMS — sin necesidad de un teléfono Android.
+
+```bash
+cd modem-agent
+
+# Configurar módems (formato: api_key:command_port[:notify_port], separados por coma)
+export VENDEL_URL=http://localhost:8090
+export MODEMS="tu_api_key_del_dispositivo:/dev/ttyUSB0:/dev/ttyUSB1"
+
+# Ejecutar
+go run .
 ```
 
 ## Configuración
