@@ -43,6 +43,9 @@ func DeviceE173() DeviceProfile {
 
 // DefaultProfile is a reference implementation that could be embedded
 // in any other custom implementation of the DeviceProfile interface.
+//
+// VENDOR PATCH: Dev exported to allow custom profiles.
+// Upstream PR: https://github.com/xlab/at/pull/43
 type DefaultProfile struct {
 	Dev *Device
 	DeviceProfile
