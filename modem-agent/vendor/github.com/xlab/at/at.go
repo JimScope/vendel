@@ -383,6 +383,8 @@ func (d *Device) Open() (err error) {
 			return
 		}
 	} else if d.NotifyPort != "" {
+		// VENDOR PATCH: single-port modem support.
+		// Upstream PR: https://github.com/xlab/at/pull/42
 		d.notifyPort = d.cmdPort
 	}
 	return
