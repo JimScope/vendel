@@ -1,0 +1,10 @@
+# github.com/xlab/at v1.0.0
+## explicit; go 1.17
+github.com/xlab/at
+github.com/xlab/at/calls
+github.com/xlab/at/pdu
+github.com/xlab/at/sms
+github.com/xlab/at/util
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3

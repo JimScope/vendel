@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -15,19 +14,6 @@ import (
 )
 
 var version = "dev"
-
-// ModemConfig holds the configuration for a single modem.
-type ModemConfig struct {
-	APIKey      string
-	CommandPort string
-	NotifyPort  string
-}
-
-// Config holds the global configuration.
-type Config struct {
-	VendelURL string
-	Modems   []ModemConfig
-}
 
 func main() {
 	cfg := loadConfig()
@@ -50,53 +36,25 @@ func main() {
 	log.Printf("received signal %s, shutting down", sig)
 }
 
-func loadConfig() Config {
-	vendelURL := os.Getenv("VENDEL_URL")
-	if vendelURL == "" {
-		vendelURL = "http://localhost:8090"
-	}
-
-	modemStr := os.Getenv("MODEMS")
-	if modemStr == "" {
-		log.Fatal("MODEMS env var is required (format: api_key:command_port[:notify_port],...")
-	}
-
-	var modems []ModemConfig
-	for _, entry := range strings.Split(modemStr, ",") {
-		entry = strings.TrimSpace(entry)
-		if entry == "" {
-			continue
-		}
-		parts := strings.SplitN(entry, ":", 3)
-		if len(parts) < 2 {
-			log.Fatalf("invalid MODEMS entry %q: expected api_key:command_port[:notify_port]", entry)
-		}
-
-		m := ModemConfig{
-			APIKey:      parts[0],
-			CommandPort: parts[1],
-		}
-		if len(parts) == 3 && parts[2] != "" {
-			m.NotifyPort = parts[2]
-		} else {
-			m.NotifyPort = m.CommandPort
-		}
-		modems = append(modems, m)
-	}
-
-	if len(modems) == 0 {
-		log.Fatal("no modems configured")
-	}
-
-	return Config{
-		VendelURL: vendelURL,
-		Modems:   modems,
-	}
-}
-
 func runModem(cfg ModemConfig, vendelURL string) {
 	logPrefix := fmt.Sprintf("[%s]", cfg.CommandPort)
 	log.Printf("%s starting modem on command=%s notify=%s", logPrefix, cfg.CommandPort, cfg.NotifyPort)
+
+	// Auto-detect profile if not specified
+	profileName := cfg.Profile
+	if profileName == "" {
+		probeDev := &at.Device{
+			CommandPort: cfg.CommandPort,
+			NotifyPort:  cfg.NotifyPort,
+		}
+		if err := probeDev.Open(); err != nil {
+			log.Printf("%s failed to open modem for detection: %v", logPrefix, err)
+			return
+		}
+		profileName = detectProfile(probeDev)
+		probeDev.Close()
+		log.Printf("%s auto-detected profile: %s", logPrefix, profileName)
+	}
 
 	// Open modem via xlab/at
 	dev := &at.Device{
@@ -109,11 +67,11 @@ func runModem(cfg ModemConfig, vendelURL string) {
 	}
 	defer dev.Close()
 
-	if err := dev.Init(at.DeviceE173()); err != nil {
+	if err := dev.Init(resolveProfile(profileName, cfg.SimPIN)); err != nil {
 		log.Printf("%s failed to init modem: %v", logPrefix, err)
 		return
 	}
-	log.Printf("%s modem initialized", logPrefix)
+	log.Printf("%s modem initialized (profile: %s)", logPrefix, profileName)
 
 	client := NewVendelClient(vendelURL, cfg.APIKey)
 
@@ -136,20 +94,25 @@ func runModem(cfg ModemConfig, vendelURL string) {
 		}
 	}
 
-	// Start incoming SMS monitoring
-	go dev.Watch()
-	go func() {
-		for msg := range dev.IncomingSms() {
-			log.Printf("%s incoming SMS from %s", logPrefix, msg.Address)
-			if reportErr := client.ReportIncoming(
-				string(msg.Address),
-				msg.Text,
-				time.Now().UTC().Format(time.RFC3339),
-			); reportErr != nil {
-				log.Printf("%s failed to report incoming SMS: %v", logPrefix, reportErr)
+	// Start incoming SMS monitoring only on dual-port modems.
+	// On single-port modems Watch would conflict with Send on the same fd.
+	if cfg.CommandPort != cfg.NotifyPort {
+		go dev.Watch()
+		go func() {
+			for msg := range dev.IncomingSms() {
+				log.Printf("%s incoming SMS from %s", logPrefix, msg.Address)
+				if reportErr := client.ReportIncoming(
+					string(msg.Address),
+					msg.Text,
+					time.Now().UTC().Format(time.RFC3339),
+				); reportErr != nil {
+					log.Printf("%s failed to report incoming SMS: %v", logPrefix, reportErr)
+				}
 			}
-		}
-	}()
+		}()
+	} else {
+		log.Printf("%s single-port mode: incoming SMS monitoring disabled", logPrefix)
+	}
 
 	// Subscribe to SSE for real-time message assignment.
 	// ConnectSSE reconnects automatically on disconnect.
