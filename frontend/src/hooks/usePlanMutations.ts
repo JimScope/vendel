@@ -4,15 +4,16 @@ import pb from "@/lib/pocketbase"
 import useCustomToast from "./useCustomToast"
 
 export interface UpgradeResponse {
-  status: "activated" | "pending_payment" | "pending_authorization"
-  plan: string
+  subscription_id: string
+  status: "active" | "pending"
   message: string
   payment_url?: string
-  authorization_url?: string
+  wallet_address?: string
 }
 
 interface UpgradePlanInput {
   plan_id: string
+  billing_cycle: "monthly" | "yearly"
   provider: string | null
 }
 
@@ -22,8 +23,12 @@ export function useUpgradePlan() {
   return useMutation({
     mutationFn: async (data: UpgradePlanInput) => {
       return (await pb.send("/api/plans/upgrade", {
-        method: "POST",
-        body: { plan_id: data.plan_id, provider: data.provider },
+        method: "PUT",
+        body: {
+          plan_id: data.plan_id,
+          billing_cycle: data.billing_cycle,
+          provider: data.provider,
+        },
       })) as UpgradeResponse
     },
     onError: () => {

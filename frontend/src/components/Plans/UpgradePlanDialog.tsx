@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { Check, ExternalLink } from "lucide-react"
-import { useState } from "react"
+import { Cuer } from "cuer"
+import { Check, Copy, ExternalLink } from "lucide-react"
+import { useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
@@ -46,9 +47,12 @@ function PlanCard({
   const { t } = useTranslation()
   return (
     <Card
-      className={`relative cursor-pointer transition-colors hover:bg-accent/50 ${
-        isSelected ? "border-primary ring-1 ring-primary" : ""
-      } ${isCurrentPlan ? "bg-accent/30" : ""}`}
+      className={`relative cursor-pointer transition-all ${isCurrentPlan ? "bg-accent/30" : ""}`}
+      style={
+        isSelected
+          ? { borderColor: "var(--brand)", boxShadow: "0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent)" }
+          : undefined
+      }
       onClick={onSelect}
     >
       {isCurrentPlan && (
@@ -87,10 +91,13 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
   const [pendingPayment, setPendingPayment] = useState<{
-    url: string
+    url?: string
+    walletAddress?: string
     plan: string
+    amount: number
     providerDisplayName: string
   } | null>(null)
+  const [copied, setCopied] = useState(false)
   const { data: plansData, isLoading } = usePlanList()
   const { config } = useAppConfig()
   const queryClient = useQueryClient()
@@ -109,31 +116,42 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
   const handleSubmit = () => {
     if (selectedPlanId) {
       mutation.mutate(
-        { plan_id: selectedPlanId, provider: effectiveProvider },
+        {
+          plan_id: selectedPlanId,
+          billing_cycle: "monthly",
+          provider: effectiveProvider,
+        },
         {
           onSuccess: (data: UpgradeResponse) => {
-            if (data.status === "activated") {
+            if (data.status === "active") {
               queryClient.invalidateQueries({ queryKey: ["quota"] })
               showSuccessToast(t("plans.planActivated"))
               setIsOpen(false)
               setSelectedPlanId(null)
               setSelectedProvider(null)
-            } else if (data.status === "pending_payment" && data.payment_url) {
+            } else if (data.status === "pending") {
               const providerInfo = providers.find(
                 (p) => p.name === effectiveProvider,
               )
-              setPendingPayment({
-                url: data.payment_url,
-                plan: data.plan,
-                providerDisplayName:
-                  providerInfo?.display_name ?? "Payment Provider",
-              })
+              const displayName =
+                providerInfo?.display_name ?? "Payment Provider"
+
+              if (data.wallet_address) {
+                setPendingPayment({
+                  walletAddress: data.wallet_address,
+                  plan: selectedPlan?.name ?? "",
+                  amount: selectedPlan?.price ?? 0,
+                  providerDisplayName: displayName,
+                })
+              } else if (data.payment_url) {
+                setPendingPayment({
+                  url: data.payment_url,
+                  plan: selectedPlan?.name ?? "",
+                  amount: selectedPlan?.price ?? 0,
+                  providerDisplayName: displayName,
+                })
+              }
               showInfoToast(t("plans.completePaymentInfo"))
-            } else if (
-              data.status === "pending_authorization" &&
-              data.authorization_url
-            ) {
-              window.location.href = data.authorization_url
             }
           },
         },
@@ -147,6 +165,7 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
       setSelectedPlanId(null)
       setSelectedProvider(null)
       setPendingPayment(null)
+      setCopied(false)
     }
   }
 
@@ -155,6 +174,14 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
       window.open(pendingPayment.url, "_blank")
     }
   }
+
+  const handleCopyAddress = useCallback(() => {
+    if (pendingPayment?.walletAddress) {
+      navigator.clipboard.writeText(pendingPayment.walletAddress)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [pendingPayment?.walletAddress])
 
   const isCurrentPlanSelected =
     selectedPlan?.name.toLowerCase() === currentPlan?.toLowerCase()
@@ -169,7 +196,7 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
       <DialogTrigger asChild>
         <Button size="sm">{t("plans.upgradePlan")}</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {pendingPayment
@@ -183,8 +210,45 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        {pendingPayment ? (
-          // Payment pending view
+        {pendingPayment?.walletAddress ? (
+          // Wallet deposit view (TronDealer)
+          <div className="py-4 text-center space-y-3">
+            <div className="mx-auto w-fit rounded-lg border bg-white p-3">
+              <Cuer.Root value={pendingPayment.walletAddress} size={160}>
+                <Cuer.Finder fill="black" />
+                <Cuer.Cells fill="black" />
+              </Cuer.Root>
+            </div>
+
+            <p className="text-xl font-bold">
+              ${pendingPayment.amount.toFixed(2)}{" "}
+              <span className="text-sm font-normal text-muted-foreground">USDT / USDC (BSC)</span>
+            </p>
+
+            <div className="mx-auto flex max-w-md items-center gap-2 rounded-lg border bg-muted/50 p-2">
+              <code className="flex-1 break-all font-mono text-xs">
+                {pendingPayment.walletAddress}
+              </code>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0"
+                onClick={handleCopyAddress}
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-brand" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              {t("plans.sendMoreToRecharge")}
+            </p>
+          </div>
+        ) : pendingPayment?.url ? (
+          // Payment redirect view (QvaPay/Stripe)
           <div className="py-8 text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
               <ExternalLink className="h-8 w-8 text-primary" />
@@ -259,7 +323,13 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
 
         <DialogFooter>
           {pendingPayment ? (
-            <Button variant="outline" onClick={() => setPendingPayment(null)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingPayment(null)
+                setCopied(false)
+              }}
+            >
               {t("plans.chooseDifferent")}
             </Button>
           ) : (

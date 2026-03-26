@@ -34,10 +34,9 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		userId := e.Auth.Id
 
 		var body struct {
-			PlanID        string `json:"plan_id"`
-			BillingCycle  string `json:"billing_cycle"`
-			PaymentMethod string `json:"payment_method"`
-			Provider      string `json:"provider"`
+			PlanID       string `json:"plan_id"`
+			BillingCycle string `json:"billing_cycle"`
+			Provider     string `json:"provider"`
 		}
 		if err := e.BindBody(&body); err != nil {
 			return apis.NewBadRequestError("Invalid request body", nil)
@@ -46,24 +45,23 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		if body.BillingCycle == "" {
 			body.BillingCycle = "monthly"
 		}
-		if body.PaymentMethod == "" {
-			body.PaymentMethod = services.GetSystemConfigValue(e.App, "default_payment_method")
-			if body.PaymentMethod == "" {
-				body.PaymentMethod = "invoice"
-			}
-		}
 
-		// Resolve payment provider
-		var providerName string
+		// Resolve payment provider — payment method is derived from it
+		var provider payment.Provider
 		if body.Provider != "" {
-			if p := payment.GetProvider(body.Provider); p != nil {
-				providerName = p.Name()
-			} else {
+			provider = payment.GetProvider(body.Provider)
+			if provider == nil {
 				return apis.NewBadRequestError("Unknown payment provider: "+body.Provider, nil)
 			}
-		} else if p := payment.GetDefaultProvider(); p != nil {
-			providerName = p.Name()
+		} else {
+			provider = payment.GetDefaultProvider()
 		}
+		if provider == nil {
+			return apis.NewBadRequestError("No payment provider configured", nil)
+		}
+
+		providerName := provider.Name()
+		paymentMethod := provider.PaymentMethod()
 
 		// Build callback URLs
 		baseURL := os.Getenv("APP_URL")
@@ -80,7 +78,7 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		errorURL := frontendURL + "/settings"
 
 		sub, redirectURL, err := services.StartSubscription(
-			e.App, userId, body.PlanID, body.BillingCycle, body.PaymentMethod,
+			e.App, userId, body.PlanID, body.BillingCycle, paymentMethod,
 			providerName, webhookURL, successURL, errorURL,
 		)
 		if err != nil {
@@ -91,7 +89,11 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 			"subscription_id": sub.Id,
 			"status":          sub.GetString("status"),
 		}
-		if redirectURL != "" {
+		if paymentMethod == "balance" && redirectURL != "" {
+			// redirectURL is the wallet address for crypto deposits
+			result["wallet_address"] = redirectURL
+			result["message"] = "Deposit to wallet address to activate subscription"
+		} else if redirectURL != "" {
 			result["payment_url"] = redirectURL
 			result["message"] = "Redirect user to payment URL"
 		} else {
@@ -99,6 +101,23 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		}
 
 		return e.JSON(http.StatusOK, result)
+	}).Bind(apis.RequireAuth("users"))
+
+	// GET /api/plans/balance — Get user crypto balance and wallet info
+	se.Router.GET("/api/plans/balance", func(e *core.RequestEvent) error {
+		userId := e.Auth.Id
+
+		bal, err := services.GetOrCreateBalance(e.App, userId)
+		if err != nil {
+			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"balance":        bal.GetFloat("balance"),
+			"currency":       bal.GetString("currency"),
+			"wallet_address": bal.GetString("wallet_address"),
+			"wallet_id":      bal.GetString("wallet_id"),
+		})
 	}).Bind(apis.RequireAuth("users"))
 
 	// POST /api/plans/cancel — Cancel subscription

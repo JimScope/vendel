@@ -24,8 +24,7 @@ const (
 const (
 	MinPasswordLength      = 10
 	AuthTokenDurationSecs  = 86400 // 24 hours
-	DefaultAPIKeyExpiryYrs = 1     // years from creation
-	CallbackStateMaxAge    = 1 * time.Hour
+	DefaultAPIKeyExpiryYrs = 1 // years from creation
 )
 
 // ── Webhook Delivery ────────────────────────────────────────────────

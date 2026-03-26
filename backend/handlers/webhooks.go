@@ -19,37 +19,6 @@ func RegisterWebhookRoutes(se *core.ServeEvent) {
 		providerName := e.Request.PathValue("provider")
 		return handlePaymentWebhook(e, providerName)
 	})
-
-	// GET /api/webhooks/{provider} — Authorization callback (QvaPay sends GET)
-	se.Router.GET("/api/webhooks/{provider}", func(e *core.RequestEvent) error {
-		providerName := e.Request.PathValue("provider")
-
-		// Verify signed state token to prevent authorization callback poisoning
-		stateToken := e.Request.URL.Query().Get("state")
-		if stateToken == "" {
-			return apis.NewBadRequestError("Missing state parameter", nil)
-		}
-		verifiedUserId, err := services.VerifyCallbackState(stateToken, services.CallbackStateMaxAge)
-		if err != nil {
-			e.App.Logger().Warn("invalid callback state", slog.String("provider", providerName), slog.Any("error", err))
-			return apis.NewBadRequestError("Invalid or expired state token", nil)
-		}
-
-		// Parse query params as payload for authorization callbacks
-		payload := make(map[string]any)
-		for key, values := range e.Request.URL.Query() {
-			if len(values) > 0 {
-				payload[key] = values[0]
-			}
-		}
-
-		// Override remote_id with the verified userId from the state token
-		payload["remote_id"] = verifiedUserId
-
-		return processWebhookPayload(e, providerName, payment.WebhookRequest{
-			Payload: payload,
-		})
-	})
 }
 
 // RegisterUserWebhookRoutes registers user-facing webhook management endpoints.
@@ -165,26 +134,22 @@ func processWebhookPayload(e *core.RequestEvent, providerName string, webhookReq
 
 	switch event.EventType {
 	case payment.EventPaymentCompleted:
-		sub, err := services.CompleteInvoicePayment(e.App, event.RemoteID, event.TransactionID)
+		// RemoteID = userId; credit balance and auto-activate pending subscription
+		result, err := services.ProcessPaymentCredit(e.App, event.RemoteID, event.TransactionID, event.Amount)
 		if err != nil {
-			e.App.Logger().Error("CompleteInvoicePayment failed", slog.Any("error", err))
+			e.App.Logger().Error("ProcessPaymentCredit failed", slog.Any("error", err))
 			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
 		}
-		return e.JSON(http.StatusOK, map[string]any{
-			"status":          "ok",
-			"subscription_id": sub.Id,
-		})
+		return e.JSON(http.StatusOK, result)
 
-	case payment.EventAuthorizationCompleted:
-		sub, err := services.CompleteAuthorization(e.App, event.RemoteID, event.UserUUID)
+	case payment.EventDepositReceived:
+		// RemoteID = wallet address; look up user, credit balance, auto-activate
+		result, err := services.ProcessDeposit(e.App, event.RemoteID, event.TransactionID, event.Amount, event.Asset)
 		if err != nil {
-			e.App.Logger().Error("CompleteAuthorization failed", slog.Any("error", err))
+			e.App.Logger().Error("ProcessDeposit failed", slog.Any("error", err))
 			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
 		}
-		return e.JSON(http.StatusOK, map[string]any{
-			"status":          "ok",
-			"subscription_id": sub.Id,
-		})
+		return e.JSON(http.StatusOK, result)
 
 	case payment.EventPaymentFailed:
 		e.App.Logger().Warn("payment failed webhook", slog.String("remote_id", event.RemoteID))

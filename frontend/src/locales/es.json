@@ -544,7 +544,16 @@
     "chooseDifferent": "Elegir otro plan",
     "confirmUpgrade": "Confirmar mejora",
     "planActivated": "Plan activado exitosamente",
-    "completePaymentInfo": "Completa el pago para activar tu plan"
+    "completePaymentInfo": "Completa el pago para activar tu plan",
+    "depositToActivate": "Deposita para activar tu plan",
+    "walletAddress": "Direccion de Wallet",
+    "sendStablecoins": "Envia USDT o USDC (BSC) a esta direccion",
+    "balanceAutoApplied": "Tu balance se aplicara automaticamente cuando se confirme el deposito",
+    "copied": "Copiado!",
+    "copyAddress": "Copiar direccion",
+    "minimumAmount": "Monto minimo",
+    "sendMoreToRecharge": "Puedes enviar mas para recargar tu balance para futuras renovaciones",
+    "balance": "Balance"
   },
   "billing": {
     "title": "Facturación",

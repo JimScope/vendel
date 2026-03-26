@@ -33,9 +33,10 @@ func NewStripeProvider() *StripeProvider {
 	}
 }
 
-func (p *StripeProvider) Name() string        { return "stripe" }
-func (p *StripeProvider) DisplayName() string { return "Stripe" }
-func (p *StripeProvider) IsConfigured() bool  { return p.SecretKey != "" && p.WebhookSecret != "" }
+func (p *StripeProvider) Name() string          { return "stripe" }
+func (p *StripeProvider) DisplayName() string   { return "Stripe" }
+func (p *StripeProvider) PaymentMethod() string { return "balance" }
+func (p *StripeProvider) IsConfigured() bool    { return p.SecretKey != "" && p.WebhookSecret != "" }
 
 func (p *StripeProvider) CreateInvoice(req InvoiceRequest) (*InvoiceResult, error) {
 	if !p.IsConfigured() {
@@ -73,79 +74,6 @@ func (p *StripeProvider) CreateInvoice(req InvoiceRequest) (*InvoiceResult, erro
 	return &InvoiceResult{
 		InvoiceID:  sessionID,
 		PaymentURL: sessionURL,
-	}, nil
-}
-
-func (p *StripeProvider) GetAuthorizationURL(req AuthorizationRequest) (*AuthorizationResult, error) {
-	if !p.IsConfigured() {
-		return nil, fmt.Errorf("Stripe is not configured")
-	}
-
-	params := url.Values{}
-	params.Set("mode", "setup")
-	params.Set("customer_creation", "always")
-	params.Set("metadata[remote_id]", req.RemoteID)
-	// Setup mode requires a dummy payment_method_types or Stripe auto-detects
-	params.Set("payment_method_types[0]", "card")
-	if req.SuccessURL != "" {
-		params.Set("success_url", req.SuccessURL)
-	}
-	if req.ErrorURL != "" {
-		params.Set("cancel_url", req.ErrorURL)
-	}
-
-	data, err := p.post("/v1/checkout/sessions", params)
-	if err != nil {
-		return nil, err
-	}
-
-	sessionURL, _ := data["url"].(string)
-	if sessionURL == "" {
-		return nil, fmt.Errorf("Stripe setup session did not return URL")
-	}
-
-	return &AuthorizationResult{AuthorizationURL: sessionURL}, nil
-}
-
-func (p *StripeProvider) ChargeAuthorizedUser(req ChargeRequest) (*ChargeResult, error) {
-	if !p.IsConfigured() {
-		return nil, fmt.Errorf("Stripe is not configured")
-	}
-
-	// UserUUID stores "cus_xxx:pm_xxx"
-	parts := strings.SplitN(req.UserUUID, ":", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid Stripe customer/payment method: %s", req.UserUUID)
-	}
-	customerID := parts[0]
-	paymentMethodID := parts[1]
-
-	amountCents := int64(req.Amount * 100)
-
-	params := url.Values{}
-	params.Set("amount", strconv.FormatInt(amountCents, 10))
-	params.Set("currency", strings.ToLower(req.Currency))
-	params.Set("customer", customerID)
-	params.Set("payment_method", paymentMethodID)
-	params.Set("off_session", "true")
-	params.Set("confirm", "true")
-	params.Set("description", req.Description)
-	params.Set("metadata[remote_id]", req.RemoteID)
-
-	data, err := p.post("/v1/payment_intents", params)
-	if err != nil {
-		return nil, err
-	}
-
-	piID, _ := data["id"].(string)
-	status, _ := data["status"].(string)
-	if status != "succeeded" {
-		return nil, fmt.Errorf("Stripe payment intent status: %s", status)
-	}
-
-	return &ChargeResult{
-		TransactionID: piID,
-		Amount:        req.Amount,
 	}, nil
 }
 
@@ -194,44 +122,17 @@ func (p *StripeProvider) handleCheckoutCompleted(obj map[string]any) (*WebhookEv
 	metadata, _ := obj["metadata"].(map[string]any)
 	remoteID, _ := metadata["remote_id"].(string)
 
-	switch mode {
-	case "payment":
-		piID, _ := obj["payment_intent"].(string)
-		return &WebhookEvent{
-			EventType:     EventPaymentCompleted,
-			RemoteID:      remoteID,
-			TransactionID: piID,
-			RawPayload:    obj,
-		}, nil
-
-	case "setup":
-		customerID, _ := obj["customer"].(string)
-		setupIntentID, _ := obj["setup_intent"].(string)
-
-		// Fetch setup intent to get payment method
-		paymentMethodID := ""
-		if setupIntentID != "" {
-			si, err := p.get("/v1/setup_intents/" + setupIntentID)
-			if err == nil {
-				paymentMethodID, _ = si["payment_method"].(string)
-			}
-		}
-
-		userUUID := customerID
-		if paymentMethodID != "" {
-			userUUID = customerID + ":" + paymentMethodID
-		}
-
-		return &WebhookEvent{
-			EventType:  EventAuthorizationCompleted,
-			RemoteID:   remoteID,
-			UserUUID:   userUUID,
-			RawPayload: obj,
-		}, nil
-
-	default:
-		return nil, fmt.Errorf("unknown checkout session mode: %s", mode)
+	if mode != "payment" {
+		return nil, fmt.Errorf("unsupported checkout session mode: %s", mode)
 	}
+
+	piID, _ := obj["payment_intent"].(string)
+	return &WebhookEvent{
+		EventType:     EventPaymentCompleted,
+		RemoteID:      remoteID,
+		TransactionID: piID,
+		RawPayload:    obj,
+	}, nil
 }
 
 func (p *StripeProvider) handlePaymentFailed(obj map[string]any) (*WebhookEvent, error) {
@@ -299,41 +200,6 @@ func (p *StripeProvider) post(path string, params url.Values) (map[string]any, e
 	}
 	req.Header.Set("Authorization", "Bearer "+p.SecretKey)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return nil, err
-	}
-
-	var data map[string]any
-	if err := json.Unmarshal(respBody, &data); err != nil {
-		return nil, fmt.Errorf("invalid JSON response: %s", string(respBody))
-	}
-
-	if resp.StatusCode >= 400 {
-		errObj, _ := data["error"].(map[string]any)
-		msg, _ := errObj["message"].(string)
-		if msg == "" {
-			msg = fmt.Sprintf("Stripe API error (HTTP %d)", resp.StatusCode)
-		}
-		return nil, fmt.Errorf("Stripe: %s", msg)
-	}
-
-	return data, nil
-}
-
-func (p *StripeProvider) get(path string) (map[string]any, error) {
-	req, err := http.NewRequest("GET", stripeBaseURL+path, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+p.SecretKey)
 
 	resp, err := p.client.Do(req)
 	if err != nil {

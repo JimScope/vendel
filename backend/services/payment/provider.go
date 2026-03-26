@@ -17,41 +17,13 @@ type InvoiceResult struct {
 	PaymentURL string
 }
 
-// AuthorizationRequest represents a request for payment authorization.
-type AuthorizationRequest struct {
-	RemoteID    string
-	CallbackURL string
-	SuccessURL  string
-	ErrorURL    string
-}
-
-// AuthorizationResult is the result of requesting authorization.
-type AuthorizationResult struct {
-	AuthorizationURL string
-}
-
-// ChargeRequest represents a request to charge an authorized user.
-type ChargeRequest struct {
-	UserUUID    string
-	Amount      float64
-	Currency    string
-	Description string
-	RemoteID    string
-}
-
-// ChargeResult is the result of charging a user.
-type ChargeResult struct {
-	TransactionID string
-	Amount        float64
-}
-
 // WebhookEventType represents types of payment webhook events.
 type WebhookEventType string
 
 const (
-	EventPaymentCompleted       WebhookEventType = "payment_completed"
-	EventAuthorizationCompleted WebhookEventType = "authorization_completed"
-	EventPaymentFailed          WebhookEventType = "payment_failed"
+	EventPaymentCompleted WebhookEventType = "payment_completed"
+	EventPaymentFailed    WebhookEventType = "payment_failed"
+	EventDepositReceived  WebhookEventType = "deposit_received"
 )
 
 // WebhookRequest carries the raw HTTP data needed by providers for webhook parsing.
@@ -66,8 +38,8 @@ type WebhookEvent struct {
 	EventType     WebhookEventType
 	RemoteID      string
 	TransactionID string
-	UserUUID      string
 	Amount        float64
+	Asset         string // e.g. "USDT", "USDC" — set by deposit-based providers
 	RawPayload    map[string]any
 }
 
@@ -75,10 +47,9 @@ type WebhookEvent struct {
 type Provider interface {
 	Name() string
 	DisplayName() string
+	PaymentMethod() string // always "balance" — all providers feed user balance
 	IsConfigured() bool
 	CreateInvoice(req InvoiceRequest) (*InvoiceResult, error)
-	GetAuthorizationURL(req AuthorizationRequest) (*AuthorizationResult, error)
-	ChargeAuthorizedUser(req ChargeRequest) (*ChargeResult, error)
 	ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 }
 
@@ -87,6 +58,7 @@ func GetProviders() []Provider {
 	all := []Provider{
 		NewQvaPayProvider(),
 		NewStripeProvider(),
+		NewTronDealerProvider(),
 	}
 	var configured []Provider
 	for _, p := range all {
