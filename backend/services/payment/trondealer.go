@@ -88,109 +88,82 @@ func (p *TronDealerProvider) CreateInvoice(req InvoiceRequest) (*InvoiceResult, 
 }
 
 // ParseWebhook verifies the HMAC-SHA256 signature and parses a TronDealer
-// webhook payload into a WebhookEvent. TronDealer sends transaction data
-// when a deposit is confirmed on-chain.
-//
-// Expected payload:
+// webhook payload. The signature header is x-signature-256 with format
+// "sha256=<hex>". The payload structure is:
 //
 //	{
 //	  "event": "transaction.confirmed",
-//	  "transaction": {
+//	  "timestamp": "...",
+//	  "data": {
 //	    "tx_hash": "0x...",
-//	    "from_address": "0x...",
 //	    "to_address": "0x...",
 //	    "asset": "USDT",
 //	    "amount": "100.00",
-//	    "status": "confirmed",
+//	    "wallet_label": "...",
+//	    "network": "bsc",
 //	    ...
-//	  },
-//	  "wallet": {
-//	    "id": "uuid",
-//	    "address": "0x...",
-//	    "label": "remote-id-here"
 //	  }
 //	}
 func (p *TronDealerProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error) {
-	// Verify HMAC-SHA256 signature
-	signature := req.Headers["X-Webhook-Signature"]
+	// Verify HMAC-SHA256 signature (header: x-signature-256, format: sha256=<hex>)
+	signature := req.Headers["X-Signature-256"]
 	if signature == "" {
-		signature = req.Headers["x-webhook-signature"]
+		signature = req.Headers["x-signature-256"]
 	}
 	if signature == "" {
-		return nil, fmt.Errorf("missing X-Webhook-Signature header")
+		return nil, fmt.Errorf("missing x-signature-256 header")
 	}
+
+	// Strip "sha256=" prefix
+	signature = strings.TrimPrefix(signature, "sha256=")
 
 	if err := p.verifySignature(signature, req.RawBody); err != nil {
 		return nil, fmt.Errorf("TronDealer signature verification failed: %w", err)
 	}
 
-	// Parse payload from raw body
-	var payload map[string]any
+	// Parse payload: {event, timestamp, data: {...}}
+	var payload struct {
+		Event string         `json:"event"`
+		Data  map[string]any `json:"data"`
+	}
 	if err := json.Unmarshal(req.RawBody, &payload); err != nil {
 		return nil, fmt.Errorf("failed to parse TronDealer webhook: %w", err)
 	}
 
-	eventType, _ := payload["event"].(string)
-
-	switch eventType {
-	case "transaction.confirmed":
-		return p.handleTransactionConfirmed(payload)
-	case "transaction.failed":
-		return p.handleTransactionFailed(payload)
-	default:
-		return nil, fmt.Errorf("unrecognized TronDealer event type: %s", eventType)
-	}
-}
-
-func (p *TronDealerProvider) handleTransactionConfirmed(payload map[string]any) (*WebhookEvent, error) {
-	tx, _ := payload["transaction"].(map[string]any)
-	wallet, _ := payload["wallet"].(map[string]any)
-	if tx == nil || wallet == nil {
-		return nil, fmt.Errorf("TronDealer webhook missing transaction or wallet data")
+	if payload.Data == nil {
+		return nil, fmt.Errorf("TronDealer webhook: missing data field")
 	}
 
-	// RemoteID is the wallet address — the handler uses it to look up the
-	// user via user_balances.wallet_address.
-	walletAddress, _ := wallet["address"].(string)
-	if walletAddress == "" {
-		return nil, fmt.Errorf("TronDealer webhook: wallet has no address")
-	}
+	data := payload.Data
+	txHash, _ := data["tx_hash"].(string)
+	asset, _ := data["asset"].(string)
+	toAddress, _ := data["to_address"].(string)
 
-	txHash, _ := tx["tx_hash"].(string)
-	asset, _ := tx["asset"].(string)
-	amountStr, _ := tx["amount"].(string)
 	var amount float64
-	fmt.Sscanf(amountStr, "%f", &amount)
-
-	return &WebhookEvent{
-		EventType:     EventDepositReceived,
-		RemoteID:      walletAddress,
-		TransactionID: txHash,
-		Amount:        amount,
-		Asset:         asset,
-		RawPayload:    payload,
-	}, nil
-}
-
-func (p *TronDealerProvider) handleTransactionFailed(payload map[string]any) (*WebhookEvent, error) {
-	wallet, _ := payload["wallet"].(map[string]any)
-	remoteID := ""
-	if wallet != nil {
-		remoteID, _ = wallet["label"].(string)
+	switch v := data["amount"].(type) {
+	case float64:
+		amount = v
+	case string:
+		fmt.Sscanf(v, "%f", &amount)
 	}
 
-	tx, _ := payload["transaction"].(map[string]any)
-	txHash := ""
-	if tx != nil {
-		txHash, _ = tx["tx_hash"].(string)
+	if toAddress == "" {
+		return nil, fmt.Errorf("TronDealer webhook: missing to_address")
 	}
 
-	return &WebhookEvent{
-		EventType:     EventPaymentFailed,
-		RemoteID:      remoteID,
-		TransactionID: txHash,
-		RawPayload:    payload,
-	}, nil
+	switch payload.Event {
+	case "transaction.confirmed":
+		return &WebhookEvent{
+			EventType:     EventDepositReceived,
+			RemoteID:      toAddress,
+			TransactionID: txHash,
+			Amount:        amount,
+			Asset:         asset,
+			RawPayload:    data,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unhandled TronDealer event: %s", payload.Event)
+	}
 }
 
 // verifySignature checks the HMAC-SHA256 signature against the raw body.
