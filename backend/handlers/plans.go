@@ -29,14 +29,13 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		return e.JSON(http.StatusOK, quota)
 	})
 
-	// PUT /api/plans/upgrade — Start subscription
+	// PUT /api/plans/upgrade — Activate subscription (balance-only)
 	se.Router.PUT("/api/plans/upgrade", func(e *core.RequestEvent) error {
 		userId := e.Auth.Id
 
 		var body struct {
 			PlanID       string `json:"plan_id"`
 			BillingCycle string `json:"billing_cycle"`
-			Provider     string `json:"provider"`
 		}
 		if err := e.BindBody(&body); err != nil {
 			return apis.NewBadRequestError("Invalid request body", nil)
@@ -46,64 +45,97 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 			body.BillingCycle = "monthly"
 		}
 
-		// Resolve payment provider — payment method is derived from it
-		var provider payment.Provider
-		if body.Provider != "" {
-			provider = payment.GetProvider(body.Provider)
-			if provider == nil {
-				return apis.NewBadRequestError("Unknown payment provider: "+body.Provider, nil)
-			}
-		} else {
-			provider = payment.GetDefaultProvider()
-		}
-		if provider == nil {
-			return apis.NewBadRequestError("No payment provider configured", nil)
+		sub, err := services.StartSubscription(e.App, userId, body.PlanID, body.BillingCycle)
+		if err != nil {
+			return handleServiceError(e, err)
 		}
 
-		providerName := provider.Name()
-		paymentMethod := provider.PaymentMethod()
+		return e.JSON(http.StatusOK, map[string]any{
+			"subscription_id": sub.Id,
+			"status":          sub.GetString("status"),
+			"message":         "Subscription activated",
+		})
+	}).Bind(apis.RequireAuth("users"))
+
+	// POST /api/plans/topup — Add funds via a payment provider
+	se.Router.POST("/api/plans/topup", func(e *core.RequestEvent) error {
+		userId := e.Auth.Id
+
+		var body struct {
+			Amount   float64 `json:"amount"`
+			Provider string  `json:"provider"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return apis.NewBadRequestError("Invalid request body", nil)
+		}
+
+		if body.Provider == "" {
+			return apis.NewBadRequestError("Provider is required", nil)
+		}
+
+		// Resolve provider with system_config fallback
+		resolve := func(key string) string { return services.GetSystemConfigValue(e.App, key) }
+		provider := payment.GetProviderWithConfig(body.Provider, resolve)
+		if provider == nil {
+			return apis.NewBadRequestError("Unknown or unconfigured provider: "+body.Provider, nil)
+		}
+
+		// For TronDealer, amount is optional (any deposit works)
+		// For QvaPay/Stripe, amount is required with min/max bounds
+		if provider.Name() != "trondealer" {
+			if body.Amount < 1 {
+				return apis.NewBadRequestError("Minimum top-up amount is $1.00", nil)
+			}
+			if body.Amount > 500 {
+				return apis.NewBadRequestError("Maximum top-up amount is $500.00", nil)
+			}
+		}
 
 		// Build callback URLs
 		baseURL := os.Getenv("APP_URL")
 		if baseURL == "" {
 			baseURL = "http://localhost:8090"
 		}
+		webhookURL := fmt.Sprintf("%s/api/webhooks/%s", baseURL, provider.Name())
 
-		webhookURL := fmt.Sprintf("%s/api/webhooks/%s", baseURL, providerName)
 		frontendURL := os.Getenv("FRONTEND_URL")
 		if frontendURL == "" {
-			frontendURL = "http://localhost:5173"
+			frontendURL = baseURL
 		}
-		successURL := frontendURL + "/settings"
-		errorURL := frontendURL + "/settings"
 
-		sub, redirectURL, err := services.StartSubscription(
-			e.App, userId, body.PlanID, body.BillingCycle, paymentMethod,
-			providerName, webhookURL, successURL, errorURL,
-		)
+		result, err := provider.CreateInvoice(payment.InvoiceRequest{
+			Amount:      body.Amount,
+			Currency:    "USD",
+			Description: "Balance top-up",
+			RemoteID:    userId,
+			WebhookURL:  webhookURL,
+			SuccessURL:  frontendURL + "/settings?topup=success",
+			ErrorURL:    frontendURL + "/settings?topup=canceled",
+		})
 		if err != nil {
-			return handleServiceError(e, err)
+			return apis.NewApiError(http.StatusInternalServerError, "Provider error: "+err.Error(), nil)
 		}
 
-		result := map[string]any{
-			"subscription_id": sub.Id,
-			"status":          sub.GetString("status"),
-		}
-		if paymentMethod == "balance" && redirectURL != "" {
-			// redirectURL is the wallet address for crypto deposits
-			result["wallet_address"] = redirectURL
-			result["message"] = "Deposit to wallet address to activate subscription"
-		} else if redirectURL != "" {
-			result["payment_url"] = redirectURL
-			result["message"] = "Redirect user to payment URL"
-		} else {
-			result["message"] = "Subscription activated"
+		// For TronDealer, persist wallet info
+		if provider.Name() == "trondealer" {
+			bal, _ := services.GetOrCreateBalance(e.App, userId)
+			if bal != nil && bal.GetString("wallet_address") == "" {
+				_ = services.SetWalletInfo(e.App, userId, result.PaymentURL, result.InvoiceID)
+			}
+
+			return e.JSON(http.StatusOK, map[string]any{
+				"provider":       provider.Name(),
+				"wallet_address": result.PaymentURL,
+			})
 		}
 
-		return e.JSON(http.StatusOK, result)
+		return e.JSON(http.StatusOK, map[string]any{
+			"provider":    provider.Name(),
+			"payment_url": result.PaymentURL,
+		})
 	}).Bind(apis.RequireAuth("users"))
 
-	// GET /api/plans/balance — Get user crypto balance and wallet info
+	// GET /api/plans/balance — Get user balance and wallet info
 	se.Router.GET("/api/plans/balance", func(e *core.RequestEvent) error {
 		userId := e.Auth.Id
 

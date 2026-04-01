@@ -1,8 +1,8 @@
 package services
 
 import (
-	"vendel/services/payment"
 	"strings"
+	"vendel/services/payment"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -38,12 +38,28 @@ func GetAppSettings(app core.App) map[string]any {
 	} else {
 		result["maintenance_mode"] = "false"
 	}
-	// Add configured payment providers
+	// Add payment providers that are enabled via system_config toggle.
+	// Each provider needs provider_<name>_enabled = "true" in system_config.
+	allProviders := []struct{ name, displayName string }{
+		{"trondealer", "TronDealer"},
+		{"qvapay", "QvaPay"},
+		{"stripe", "Stripe"},
+	}
+	resolve := func(key string) string { return GetSystemConfigValue(app, key) }
 	var providers []map[string]string
-	for _, p := range payment.GetProviders() {
+	for _, p := range allProviders {
+		enabledKey := "provider_" + p.name + "_enabled"
+		if strings.ToLower(GetSystemConfigValue(app, enabledKey)) != "true" {
+			continue
+		}
+		// Only list the provider if it's actually configured (has API keys)
+		provider := payment.GetProviderWithConfig(p.name, resolve)
+		if provider == nil {
+			continue
+		}
 		providers = append(providers, map[string]string{
-			"name":         p.Name(),
-			"display_name": p.DisplayName(),
+			"name":         p.name,
+			"display_name": p.displayName,
 		})
 	}
 	result["payment_providers"] = providers

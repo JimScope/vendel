@@ -1,4 +1,4 @@
-import { Calendar, CreditCard, Wallet } from "lucide-react"
+import { Calendar, CreditCard } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import {
   Card,
@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useBalance } from "@/hooks/useBalance"
 import { useQuota } from "@/hooks/useQuota"
 import UpgradePlanDialog from "./UpgradePlanDialog"
 
@@ -36,7 +35,6 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
 function QuotaCard() {
   const { t } = useTranslation()
   const { data: quota, isLoading } = useQuota()
-  const { data: balance } = useBalance()
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "N/A"
@@ -109,18 +107,6 @@ function QuotaCard() {
                 </span>
               </div>
             </div>
-
-            {balance?.wallet_address && (
-              <div className="flex items-center justify-between text-sm border-t border-border pt-3">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Wallet className="h-4 w-4" />
-                  <span>{t("plans.balance")}</span>
-                </div>
-                <span className="font-medium">
-                  ${balance.balance.toFixed(2)} {balance.currency}
-                </span>
-              </div>
-            )}
           </>
         )}
       </CardContent>

@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import pb from "@/lib/pocketbase"
-import useCustomToast from "./useCustomToast"
 
 export function useSystemConfig() {
   return useQuery({
@@ -10,23 +9,19 @@ export function useSystemConfig() {
   })
 }
 
-export function useUpdateSystemConfig() {
+export function useSaveSystemConfig() {
   const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
 
   return useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      return await pb.send(`/api/system-config/${key}`, {
-        method: "PATCH",
-        body: { value },
+    mutationFn: async (configs: Record<string, string>) => {
+      return await pb.send("/api/system-config", {
+        method: "PUT",
+        body: configs,
       })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["system-config"] })
-      showSuccessToast("Configuration updated successfully")
-    },
-    onError: () => {
-      showErrorToast("Failed to update configuration")
+      queryClient.invalidateQueries({ queryKey: ["app-settings"] })
     },
   })
 }

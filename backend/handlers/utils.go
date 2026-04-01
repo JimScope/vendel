@@ -4,6 +4,7 @@ import (
 	"vendel/middleware"
 	"vendel/services"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/pocketbase/pocketbase/apis"
@@ -33,6 +34,7 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 	}).Bind(apis.RequireAuth("users"))
 
 	// GET /api/system-config — returns all system_config records (app admin only)
+	// Also includes env_hints: which config keys have env vars set.
 	se.Router.GET("/api/system-config", func(e *core.RequestEvent) error {
 		if !middleware.IsAppSuperuser(e) {
 			return e.ForbiddenError("", nil)
@@ -41,7 +43,55 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 		if err != nil {
 			return apis.NewApiError(http.StatusInternalServerError, "Failed to fetch system config", nil)
 		}
-		return e.JSON(http.StatusOK, map[string]any{"data": records})
+
+		// Map config keys → env var names
+		envMap := map[string]string{
+			"trondealer_api_key":        "TRONDEALER_API_KEY",
+			"trondealer_webhook_secret": "TRONDEALER_WEBHOOK_SECRET",
+			"qvapay_app_id":             "QVAPAY_APP_ID",
+			"qvapay_app_secret":         "QVAPAY_APP_SECRET",
+			"stripe_secret_key":         "STRIPE_SECRET_KEY",
+			"stripe_webhook_secret":     "STRIPE_WEBHOOK_SECRET",
+		}
+		envHints := map[string]bool{}
+		for configKey, envKey := range envMap {
+			envHints[configKey] = os.Getenv(envKey) != ""
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{"data": records, "env_hints": envHints})
+	}).Bind(apis.RequireAuth("users"))
+
+	// PUT /api/system-config — batch update config values (app admin only)
+	se.Router.PUT("/api/system-config", func(e *core.RequestEvent) error {
+		if !middleware.IsAppSuperuser(e) {
+			return e.ForbiddenError("", nil)
+		}
+
+		var body map[string]string
+		if err := e.BindBody(&body); err != nil {
+			return apis.NewBadRequestError("Invalid request body", nil)
+		}
+
+		collection, err := e.App.FindCollectionByNameOrId("system_config")
+		if err != nil {
+			return apis.NewApiError(http.StatusInternalServerError, "system_config collection not found", nil)
+		}
+
+		for key, value := range body {
+			record, _ := e.App.FindFirstRecordByFilter("system_config", "key = {:key}", map[string]any{"key": key})
+			if record != nil {
+				record.Set("value", value)
+			} else {
+				record = core.NewRecord(collection)
+				record.Set("key", key)
+				record.Set("value", value)
+			}
+			if err := e.App.Save(record); err != nil {
+				return apis.NewApiError(http.StatusInternalServerError, "Failed to save config key: "+key, nil)
+			}
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{"updated": len(body)})
 	}).Bind(apis.RequireAuth("users"))
 
 	// PATCH /api/system-config/{key} — update (or create) a config value (app admin only)

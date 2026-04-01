@@ -1,7 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { Cuer } from "cuer"
-import { Check, Copy, ExternalLink } from "lucide-react"
-import { useCallback, useState } from "react"
+import { Check } from "lucide-react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,10 +22,10 @@ import {
 } from "@/components/ui/dialog"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Skeleton } from "@/components/ui/skeleton"
-import useAppConfig from "@/hooks/useAppConfig"
+import { useBalance } from "@/hooks/useBalance"
 import useCustomToast from "@/hooks/useCustomToast"
 import { usePlanList } from "@/hooks/usePlanList"
-import { type UpgradeResponse, useUpgradePlan } from "@/hooks/usePlanMutations"
+import { useUpgradePlan } from "@/hooks/usePlanMutations"
 import type { Plan } from "@/types/collections"
 
 interface UpgradePlanDialogProps {
@@ -50,7 +49,11 @@ function PlanCard({
       className={`relative cursor-pointer transition-all ${isCurrentPlan ? "bg-accent/30" : ""}`}
       style={
         isSelected
-          ? { borderColor: "var(--brand)", boxShadow: "0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent)" }
+          ? {
+              borderColor: "var(--brand)",
+              boxShadow:
+                "0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent)",
+            }
           : undefined
       }
       onClick={onSelect}
@@ -89,196 +92,76 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
-  const [pendingPayment, setPendingPayment] = useState<{
-    url?: string
-    walletAddress?: string
-    plan: string
-    amount: number
-    providerDisplayName: string
-  } | null>(null)
-  const [copied, setCopied] = useState(false)
   const { data: plansData, isLoading } = usePlanList()
-  const { config } = useAppConfig()
+  const { data: balance } = useBalance()
   const queryClient = useQueryClient()
-  const { showSuccessToast, showInfoToast } = useCustomToast()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
   const mutation = useUpgradePlan()
 
-  const providers = config.paymentProviders
   const selectedPlan = plansData?.data?.find((p) => p.id === selectedPlanId)
-  const isPaidPlan = selectedPlan && (selectedPlan.price ?? 0) > 0
-  const needsProviderSelection = isPaidPlan && providers.length > 1
-
-  // Auto-select provider if only one available
-  const effectiveProvider =
-    providers.length === 1 ? providers[0].name : selectedProvider
 
   const handleSubmit = () => {
-    if (selectedPlanId) {
-      mutation.mutate(
-        {
-          plan_id: selectedPlanId,
-          billing_cycle: "monthly",
-          provider: effectiveProvider,
-        },
-        {
-          onSuccess: (data: UpgradeResponse) => {
-            if (data.status === "active") {
-              queryClient.invalidateQueries({ queryKey: ["quota"] })
-              showSuccessToast(t("plans.planActivated"))
-              setIsOpen(false)
-              setSelectedPlanId(null)
-              setSelectedProvider(null)
-            } else if (data.status === "pending") {
-              const providerInfo = providers.find(
-                (p) => p.name === effectiveProvider,
-              )
-              const displayName =
-                providerInfo?.display_name ?? "Payment Provider"
+    if (!selectedPlanId) return
 
-              if (data.wallet_address) {
-                setPendingPayment({
-                  walletAddress: data.wallet_address,
-                  plan: selectedPlan?.name ?? "",
-                  amount: selectedPlan?.price ?? 0,
-                  providerDisplayName: displayName,
-                })
-              } else if (data.payment_url) {
-                setPendingPayment({
-                  url: data.payment_url,
-                  plan: selectedPlan?.name ?? "",
-                  amount: selectedPlan?.price ?? 0,
-                  providerDisplayName: displayName,
-                })
-              }
-              showInfoToast(t("plans.completePaymentInfo"))
-            }
-          },
+    mutation.mutate(
+      { plan_id: selectedPlanId, billing_cycle: "monthly" },
+      {
+        onSuccess: (data) => {
+          if (data.status.includes("active")) {
+            queryClient.invalidateQueries({ queryKey: ["quota"] })
+            queryClient.invalidateQueries({ queryKey: ["balance"] })
+            showSuccessToast(t("plans.planActivated"))
+            setIsOpen(false)
+            setSelectedPlanId(null)
+          }
         },
-      )
-    }
+        onError: (error) => {
+          showErrorToast(
+            error instanceof Error ? error.message : String(error),
+          )
+        },
+      },
+    )
   }
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open)
     if (!open) {
       setSelectedPlanId(null)
-      setSelectedProvider(null)
-      setPendingPayment(null)
-      setCopied(false)
     }
   }
-
-  const handlePaymentRedirect = () => {
-    if (pendingPayment?.url) {
-      window.open(pendingPayment.url, "_blank")
-    }
-  }
-
-  const handleCopyAddress = useCallback(() => {
-    if (pendingPayment?.walletAddress) {
-      navigator.clipboard.writeText(pendingPayment.walletAddress)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }, [pendingPayment?.walletAddress])
 
   const isCurrentPlanSelected =
     selectedPlan?.name.toLowerCase() === currentPlan?.toLowerCase()
 
-  const canSubmit =
-    selectedPlanId &&
-    !isCurrentPlanSelected &&
-    (!isPaidPlan || effectiveProvider)
+  const canSubmit = selectedPlanId && !isCurrentPlanSelected
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm">{t("plans.upgradePlan")}</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
-            {pendingPayment
-              ? t("plans.completePayment")
-              : t("plans.changePlan")}
-          </DialogTitle>
-          <DialogDescription>
-            {pendingPayment
-              ? t("plans.completePaymentDesc", { plan: pendingPayment.plan })
-              : t("plans.choosePlanDesc")}
-          </DialogDescription>
+          <DialogTitle>{t("plans.changePlan")}</DialogTitle>
+          <DialogDescription>{t("plans.choosePlanDesc")}</DialogDescription>
         </DialogHeader>
 
-        {pendingPayment?.walletAddress ? (
-          // Wallet deposit view (TronDealer)
-          <div className="py-4 text-center space-y-3">
-            <div className="mx-auto w-fit rounded-lg border bg-white p-3">
-              <Cuer.Root value={pendingPayment.walletAddress} size={160}>
-                <Cuer.Finder fill="black" />
-                <Cuer.Cells fill="black" />
-              </Cuer.Root>
-            </div>
-
-            <p className="text-xl font-bold">
-              ${pendingPayment.amount.toFixed(2)}{" "}
-              <span className="text-sm font-normal text-muted-foreground">USDT / USDC (BSC)</span>
-            </p>
-
-            <div className="mx-auto flex max-w-md items-center gap-2 rounded-lg border bg-muted/50 p-2">
-              <code className="flex-1 break-all font-mono text-xs">
-                {pendingPayment.walletAddress}
-              </code>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0"
-                onClick={handleCopyAddress}
-              >
-                {copied ? (
-                  <Check className="h-4 w-4 text-brand" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              {t("plans.sendMoreToRecharge")}
-            </p>
-          </div>
-        ) : pendingPayment?.url ? (
-          // Payment redirect view (QvaPay/Stripe)
-          <div className="py-8 text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <ExternalLink className="h-8 w-8 text-primary" />
-            </div>
-            <p className="text-muted-foreground">
-              {t("plans.paymentRedirectMsg", {
-                provider: pendingPayment.providerDisplayName,
-              })}
-            </p>
-            <Button onClick={handlePaymentRedirect} size="lg" className="gap-2">
-              <ExternalLink className="h-4 w-4" />
-              {t("plans.payWith", {
-                provider: pendingPayment.providerDisplayName,
-              })}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              {t("plans.secureRedirectMsg", {
-                provider: pendingPayment.providerDisplayName,
-              })}
-            </p>
-          </div>
-        ) : isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 py-4">
-            {["a", "b", "c", "d"].map((id) => (
+        {isLoading ? (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+            {["a", "b", "c"].map((id) => (
               <Skeleton key={id} className="h-48 w-full" />
             ))}
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              {t("plans.currentBalance", {
+                amount: `$${balance?.balance?.toFixed(2) ?? "0.00"}`,
+              })}
+            </p>
+
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
               {(plansData?.data as unknown as Plan[])?.map((plan) => (
                 <PlanCard
                   key={plan.id}
@@ -287,69 +170,28 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
                     plan.name.toLowerCase() === currentPlan?.toLowerCase()
                   }
                   isSelected={selectedPlanId === plan.id}
-                  onSelect={() => {
-                    setSelectedPlanId(plan.id)
-                    setSelectedProvider(null)
-                  }}
+                  onSelect={() => setSelectedPlanId(plan.id)}
                 />
               ))}
             </div>
-
-            {needsProviderSelection && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">
-                  {t("plans.paymentMethod")}
-                </p>
-                <div className="flex gap-2">
-                  {providers.map((provider) => (
-                    <Button
-                      key={provider.name}
-                      variant={
-                        selectedProvider === provider.name
-                          ? "default"
-                          : "outline"
-                      }
-                      size="sm"
-                      onClick={() => setSelectedProvider(provider.name)}
-                    >
-                      {provider.display_name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
         <DialogFooter>
-          {pendingPayment ? (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPendingPayment(null)
-                setCopied(false)
-              }}
-            >
-              {t("plans.chooseDifferent")}
+          <DialogClose asChild>
+            <Button variant="outline" disabled={mutation.isPending}>
+              {t("common.cancel")}
             </Button>
-          ) : (
-            <>
-              <DialogClose asChild>
-                <Button variant="outline" disabled={mutation.isPending}>
-                  {t("common.cancel")}
-                </Button>
-              </DialogClose>
-              <LoadingButton
-                onClick={handleSubmit}
-                loading={mutation.isPending}
-                disabled={!canSubmit}
-              >
-                {isCurrentPlanSelected
-                  ? t("plans.currentPlan")
-                  : t("plans.confirmUpgrade")}
-              </LoadingButton>
-            </>
-          )}
+          </DialogClose>
+          <LoadingButton
+            onClick={handleSubmit}
+            loading={mutation.isPending}
+            disabled={!canSubmit}
+          >
+            {isCurrentPlanSelected
+              ? t("plans.currentPlan")
+              : t("plans.confirmUpgrade")}
+          </LoadingButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

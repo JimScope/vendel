@@ -6,24 +6,18 @@ import (
 	"net/mail"
 	"time"
 
-	"vendel/services/payment"
-
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
-// StartSubscription begins the subscription process.
-// All providers use the balance flow: deposit funds → balance credited → subscription activates.
-// Returns (subscription record, payment/deposit URL or empty, error).
+// StartSubscription activates a subscription by debiting the user's balance.
+// Subscriptions are balance-only — providers are used separately for top-ups.
 func StartSubscription(
 	app core.App,
-	userId, planId string,
-	billingCycle, paymentMethod string,
-	providerName string,
-	webhookURL, successURL, errorURL string,
-) (*core.Record, string, error) {
+	userId, planId, billingCycle string,
+) (*core.Record, error) {
 	existing, _ := findSubscriptionByUser(app, userId)
 	if existing != nil {
 		switch existing.GetString("status") {
@@ -32,18 +26,18 @@ func StartSubscription(
 			existing = nil
 		case "active":
 			if existing.GetString("plan") == planId {
-				return nil, "", fmt.Errorf("already subscribed to this plan")
+				return nil, fmt.Errorf("already subscribed to this plan")
 			}
-			return nil, "", fmt.Errorf("cancel current subscription before changing plans")
+			return nil, fmt.Errorf("cancel current subscription before changing plans")
 		}
 	}
 
 	plan, err := app.FindRecordById("user_plans", planId)
 	if err != nil {
-		return nil, "", fmt.Errorf("plan not found")
+		return nil, fmt.Errorf("plan not found")
 	}
 	if !plan.GetBool("is_public") {
-		return nil, "", fmt.Errorf("plan not available")
+		return nil, fmt.Errorf("plan not available")
 	}
 
 	amount, periodDays := calculateBilling(plan, billingCycle)
@@ -53,14 +47,14 @@ func StartSubscription(
 
 	// Free plan — activate immediately
 	if amount <= 0 {
-		sub, err := createSubscriptionRecord(app, userId, planId, billingCycle, paymentMethod, providerName, "active", now, periodEnd)
+		sub, err := createSubscriptionRecord(app, userId, planId, billingCycle, "active", now, periodEnd)
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
 		if err := updateUserQuota(app, userId, planId); err != nil {
 			app.Logger().Warn("failed to update quota", slog.Any("error", err))
 		}
-		return sub, "", nil
+		return sub, nil
 	}
 
 	// Delete existing expired/canceled subscription
@@ -68,49 +62,27 @@ func StartSubscription(
 		_ = app.Delete(existing)
 	}
 
-	sub, err := createSubscriptionRecord(app, userId, planId, billingCycle, paymentMethod, providerName, "pending", now, now)
-	if err != nil {
-		return nil, "", err
-	}
-
-	provider, err := resolveProvider(providerName)
-	if err != nil {
-		return nil, "", err
-	}
-
+	// Check balance
 	bal, err := GetOrCreateBalance(app, userId)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	// If balance is sufficient, activate immediately
-	if bal.GetFloat("balance") >= amount {
-		if err := activateBalanceSubscription(app, sub, plan, userId, amount, periodDays); err != nil {
-			return nil, "", err
-		}
-		return sub, "", nil
+	if bal.GetFloat("balance") < amount {
+		return nil, fmt.Errorf("insufficient balance: need $%.2f, have $%.2f", amount, bal.GetFloat("balance"))
 	}
 
-	// Insufficient balance — ask the provider for a payment/deposit method.
-	// TronDealer: assigns a wallet address (persistent, reusable).
-	// QvaPay/Stripe: creates an invoice/checkout for the needed amount.
-	result, err := provider.CreateInvoice(payment.InvoiceRequest{
-		Amount:      amount,
-		Currency:    "USD",
-		Description: fmt.Sprintf("Subscription: %s (%s)", plan.GetString("name"), sub.GetString("billing_cycle")),
-		RemoteID:    userId,
-		WebhookURL:  webhookURL,
-	})
+	// Create subscription and activate by debiting balance
+	sub, err := createSubscriptionRecord(app, userId, planId, billingCycle, "pending", now, now)
 	if err != nil {
-		return nil, "", fmt.Errorf("payment provider error: %w", err)
+		return nil, err
 	}
 
-	// For wallet-based providers, persist the address for future deposits
-	if provider.Name() == "trondealer" && bal.GetString("wallet_address") == "" {
-		_ = SetWalletInfo(app, userId, result.PaymentURL, result.InvoiceID)
+	if err := activateBalanceSubscription(app, sub, plan, userId, amount, periodDays); err != nil {
+		return nil, err
 	}
 
-	return sub, result.PaymentURL, nil
+	return sub, nil
 }
 
 // CancelSubscription cancels a subscription, optionally immediately.
@@ -181,17 +153,6 @@ func calculateBilling(plan *core.Record, cycle string) (amount float64, periodDa
 	return amount, 365
 }
 
-func resolveProvider(name string) (payment.Provider, error) {
-	provider := payment.GetProvider(name)
-	if provider == nil {
-		provider = payment.GetDefaultProvider()
-	}
-	if provider == nil {
-		return nil, fmt.Errorf("no payment provider configured")
-	}
-	return provider, nil
-}
-
 // FindPaymentByTransactionID looks up a payment record by provider_transaction_id.
 func FindPaymentByTransactionID(app core.App, transactionID string) (*core.Record, error) {
 	return app.FindFirstRecordByFilter(
@@ -211,7 +172,7 @@ func findSubscriptionByUser(app core.App, userId string) (*core.Record, error) {
 
 func createSubscriptionRecord(
 	app core.App,
-	userId, planId, billingCycle, paymentMethod, provider, status string,
+	userId, planId, billingCycle, status string,
 	periodStart, periodEnd time.Time,
 ) (*core.Record, error) {
 	collection, err := app.FindCollectionByNameOrId("subscriptions")
@@ -223,8 +184,8 @@ func createSubscriptionRecord(
 	record.Set("user", userId)
 	record.Set("plan", planId)
 	record.Set("billing_cycle", billingCycle)
-	record.Set("payment_method", paymentMethod)
-	record.Set("provider", provider)
+	record.Set("payment_method", "balance")
+	record.Set("provider", "")
 	record.Set("status", status)
 	record.Set("current_period_start", periodStart)
 	record.Set("current_period_end", periodEnd)
