@@ -108,7 +108,10 @@ func configureSMTP(app core.App) {
 		settings.Meta.SenderName = appName
 	}
 	if settings.Meta.SenderAddress == "" || settings.Meta.SenderAddress == "support@example.com" {
-		settings.Meta.SenderAddress = "noreply@vendel.cc"
+		senderEmail := services.GetSystemConfigValue(app, "sender_email")
+		if senderEmail != "" {
+			settings.Meta.SenderAddress = senderEmail
+		}
 	}
 
 	// AppURL is used by PocketBase email templates ({APP_URL} placeholder)

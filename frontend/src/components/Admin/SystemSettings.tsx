@@ -136,6 +136,21 @@ function SystemSettings() {
             </p>
           </div>
 
+          <div className="grid gap-2">
+            <Label htmlFor="sender-email">{t("admin.senderEmail")}</Label>
+            <Input
+              id="sender-email"
+              type="email"
+              value={get("sender_email")}
+              onChange={(e) => set("sender_email", e.target.value)}
+              placeholder={t("admin.senderEmailPlaceholder")}
+              className="w-[300px]"
+            />
+            <p className="text-sm text-muted-foreground">
+              {t("admin.senderEmailDesc")}
+            </p>
+          </div>
+
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div className="space-y-0.5">
               <Label htmlFor="maintenance-mode">

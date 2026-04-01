@@ -333,6 +333,7 @@ func init() {
 		// System config defaults
 		configs := []struct{ key, value, desc string }{
 			{"app_name", "Vendel", "Application display name"},
+			{"sender_email", "noreply@vendel.cc", "Email address used for transactional emails"},
 			{"support_email", "support@vendel.cc", "Support email address"},
 			{"maintenance_mode", "false", "Enable/disable maintenance mode"},
 			{"default_payment_method", "invoice", "Default payment method (invoice or authorized)"},
