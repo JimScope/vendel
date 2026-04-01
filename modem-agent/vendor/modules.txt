@@ -1,4 +1,4 @@
-# github.com/xlab/at v1.0.0
+# github.com/xlab/at v1.0.1-0.20260329105545-b341cce335ba
 ## explicit; go 1.17
 github.com/xlab/at
 github.com/xlab/at/calls
