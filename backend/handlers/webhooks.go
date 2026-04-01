@@ -138,7 +138,7 @@ func processWebhookPayload(e *core.RequestEvent, providerName string, webhookReq
 		result, err := services.ProcessPaymentCredit(e.App, event.RemoteID, event.TransactionID, event.Amount)
 		if err != nil {
 			e.App.Logger().Error("ProcessPaymentCredit failed", slog.Any("error", err))
-			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
+			return apis.NewApiError(http.StatusInternalServerError, "payment processing failed", nil)
 		}
 		return e.JSON(http.StatusOK, result)
 
@@ -147,7 +147,7 @@ func processWebhookPayload(e *core.RequestEvent, providerName string, webhookReq
 		result, err := services.ProcessDeposit(e.App, event.RemoteID, event.TransactionID, event.Amount, event.Asset)
 		if err != nil {
 			e.App.Logger().Error("ProcessDeposit failed", slog.Any("error", err))
-			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
+			return apis.NewApiError(http.StatusInternalServerError, "deposit processing failed", nil)
 		}
 		return e.JSON(http.StatusOK, result)
 

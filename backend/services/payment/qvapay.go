@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
-	"time"
 )
 
 const qvaPayBaseURL = "https://api.qvapay.com/v2"
@@ -19,14 +17,6 @@ type QvaPayProvider struct {
 	client    *http.Client
 }
 
-// NewQvaPayProvider creates a new QvaPay provider from environment.
-func NewQvaPayProvider() *QvaPayProvider {
-	return &QvaPayProvider{
-		AppID:     os.Getenv("QVAPAY_APP_ID"),
-		AppSecret: os.Getenv("QVAPAY_APP_SECRET"),
-		client:    &http.Client{Timeout: 30 * time.Second},
-	}
-}
 
 func (p *QvaPayProvider) Name() string          { return "qvapay" }
 func (p *QvaPayProvider) DisplayName() string   { return "QvaPay" }
@@ -85,11 +75,6 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 		}
 		remoteIDStr := fmt.Sprintf("%v", remoteID)
 
-		// Verify transaction with QvaPay API before trusting the webhook
-		if err := p.verifyTransaction(txUUID, remoteIDStr); err != nil {
-			return nil, fmt.Errorf("QvaPay webhook verification failed: %w", err)
-		}
-
 		var amount float64
 		if a, ok := payload["amount"]; ok {
 			switch v := a.(type) {
@@ -98,6 +83,11 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 			case string:
 				fmt.Sscanf(v, "%f", &amount)
 			}
+		}
+
+		// Verify transaction with QvaPay API before trusting the webhook
+		if err := p.verifyTransaction(txUUID, remoteIDStr, amount); err != nil {
+			return nil, fmt.Errorf("QvaPay webhook verification failed: %w", err)
 		}
 
 		return &WebhookEvent{
@@ -114,7 +104,7 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 
 // verifyTransaction calls the QvaPay API to confirm that the given transaction
 // exists, has status "paid", and its remote_id matches the expected value.
-func (p *QvaPayProvider) verifyTransaction(txUUID, expectedRemoteID string) error {
+func (p *QvaPayProvider) verifyTransaction(txUUID, expectedRemoteID string, expectedAmount float64) error {
 	data, err := p.post("/transactions/"+txUUID, nil)
 	if err != nil {
 		return fmt.Errorf("QvaPay verification request failed: %w", err)
@@ -128,6 +118,16 @@ func (p *QvaPayProvider) verifyTransaction(txUUID, expectedRemoteID string) erro
 	remoteID := getAnyStringKey(data, "remote_id")
 	if remoteID != expectedRemoteID {
 		return fmt.Errorf("QvaPay transaction %s remote_id mismatch: got %q, expected %q", txUUID, remoteID, expectedRemoteID)
+	}
+
+	// Verify amount matches to prevent forged webhook payloads
+	if expectedAmount > 0 {
+		var verifiedAmount float64
+		amtStr := getAnyStringKey(data, "amount")
+		fmt.Sscanf(amtStr, "%f", &verifiedAmount)
+		if verifiedAmount != expectedAmount {
+			return fmt.Errorf("QvaPay transaction %s amount mismatch: got %.2f, expected %.2f", txUUID, verifiedAmount, expectedAmount)
+		}
 	}
 
 	return nil

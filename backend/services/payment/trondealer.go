@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
-	"time"
 )
 
 const defaultTronDealerBaseURL = "https://trondealer.com"
@@ -25,19 +23,6 @@ type TronDealerProvider struct {
 	client        *http.Client
 }
 
-// NewTronDealerProvider creates a new TronDealer provider from environment.
-func NewTronDealerProvider() *TronDealerProvider {
-	apiURL := os.Getenv("TRONDEALER_API_URL")
-	if apiURL == "" {
-		apiURL = defaultTronDealerBaseURL
-	}
-	return &TronDealerProvider{
-		APIKey:        os.Getenv("TRONDEALER_API_KEY"),
-		APIURL:        strings.TrimRight(apiURL, "/"),
-		WebhookSecret: os.Getenv("TRONDEALER_WEBHOOK_SECRET"),
-		client:        &http.Client{Timeout: 30 * time.Second},
-	}
-}
 
 func (p *TronDealerProvider) Name() string          { return "trondealer" }
 func (p *TronDealerProvider) DisplayName() string   { return "TronDealer" }

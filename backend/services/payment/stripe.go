@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -24,14 +23,6 @@ type StripeProvider struct {
 	client        *http.Client
 }
 
-// NewStripeProvider creates a new Stripe provider from environment.
-func NewStripeProvider() *StripeProvider {
-	return &StripeProvider{
-		SecretKey:     os.Getenv("STRIPE_SECRET_KEY"),
-		WebhookSecret: os.Getenv("STRIPE_WEBHOOK_SECRET"),
-		client:        &http.Client{Timeout: 30 * time.Second},
-	}
-}
 
 func (p *StripeProvider) Name() string          { return "stripe" }
 func (p *StripeProvider) DisplayName() string   { return "Stripe" }
@@ -127,10 +118,18 @@ func (p *StripeProvider) handleCheckoutCompleted(obj map[string]any) (*WebhookEv
 	}
 
 	piID, _ := obj["payment_intent"].(string)
+
+	// amount_total is in cents
+	var amount float64
+	if amtRaw, ok := obj["amount_total"].(float64); ok {
+		amount = amtRaw / 100
+	}
+
 	return &WebhookEvent{
 		EventType:     EventPaymentCompleted,
 		RemoteID:      remoteID,
 		TransactionID: piID,
+		Amount:        amount,
 		RawPayload:    obj,
 	}, nil
 }

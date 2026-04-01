@@ -32,6 +32,14 @@ func GetOrCreateBalance(app core.App, userId string) (*core.Record, error) {
 	record.Set("currency", "USDT")
 
 	if err := app.Save(record); err != nil {
+		// Unique constraint race: another request created it first — re-fetch
+		if existing, retryErr := app.FindFirstRecordByFilter(
+			"user_balances",
+			"user = {:userId}",
+			dbx.Params{"userId": userId},
+		); retryErr == nil {
+			return existing, nil
+		}
 		return nil, fmt.Errorf("failed to create balance record: %w", err)
 	}
 	return record, nil
@@ -155,9 +163,34 @@ func ProcessPaymentCredit(app core.App, userId, txHash string, amount float64) (
 // creditAndActivate is the shared logic for all deposit/payment flows:
 // credit balance, then auto-activate a pending subscription if sufficient.
 func creditAndActivate(app core.App, userId, txHash string, amount float64, asset string) (map[string]any, error) {
+	// Idempotency: skip if this transaction was already processed
+	if txHash != "" {
+		existing, _ := FindPaymentByTransactionID(app, txHash)
+		if existing != nil {
+			return map[string]any{
+				"status":  "already_processed",
+				"tx_hash": txHash,
+			}, nil
+		}
+	}
+
 	newBalance, err := CreditBalance(app, userId, amount)
 	if err != nil {
 		return nil, err
+	}
+
+	// Record the credit as a payment for idempotency tracking
+	if txHash != "" {
+		collection, _ := app.FindCollectionByNameOrId("payments")
+		if collection != nil {
+			record := core.NewRecord(collection)
+			record.Set("amount", amount)
+			record.Set("currency", asset)
+			record.Set("provider", "")
+			record.Set("provider_transaction_id", txHash)
+			record.Set("status", "completed")
+			_ = app.Save(record)
+		}
 	}
 
 	result := map[string]any{
@@ -259,30 +292,46 @@ func ProcessBalanceRenewal(app core.App, subscriptionId string) error {
 	periodStart := sub.GetDateTime("current_period_end").Time()
 	periodEnd := periodStart.Add(time.Duration(periodDays) * 24 * time.Hour)
 
-	// Try to debit balance
-	_, err = DebitBalance(app, userId, amount)
-	if err != nil {
-		// Insufficient balance — mark as past_due
-		sub.Set("status", "past_due")
-		_ = app.Save(sub)
-		notifyRenewalFailure(app, sub, plan, fmt.Errorf("insufficient balance for renewal"))
-		return fmt.Errorf("balance renewal failed: %w", err)
-	}
+	// Debit balance + create payment + renew subscription — all in one transaction
+	err = app.RunInTransaction(func(txApp core.App) error {
+		// Debit balance
+		bal, balErr := GetOrCreateBalance(txApp, userId)
+		if balErr != nil {
+			return balErr
+		}
+		current := bal.GetFloat("balance")
+		if current < amount {
+			return fmt.Errorf("insufficient balance: have %.2f, need %.2f", current, amount)
+		}
+		bal.Set("balance", current-amount)
+		if balErr = txApp.Save(bal); balErr != nil {
+			return balErr
+		}
 
-	// Balance debited successfully — create payment and renew
-	return app.RunInTransaction(func(txApp core.App) error {
-		pay, err := createPaymentRecord(txApp, sub.Id, amount, "USD",
+		// Create payment record
+		pay, payErr := createPaymentRecord(txApp, sub.Id, amount, "USD",
 			sub.GetString("provider"), periodStart, periodEnd, "completed")
-		if err != nil {
-			return err
+		if payErr != nil {
+			return payErr
 		}
 		pay.Set("paid_at", types.NowDateTime())
-		if err := txApp.Save(pay); err != nil {
-			return err
+		if payErr = txApp.Save(pay); payErr != nil {
+			return payErr
 		}
 
+		// Renew subscription period
 		sub.Set("current_period_start", periodStart)
 		sub.Set("current_period_end", periodEnd)
 		return txApp.Save(sub)
 	})
+
+	if err != nil {
+		// Transaction failed — mark as past_due
+		sub.Set("status", "past_due")
+		_ = app.Save(sub)
+		notifyRenewalFailure(app, sub, plan, err)
+		return fmt.Errorf("balance renewal failed: %w", err)
+	}
+
+	return nil
 }
