@@ -108,9 +108,9 @@ func configureSMTP(app core.App) {
 		settings.Meta.SenderName = appName
 	}
 	if settings.Meta.SenderAddress == "" || settings.Meta.SenderAddress == "support@example.com" {
-		settings.Meta.SenderAddress = os.Getenv("FIRST_SUPERUSER")
-		if settings.Meta.SenderAddress == "" {
-			settings.Meta.SenderAddress = "noreply@vendel.cc"
+		senderEmail := services.GetSystemConfigValue(app, "sender_email")
+		if senderEmail != "" {
+			settings.Meta.SenderAddress = senderEmail
 		}
 	}
 

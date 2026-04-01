@@ -170,7 +170,7 @@ export type SubscriptionStatus =
   | "expired"
 
 export type BillingCycle = "monthly" | "yearly"
-export type PaymentMethod = "invoice" | "authorized"
+export type PaymentMethod = "invoice" | "authorized" | "balance"
 
 export interface Subscription extends BaseRecord {
   user: string
@@ -200,6 +200,15 @@ export interface Payment extends BaseRecord {
   period_start: string
   period_end: string
   paid_at: string
+}
+
+// ── User Balances ───────────────────────────────────────────────────
+
+export interface UserBalance {
+  balance: number
+  currency: string
+  wallet_address: string
+  wallet_id: string
 }
 
 // ── System Config ────────────────────────────────────────────────────

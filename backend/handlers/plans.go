@@ -29,15 +29,13 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		return e.JSON(http.StatusOK, quota)
 	})
 
-	// PUT /api/plans/upgrade — Start subscription
+	// PUT /api/plans/upgrade — Activate subscription (balance-only)
 	se.Router.PUT("/api/plans/upgrade", func(e *core.RequestEvent) error {
 		userId := e.Auth.Id
 
 		var body struct {
-			PlanID        string `json:"plan_id"`
-			BillingCycle  string `json:"billing_cycle"`
-			PaymentMethod string `json:"payment_method"`
-			Provider      string `json:"provider"`
+			PlanID       string `json:"plan_id"`
+			BillingCycle string `json:"billing_cycle"`
 		}
 		if err := e.BindBody(&body); err != nil {
 			return apis.NewBadRequestError("Invalid request body", nil)
@@ -46,23 +44,51 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		if body.BillingCycle == "" {
 			body.BillingCycle = "monthly"
 		}
-		if body.PaymentMethod == "" {
-			body.PaymentMethod = services.GetSystemConfigValue(e.App, "default_payment_method")
-			if body.PaymentMethod == "" {
-				body.PaymentMethod = "invoice"
-			}
+
+		sub, err := services.StartSubscription(e.App, userId, body.PlanID, body.BillingCycle)
+		if err != nil {
+			return handleServiceError(e, err)
 		}
 
-		// Resolve payment provider
-		var providerName string
-		if body.Provider != "" {
-			if p := payment.GetProvider(body.Provider); p != nil {
-				providerName = p.Name()
-			} else {
-				return apis.NewBadRequestError("Unknown payment provider: "+body.Provider, nil)
+		return e.JSON(http.StatusOK, map[string]any{
+			"subscription_id": sub.Id,
+			"status":          sub.GetString("status"),
+			"message":         "Subscription activated",
+		})
+	}).Bind(apis.RequireAuth("users"))
+
+	// POST /api/plans/topup — Add funds via a payment provider
+	se.Router.POST("/api/plans/topup", func(e *core.RequestEvent) error {
+		userId := e.Auth.Id
+
+		var body struct {
+			Amount   float64 `json:"amount"`
+			Provider string  `json:"provider"`
+		}
+		if err := e.BindBody(&body); err != nil {
+			return apis.NewBadRequestError("Invalid request body", nil)
+		}
+
+		if body.Provider == "" {
+			return apis.NewBadRequestError("Provider is required", nil)
+		}
+
+		// Resolve provider with system_config fallback
+		resolve := func(key string) string { return services.GetSystemConfigValue(e.App, key) }
+		provider := payment.GetProviderWithConfig(body.Provider, resolve)
+		if provider == nil {
+			return apis.NewBadRequestError("Unknown or unconfigured provider: "+body.Provider, nil)
+		}
+
+		// For TronDealer, amount is optional (any deposit works)
+		// For QvaPay/Stripe, amount is required with min/max bounds
+		if provider.Name() != "trondealer" {
+			if body.Amount < 1 {
+				return apis.NewBadRequestError("Minimum top-up amount is $1.00", nil)
 			}
-		} else if p := payment.GetDefaultProvider(); p != nil {
-			providerName = p.Name()
+			if body.Amount > 500 {
+				return apis.NewBadRequestError("Maximum top-up amount is $500.00", nil)
+			}
 		}
 
 		// Build callback URLs
@@ -70,35 +96,60 @@ func RegisterPlanRoutes(se *core.ServeEvent) {
 		if baseURL == "" {
 			baseURL = "http://localhost:8090"
 		}
+		webhookURL := fmt.Sprintf("%s/api/webhooks/%s", baseURL, provider.Name())
 
-		webhookURL := fmt.Sprintf("%s/api/webhooks/%s", baseURL, providerName)
 		frontendURL := os.Getenv("FRONTEND_URL")
 		if frontendURL == "" {
-			frontendURL = "http://localhost:5173"
+			frontendURL = baseURL
 		}
-		successURL := frontendURL + "/settings"
-		errorURL := frontendURL + "/settings"
 
-		sub, redirectURL, err := services.StartSubscription(
-			e.App, userId, body.PlanID, body.BillingCycle, body.PaymentMethod,
-			providerName, webhookURL, successURL, errorURL,
-		)
+		result, err := provider.CreateInvoice(payment.InvoiceRequest{
+			Amount:      body.Amount,
+			Currency:    "USD",
+			Description: "Balance top-up",
+			RemoteID:    userId,
+			WebhookURL:  webhookURL,
+			SuccessURL:  frontendURL + "/settings?topup=success",
+			ErrorURL:    frontendURL + "/settings?topup=canceled",
+		})
 		if err != nil {
-			return handleServiceError(e, err)
+			return apis.NewApiError(http.StatusInternalServerError, "Provider error: "+err.Error(), nil)
 		}
 
-		result := map[string]any{
-			"subscription_id": sub.Id,
-			"status":          sub.GetString("status"),
-		}
-		if redirectURL != "" {
-			result["payment_url"] = redirectURL
-			result["message"] = "Redirect user to payment URL"
-		} else {
-			result["message"] = "Subscription activated"
+		// For TronDealer, persist wallet info
+		if provider.Name() == "trondealer" {
+			bal, _ := services.GetOrCreateBalance(e.App, userId)
+			if bal != nil && bal.GetString("wallet_address") == "" {
+				_ = services.SetWalletInfo(e.App, userId, result.PaymentURL, result.InvoiceID)
+			}
+
+			return e.JSON(http.StatusOK, map[string]any{
+				"provider":       provider.Name(),
+				"wallet_address": result.PaymentURL,
+			})
 		}
 
-		return e.JSON(http.StatusOK, result)
+		return e.JSON(http.StatusOK, map[string]any{
+			"provider":    provider.Name(),
+			"payment_url": result.PaymentURL,
+		})
+	}).Bind(apis.RequireAuth("users"))
+
+	// GET /api/plans/balance — Get user balance and wallet info
+	se.Router.GET("/api/plans/balance", func(e *core.RequestEvent) error {
+		userId := e.Auth.Id
+
+		bal, err := services.GetOrCreateBalance(e.App, userId)
+		if err != nil {
+			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"balance":        bal.GetFloat("balance"),
+			"currency":       bal.GetString("currency"),
+			"wallet_address": bal.GetString("wallet_address"),
+			"wallet_id":      bal.GetString("wallet_id"),
+		})
 	}).Bind(apis.RequireAuth("users"))
 
 	// POST /api/plans/cancel — Cancel subscription

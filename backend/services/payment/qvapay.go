@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
-	"time"
 )
 
 const qvaPayBaseURL = "https://api.qvapay.com/v2"
@@ -19,18 +17,11 @@ type QvaPayProvider struct {
 	client    *http.Client
 }
 
-// NewQvaPayProvider creates a new QvaPay provider from environment.
-func NewQvaPayProvider() *QvaPayProvider {
-	return &QvaPayProvider{
-		AppID:     os.Getenv("QVAPAY_APP_ID"),
-		AppSecret: os.Getenv("QVAPAY_APP_SECRET"),
-		client:    &http.Client{Timeout: 30 * time.Second},
-	}
-}
 
-func (p *QvaPayProvider) Name() string        { return "qvapay" }
-func (p *QvaPayProvider) DisplayName() string { return "QvaPay" }
-func (p *QvaPayProvider) IsConfigured() bool  { return p.AppID != "" && p.AppSecret != "" }
+func (p *QvaPayProvider) Name() string          { return "qvapay" }
+func (p *QvaPayProvider) DisplayName() string   { return "QvaPay" }
+func (p *QvaPayProvider) PaymentMethod() string { return "balance" }
+func (p *QvaPayProvider) IsConfigured() bool    { return p.AppID != "" && p.AppSecret != "" }
 
 func (p *QvaPayProvider) headers() map[string]string {
 	return map[string]string{
@@ -72,70 +63,8 @@ func (p *QvaPayProvider) CreateInvoice(req InvoiceRequest) (*InvoiceResult, erro
 	}, nil
 }
 
-func (p *QvaPayProvider) GetAuthorizationURL(req AuthorizationRequest) (*AuthorizationResult, error) {
-	if !p.IsConfigured() {
-		return nil, fmt.Errorf("QvaPay is not configured")
-	}
-
-	data, err := p.post("/authorize_payments", map[string]any{
-		"remote_id": req.RemoteID,
-		"callback":  req.CallbackURL,
-		"success":   req.SuccessURL,
-		"error":     req.ErrorURL,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	url := getAnyStringKey(data, "url", "authorization_url")
-	if url == "" {
-		errMsg := getStringKey(data, "error", "message")
-		return nil, fmt.Errorf("QvaPay authorize_payments failed: %s", errMsg)
-	}
-
-	return &AuthorizationResult{AuthorizationURL: url}, nil
-}
-
-func (p *QvaPayProvider) ChargeAuthorizedUser(req ChargeRequest) (*ChargeResult, error) {
-	if !p.IsConfigured() {
-		return nil, fmt.Errorf("QvaPay is not configured")
-	}
-
-	data, err := p.post("/charge", map[string]any{
-		"amount":      req.Amount,
-		"user_uuid":   req.UserUUID,
-		"description": req.Description,
-		"remote_id":   req.RemoteID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	txID := getAnyStringKey(data, "transaction_uuid", "transation_uuid", "uuid")
-	if txID == "" {
-		errMsg := getStringKey(data, "error", "message")
-		return nil, fmt.Errorf("QvaPay charge failed: %s", errMsg)
-	}
-
-	return &ChargeResult{
-		TransactionID: txID,
-		Amount:        req.Amount,
-	}, nil
-}
-
 func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error) {
 	payload := req.Payload
-
-	// Authorization callback: has user_uuid + remote_id
-	if userUUID, ok := payload["user_uuid"]; ok {
-		remoteID, _ := payload["remote_id"]
-		return &WebhookEvent{
-			EventType:  EventAuthorizationCompleted,
-			RemoteID:   fmt.Sprintf("%v", remoteID),
-			UserUUID:   fmt.Sprintf("%v", userUUID),
-			RawPayload: payload,
-		}, nil
-	}
 
 	// Invoice payment webhook: has transaction_uuid
 	txUUID := getAnyStringKey(payload, "transaction_uuid", "transation_uuid")
@@ -146,11 +75,6 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 		}
 		remoteIDStr := fmt.Sprintf("%v", remoteID)
 
-		// Verify transaction with QvaPay API before trusting the webhook
-		if err := p.verifyTransaction(txUUID, remoteIDStr); err != nil {
-			return nil, fmt.Errorf("QvaPay webhook verification failed: %w", err)
-		}
-
 		var amount float64
 		if a, ok := payload["amount"]; ok {
 			switch v := a.(type) {
@@ -159,6 +83,11 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 			case string:
 				fmt.Sscanf(v, "%f", &amount)
 			}
+		}
+
+		// Verify transaction with QvaPay API before trusting the webhook
+		if err := p.verifyTransaction(txUUID, remoteIDStr, amount); err != nil {
+			return nil, fmt.Errorf("QvaPay webhook verification failed: %w", err)
 		}
 
 		return &WebhookEvent{
@@ -175,7 +104,7 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 
 // verifyTransaction calls the QvaPay API to confirm that the given transaction
 // exists, has status "paid", and its remote_id matches the expected value.
-func (p *QvaPayProvider) verifyTransaction(txUUID, expectedRemoteID string) error {
+func (p *QvaPayProvider) verifyTransaction(txUUID, expectedRemoteID string, expectedAmount float64) error {
 	data, err := p.post("/transactions/"+txUUID, nil)
 	if err != nil {
 		return fmt.Errorf("QvaPay verification request failed: %w", err)
@@ -189,6 +118,16 @@ func (p *QvaPayProvider) verifyTransaction(txUUID, expectedRemoteID string) erro
 	remoteID := getAnyStringKey(data, "remote_id")
 	if remoteID != expectedRemoteID {
 		return fmt.Errorf("QvaPay transaction %s remote_id mismatch: got %q, expected %q", txUUID, remoteID, expectedRemoteID)
+	}
+
+	// Verify amount matches to prevent forged webhook payloads
+	if expectedAmount > 0 {
+		var verifiedAmount float64
+		amtStr := getAnyStringKey(data, "amount")
+		fmt.Sscanf(amtStr, "%f", &verifiedAmount)
+		if verifiedAmount != expectedAmount {
+			return fmt.Errorf("QvaPay transaction %s amount mismatch: got %.2f, expected %.2f", txUUID, verifiedAmount, expectedAmount)
+		}
 	}
 
 	return nil

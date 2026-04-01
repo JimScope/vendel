@@ -76,7 +76,28 @@ function Terms() {
             <h2 className="text-xl font-semibold">3. User Accounts</h2>
 
             <div className="space-y-3">
-              <h3 className="text-lg font-medium">3.1 Registration</h3>
+              <h3 className="text-lg font-medium">3.1 Eligibility</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                To use the Service, you must:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>
+                  Be at least 18 years old or the age of legal majority in your
+                  jurisdiction
+                </li>
+                <li>Have the legal capacity to enter into binding agreements</li>
+                <li>
+                  Not be located in a jurisdiction where the Service is
+                  prohibited
+                </li>
+                <li>
+                  Provide accurate and truthful registration information
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium">3.2 Registration</h3>
               <p className="text-muted-foreground leading-relaxed">
                 To use the Service, you must create an account by providing
                 accurate and complete information. You are responsible for
@@ -85,7 +106,7 @@ function Terms() {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-lg font-medium">3.2 Account Security</h3>
+              <h3 className="text-lg font-medium">3.3 Account Security</h3>
               <p className="text-muted-foreground leading-relaxed">
                 You are responsible for all activities that occur under your
                 account. You must immediately notify us of any unauthorized use
@@ -112,6 +133,15 @@ function Terms() {
               <li>
                 Send messages that violate telecommunications regulations in any
                 jurisdiction
+              </li>
+              <li>
+                Engage in money laundering, terrorist financing, or any
+                financial crime
+              </li>
+              <li>Evade economic sanctions or trade restrictions</li>
+              <li>
+                Reverse engineer, decompile, or disassemble any part of the
+                Service
               </li>
             </ul>
           </section>
@@ -154,7 +184,38 @@ function Terms() {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-lg font-medium">6.3 Refunds</h3>
+              <h3 className="text-lg font-medium">6.3 Balance and Top-Ups</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                The Service uses a balance-based payment system. You can add
+                funds to your account through supported payment providers
+                (cryptocurrency, QvaPay, Stripe). Important:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>
+                  Top-up transactions are processed by third-party providers and
+                  may be irreversible once confirmed
+                </li>
+                <li>
+                  You are responsible for verifying wallet addresses and payment
+                  details before confirming transactions
+                </li>
+                <li>
+                  Cryptocurrency transactions are subject to blockchain
+                  confirmation times and network conditions
+                </li>
+                <li>
+                  We are not liable for funds sent to incorrect addresses or
+                  lost due to user error
+                </li>
+                <li>
+                  Balance funds do not expire but may be subject to inactivity
+                  policies
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium">6.4 Refunds</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Due to the nature of the Service, refunds are generally not
                 provided for used quotas. Exceptions may be made at our sole
@@ -196,7 +257,21 @@ function Terms() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold">9. Indemnification</h2>
+            <h2 className="text-xl font-semibold">
+              9. Intellectual Property
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              All content, features, and functionality of the Service —
+              including but not limited to software, text, graphics, logos, and
+              documentation — are the property of {appName} and are protected by
+              applicable intellectual property laws. You are granted a limited,
+              non-exclusive, revocable license to use the Service in accordance
+              with these Terms.
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold">10. Indemnification</h2>
             <p className="text-muted-foreground leading-relaxed">
               You agree to indemnify and hold harmless the Service operator from
               any claims, damages, losses, or expenses arising from your use of
@@ -205,7 +280,7 @@ function Terms() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold">10. Termination</h2>
+            <h2 className="text-xl font-semibold">11. Termination</h2>
             <p className="text-muted-foreground leading-relaxed">
               We reserve the right to suspend or terminate your account at any
               time for violation of these Terms or for any other reason at our
@@ -215,11 +290,15 @@ function Terms() {
               <li>Your access to the Service will be revoked</li>
               <li>Your data may be deleted after a reasonable period</li>
               <li>Any unused quota will be forfeited</li>
+              <li>
+                Any remaining balance may be withdrawn within 30 days of account
+                termination, subject to applicable fees
+              </li>
             </ul>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold">11. Changes to Terms</h2>
+            <h2 className="text-xl font-semibold">12. Changes to Terms</h2>
             <p className="text-muted-foreground leading-relaxed">
               We may modify these Terms at any time. Significant changes will be
               communicated through the Service or via email. Continued use of
@@ -229,7 +308,7 @@ function Terms() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold">12. Governing Law</h2>
+            <h2 className="text-xl font-semibold">13. Governing Law</h2>
             <p className="text-muted-foreground leading-relaxed">
               These Terms shall be governed by and construed in accordance with
               applicable international laws and conventions. Any disputes shall
@@ -239,7 +318,7 @@ function Terms() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold">13. Contact</h2>
+            <h2 className="text-xl font-semibold">14. Contact</h2>
             <p className="text-muted-foreground leading-relaxed">
               For questions about these Terms of Service, please contact us at{" "}
               <a

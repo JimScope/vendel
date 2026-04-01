@@ -131,6 +131,40 @@ function Privacy() {
                 <li>Pages viewed within our application</li>
               </ul>
             </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium">
+                2.4 Payment and Transaction Data
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                When you use payment features, we collect:
+              </p>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>
+                  <strong className="text-foreground">Wallet addresses:</strong>{" "}
+                  Assigned for cryptocurrency deposits (TronDealer)
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Transaction history:
+                  </strong>{" "}
+                  Top-up amounts, payment provider used, timestamps
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Balance information:
+                  </strong>{" "}
+                  Current account balance and currency
+                </li>
+                <li>
+                  <strong className="text-foreground">
+                    Payment provider data:
+                  </strong>{" "}
+                  Transaction IDs, payment status (we do not store full card
+                  numbers or bank credentials)
+                </li>
+              </ul>
+            </div>
           </section>
 
           <section className="space-y-4">
@@ -225,6 +259,17 @@ function Privacy() {
                   <strong className="text-foreground">Usage statistics:</strong>{" "}
                   May be retained in anonymized form for analytics
                 </li>
+                <li>
+                  <strong className="text-foreground">
+                    Payment and transaction data:
+                  </strong>{" "}
+                  Retained for a minimum of 5 years for regulatory compliance
+                </li>
+                <li>
+                  <strong className="text-foreground">Post-deletion:</strong>{" "}
+                  Personal data is purged within 90 days after account deletion;
+                  anonymized usage statistics may be retained
+                </li>
               </ul>
             </div>
           </section>
@@ -256,6 +301,13 @@ function Privacy() {
                   </strong>{" "}
                   To send transactional emails
                 </li>
+                <li>
+                  <strong className="text-foreground">
+                    Blockchain network providers:
+                  </strong>{" "}
+                  To process cryptocurrency transactions (transaction data is
+                  publicly visible and immutable on-chain)
+                </li>
               </ul>
             </div>
 
@@ -273,6 +325,16 @@ function Privacy() {
                 In the event of a merger, acquisition, or sale of assets, user
                 data may be transferred. You will be notified of any such
                 change.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium">5.4 Webhooks</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                If you configure webhooks, SMS delivery data and event
+                notifications are sent to your specified endpoint URLs. Webhook
+                payloads are signed with HMAC for integrity verification. You
+                are responsible for the security of your webhook endpoints.
               </p>
             </div>
           </section>

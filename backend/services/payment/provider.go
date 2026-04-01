@@ -1,5 +1,11 @@
 package payment
 
+import (
+	"net/http"
+	"os"
+	"time"
+)
+
 // InvoiceRequest represents a request to create a payment invoice.
 type InvoiceRequest struct {
 	Amount      float64
@@ -17,41 +23,13 @@ type InvoiceResult struct {
 	PaymentURL string
 }
 
-// AuthorizationRequest represents a request for payment authorization.
-type AuthorizationRequest struct {
-	RemoteID    string
-	CallbackURL string
-	SuccessURL  string
-	ErrorURL    string
-}
-
-// AuthorizationResult is the result of requesting authorization.
-type AuthorizationResult struct {
-	AuthorizationURL string
-}
-
-// ChargeRequest represents a request to charge an authorized user.
-type ChargeRequest struct {
-	UserUUID    string
-	Amount      float64
-	Currency    string
-	Description string
-	RemoteID    string
-}
-
-// ChargeResult is the result of charging a user.
-type ChargeResult struct {
-	TransactionID string
-	Amount        float64
-}
-
 // WebhookEventType represents types of payment webhook events.
 type WebhookEventType string
 
 const (
-	EventPaymentCompleted       WebhookEventType = "payment_completed"
-	EventAuthorizationCompleted WebhookEventType = "authorization_completed"
-	EventPaymentFailed          WebhookEventType = "payment_failed"
+	EventPaymentCompleted WebhookEventType = "payment_completed"
+	EventPaymentFailed    WebhookEventType = "payment_failed"
+	EventDepositReceived  WebhookEventType = "deposit_received"
 )
 
 // WebhookRequest carries the raw HTTP data needed by providers for webhook parsing.
@@ -66,8 +44,8 @@ type WebhookEvent struct {
 	EventType     WebhookEventType
 	RemoteID      string
 	TransactionID string
-	UserUUID      string
 	Amount        float64
+	Asset         string // e.g. "USDT", "USDC" — set by deposit-based providers
 	RawPayload    map[string]any
 }
 
@@ -75,19 +53,60 @@ type WebhookEvent struct {
 type Provider interface {
 	Name() string
 	DisplayName() string
+	PaymentMethod() string // always "balance" — all providers feed user balance
 	IsConfigured() bool
 	CreateInvoice(req InvoiceRequest) (*InvoiceResult, error)
-	GetAuthorizationURL(req AuthorizationRequest) (*AuthorizationResult, error)
-	ChargeAuthorizedUser(req ChargeRequest) (*ChargeResult, error)
 	ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 }
 
-// GetProviders returns all configured payment providers.
+// ConfigResolver reads config values (used for system_config DB fallback).
+type ConfigResolver func(key string) string
+
+// GetProviders returns all configured payment providers using env vars only.
 func GetProviders() []Provider {
-	all := []Provider{
-		NewQvaPayProvider(),
-		NewStripeProvider(),
+	return getProviders(nil)
+}
+
+// GetProvidersWithConfig returns all configured providers, using the resolver
+// as fallback when env vars are not set. This allows admin UI configuration.
+func GetProvidersWithConfig(resolve ConfigResolver) []Provider {
+	return getProviders(resolve)
+}
+
+func getProviders(resolve ConfigResolver) []Provider {
+	r := func(envKey, configKey string) string {
+		v := os.Getenv(envKey)
+		if v == "" && resolve != nil {
+			v = resolve(configKey)
+		}
+		return v
 	}
+
+	all := []Provider{
+		&QvaPayProvider{
+			AppID:     r("QVAPAY_APP_ID", "qvapay_app_id"),
+			AppSecret: r("QVAPAY_APP_SECRET", "qvapay_app_secret"),
+			client:    &http.Client{Timeout: 30 * time.Second},
+		},
+		&StripeProvider{
+			SecretKey:     r("STRIPE_SECRET_KEY", "stripe_secret_key"),
+			WebhookSecret: r("STRIPE_WEBHOOK_SECRET", "stripe_webhook_secret"),
+			client:        &http.Client{Timeout: 30 * time.Second},
+		},
+		func() *TronDealerProvider {
+			apiURL := r("TRONDEALER_API_URL", "trondealer_api_url")
+			if apiURL == "" {
+				apiURL = defaultTronDealerBaseURL
+			}
+			return &TronDealerProvider{
+				APIKey:        r("TRONDEALER_API_KEY", "trondealer_api_key"),
+				APIURL:        apiURL,
+				WebhookSecret: r("TRONDEALER_WEBHOOK_SECRET", "trondealer_webhook_secret"),
+				client:        &http.Client{Timeout: 30 * time.Second},
+			}
+		}(),
+	}
+
 	var configured []Provider
 	for _, p := range all {
 		if p.IsConfigured() {
@@ -107,7 +126,17 @@ func GetProvider(name string) Provider {
 	return nil
 }
 
-// GetDefaultProvider returns the first configured provider (backwards compat).
+// GetProviderWithConfig returns a provider by name using config fallback.
+func GetProviderWithConfig(name string, resolve ConfigResolver) Provider {
+	for _, p := range GetProvidersWithConfig(resolve) {
+		if p.Name() == name {
+			return p
+		}
+	}
+	return nil
+}
+
+// GetDefaultProvider returns the first configured provider.
 func GetDefaultProvider() Provider {
 	providers := GetProviders()
 	if len(providers) > 0 {

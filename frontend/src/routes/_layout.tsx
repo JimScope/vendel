@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next"
 
 import { Footer } from "@/components/Common/Footer"
 import { Logo } from "@/components/Common/Logo"
+import TopUpPopover from "@/components/Plans/TopUpPopover"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -109,12 +110,15 @@ function Layout() {
               <span className="text-sm text-muted-foreground">{pageTitle}</span>
             </>
           )}
-          {config.maintenanceMode && (
-            <Badge variant="destructive" className="ml-auto gap-1.5">
-              <Construction className="size-3" />
-              {t("maintenance.maintenanceMode")}
-            </Badge>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            <TopUpPopover />
+            {config.maintenanceMode && (
+              <Badge variant="destructive" className="gap-1.5">
+                <Construction className="size-3" />
+                {t("maintenance.maintenanceMode")}
+              </Badge>
+            )}
+          </div>
         </header>
         <main id="main-content" className="flex-1 p-6 md:p-8">
           <div className="mx-auto max-w-7xl">
