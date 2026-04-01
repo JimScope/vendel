@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://vendel.cc">Website</a> &middot;
-  <a href="https://app.vendel.cc">Dashboard Demo</a> &middot;
+  <a href="https://app.vendel.cc">Dashboard</a> &middot;
   <a href="./README.md">Read in English</a>
 </p>
 
