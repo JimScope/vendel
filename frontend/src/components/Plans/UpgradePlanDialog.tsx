@@ -116,9 +116,7 @@ function UpgradePlanDialog({ currentPlan }: UpgradePlanDialogProps) {
           }
         },
         onError: (error) => {
-          showErrorToast(
-            error instanceof Error ? error.message : String(error),
-          )
+          showErrorToast(error instanceof Error ? error.message : String(error))
         },
       },
     )

@@ -18,7 +18,7 @@ RUN go mod download
 
 COPY backend/ .
 COPY --from=frontend-builder /app/frontend/dist ./ui/dist/
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/vendel -ldflags="-s -w" .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/vendel -ldflags="-s -w -X main.version=docker" .
 
 # Stage 3: Runtime
 FROM alpine:3.22
