@@ -14,18 +14,38 @@ import (
 // SendSMS orchestrates the entire SMS sending process.
 // Recipients are distributed among devices via round-robin.
 func SendSMS(app core.App, userId string, recipients []string, body string, deviceId string) ([]*core.Record, error) {
-	count := len(recipients)
-	if count == 0 {
+	if len(recipients) == 0 {
 		return nil, fmt.Errorf("no recipients provided")
 	}
 
-	// Check quota
-	if err := CheckSMSQuota(app, userId, count); err != nil {
+	if err := CheckSMSQuota(app, userId, len(recipients)); err != nil {
 		return nil, err
 	}
 
-	// Determine devices
-	var devices []*core.Record
+	devices, err := resolveDevices(app, userId, deviceId)
+	if err != nil {
+		return nil, err
+	}
+
+	messages, err := createMessageRecords(app, userId, recipients, body, devices)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := IncrementSMSCount(app, userId, len(recipients)); err != nil {
+		app.Logger().Warn("failed to increment SMS count", slog.Any("error", err))
+	}
+
+	if len(devices) > 0 {
+		routine.FireAndForget(func() { DispatchMessages(app, messages) })
+	}
+
+	return messages, nil
+}
+
+// resolveDevices returns the target device(s) for sending.
+// If deviceId is specified, validates ownership. Otherwise, returns all user devices.
+func resolveDevices(app core.App, userId, deviceId string) ([]*core.Record, error) {
 	if deviceId != "" {
 		device, err := app.FindRecordById("sms_devices", deviceId)
 		if err != nil {
@@ -34,33 +54,35 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 		if device.GetString("user") != userId {
 			return nil, fmt.Errorf("device does not belong to user")
 		}
-		devices = []*core.Record{device}
-	} else {
-		records, err := app.FindRecordsByFilter(
-			"sms_devices",
-			"user = {:userId} && (fcm_token != '' || device_type = 'modem')",
-			"-created",
-			0, 0,
-			dbx.Params{"userId": userId},
-		)
-		if err == nil && len(records) > 0 {
-			devices = records
-		}
+		return []*core.Record{device}, nil
 	}
 
-	// Generate batch ID for bulk sends
-	batchId := ""
-	if count > 1 {
-		batchId = core.GenerateDefaultRandomId()
+	records, err := app.FindRecordsByFilter(
+		"sms_devices",
+		"user = {:userId} && (fcm_token != '' || device_type = 'modem')",
+		"-created",
+		0, 0,
+		dbx.Params{"userId": userId},
+	)
+	if err != nil || len(records) == 0 {
+		return nil, nil
 	}
+	return records, nil
+}
 
-	// Create message records
+// createMessageRecords creates sms_messages records, assigning devices via round-robin.
+func createMessageRecords(app core.App, userId string, recipients []string, body string, devices []*core.Record) ([]*core.Record, error) {
 	collection, err := app.FindCollectionByNameOrId("sms_messages")
 	if err != nil {
 		return nil, fmt.Errorf("sms_messages collection not found: %w", err)
 	}
 
-	var messages []*core.Record
+	batchId := ""
+	if len(recipients) > 1 {
+		batchId = core.GenerateDefaultRandomId()
+	}
+
+	messages := make([]*core.Record, 0, len(recipients))
 	for i, recipient := range recipients {
 		record := core.NewRecord(collection)
 		record.Set("to", recipient)
@@ -88,21 +110,11 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 		messages = append(messages, record)
 	}
 
-	// Increment SMS count
-	if err := IncrementSMSCount(app, userId, count); err != nil {
-		app.Logger().Warn("failed to increment SMS count", slog.Any("error", err))
-	}
-
-	// Dispatch FCM notifications in background (replaces QStash)
-	if len(devices) > 0 {
-		routine.FireAndForget(func() { DispatchMessages(app, messages) })
-	}
-
 	return messages, nil
 }
 
 // ProcessSMSAck handles device acknowledgment for a sent SMS.
-// The deviceId must match the message's assigned device (prevents cross-device manipulation).
+// The deviceId must match the message's assigned device.
 func ProcessSMSAck(app core.App, deviceId string, messageId string, status string, errorMessage string) error {
 	record, err := app.FindRecordById("sms_messages", messageId)
 	if err != nil {
@@ -117,9 +129,11 @@ func ProcessSMSAck(app core.App, deviceId string, messageId string, status strin
 	if errorMessage != "" {
 		record.Set("error_message", errorMessage)
 	}
-	if status == "sent" {
+
+	switch status {
+	case "sent":
 		record.Set("sent_at", types.NowDateTime())
-	} else if status == "delivered" {
+	case "delivered":
 		record.Set("delivered_at", types.NowDateTime())
 	}
 
@@ -127,7 +141,6 @@ func ProcessSMSAck(app core.App, deviceId string, messageId string, status strin
 		return err
 	}
 
-	// Trigger webhooks for status transitions
 	eventMap := map[string]string{"sent": "sms_sent", "delivered": "sms_delivered", "failed": "sms_failed"}
 	if event, ok := eventMap[status]; ok {
 		routine.FireAndForget(func() { TriggerWebhooks(app, record.GetString("user"), record, event) })
@@ -137,10 +150,8 @@ func ProcessSMSAck(app core.App, deviceId string, messageId string, status strin
 }
 
 // HandleIncomingSMS processes an incoming SMS from a device and triggers webhooks.
-// deviceId is used for deduplication and traceability.
 func HandleIncomingSMS(app core.App, userId string, deviceId string, fromNumber string, body string, timestamp string) (*core.Record, error) {
 	// Deduplicate: check for identical incoming SMS within the last 5 minutes
-	// Uses blind index (body_hash) instead of plaintext body for encrypted field lookup
 	cutoff := time.Now().UTC().Add(-5 * time.Minute).Format(time.RFC3339)
 	bodyHash, _ := ComputeBodyHash(body)
 	existing, err := app.FindFirstRecordByFilter(
@@ -171,10 +182,7 @@ func HandleIncomingSMS(app core.App, userId string, deviceId string, fromNumber 
 		return nil, err
 	}
 
-	// Trigger webhooks in background
 	routine.FireAndForget(func() { TriggerWebhooks(app, userId, record, "sms_received") })
 
 	return record, nil
 }
-
-
