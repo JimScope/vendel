@@ -51,7 +51,7 @@ function SystemSettings() {
       server[c.key] = c.value
     }
     setDraft(server)
-  }, [configs.data])
+  }, [configs?.data])
 
   if (isLoading) {
     return (
