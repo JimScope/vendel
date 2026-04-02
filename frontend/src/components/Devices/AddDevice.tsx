@@ -100,7 +100,7 @@ const AddDevice = ({ open, onOpenChange }: AddDeviceProps) => {
 
   const getQrPayload = (deviceApiKey: string) => {
     const payload = {
-      server_instance: import.meta.env.VITE_API_URL,
+      server_instance: import.meta.env.VITE_API_URL || window.location.origin,
       api_key: deviceApiKey,
       version: QR_PAYLOAD_VERSION,
     }
