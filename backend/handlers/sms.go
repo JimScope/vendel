@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -25,9 +26,31 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 			Recipients []string `json:"recipients"`
 			Body       string   `json:"body"`
 			DeviceID   string   `json:"device_id"`
+			GroupID    string   `json:"group_id"`
 		}
 		if err := e.BindBody(&body); err != nil {
 			return apis.NewBadRequestError("Invalid request body", nil)
+		}
+
+		// Resolve group contacts into recipients
+		if body.GroupID != "" {
+			groupContacts, _ := e.App.FindRecordsByFilter(
+				"contacts",
+				"user = {:userId} && groups.id ?= {:groupId}",
+				"", 0, 0,
+				dbx.Params{"userId": userId, "groupId": body.GroupID},
+			)
+			seen := make(map[string]bool)
+			for _, r := range body.Recipients {
+				seen[r] = true
+			}
+			for _, c := range groupContacts {
+				phone := c.GetString("phone_number")
+				if !seen[phone] {
+					body.Recipients = append(body.Recipients, phone)
+					seen[phone] = true
+				}
+			}
 		}
 
 		if len(body.Recipients) == 0 {

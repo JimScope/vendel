@@ -29,6 +29,7 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutScheduledRouteImport } from './routes/_layout/scheduled'
 import { Route as LayoutIntegrationsRouteImport } from './routes/_layout/integrations'
 import { Route as LayoutDevicesRouteImport } from './routes/_layout/devices'
+import { Route as LayoutContactsRouteImport } from './routes/_layout/contacts'
 import { Route as LayoutBillingRouteImport } from './routes/_layout/billing'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
@@ -131,6 +132,11 @@ const LayoutDevicesRoute = LayoutDevicesRouteImport.update({
   path: '/devices',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutContactsRoute = LayoutContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutBillingRoute = LayoutBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/admin': typeof LayoutAdminRoute
   '/billing': typeof LayoutBillingRoute
+  '/contacts': typeof LayoutContactsRoute
   '/devices': typeof LayoutDevicesRoute
   '/integrations': typeof LayoutIntegrationsRoute
   '/scheduled': typeof LayoutScheduledRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/admin': typeof LayoutAdminRoute
   '/billing': typeof LayoutBillingRoute
+  '/contacts': typeof LayoutContactsRoute
   '/devices': typeof LayoutDevicesRoute
   '/integrations': typeof LayoutIntegrationsRoute
   '/scheduled': typeof LayoutScheduledRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/billing': typeof LayoutBillingRoute
+  '/_layout/contacts': typeof LayoutContactsRoute
   '/_layout/devices': typeof LayoutDevicesRoute
   '/_layout/integrations': typeof LayoutIntegrationsRoute
   '/_layout/scheduled': typeof LayoutScheduledRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/admin'
     | '/billing'
+    | '/contacts'
     | '/devices'
     | '/integrations'
     | '/scheduled'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/admin'
     | '/billing'
+    | '/contacts'
     | '/devices'
     | '/integrations'
     | '/scheduled'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/_layout/admin'
     | '/_layout/billing'
+    | '/_layout/contacts'
     | '/_layout/devices'
     | '/_layout/integrations'
     | '/_layout/scheduled'
@@ -443,6 +455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutDevicesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/contacts': {
+      id: '/_layout/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof LayoutContactsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/billing': {
       id: '/_layout/billing'
       path: '/billing'
@@ -463,6 +482,7 @@ declare module '@tanstack/react-router' {
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutBillingRoute: typeof LayoutBillingRoute
+  LayoutContactsRoute: typeof LayoutContactsRoute
   LayoutDevicesRoute: typeof LayoutDevicesRoute
   LayoutIntegrationsRoute: typeof LayoutIntegrationsRoute
   LayoutScheduledRoute: typeof LayoutScheduledRoute
@@ -476,6 +496,7 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutBillingRoute: LayoutBillingRoute,
+  LayoutContactsRoute: LayoutContactsRoute,
   LayoutDevicesRoute: LayoutDevicesRoute,
   LayoutIntegrationsRoute: LayoutIntegrationsRoute,
   LayoutScheduledRoute: LayoutScheduledRoute,

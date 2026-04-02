@@ -28,6 +28,7 @@ const PAGE_TITLE_KEYS: Record<string, string> = {
   "/templates": "sidebar.templates",
   "/scheduled": "sidebar.scheduled",
   "/devices": "sidebar.devices",
+  "/contacts": "contacts.title",
   "/webhooks": "sidebar.webhooks",
   "/integrations": "sidebar.integrations",
   "/billing": "sidebar.billing",
@@ -94,9 +95,7 @@ function Layout() {
   }
 
   return (
-    <>
-      <AnnouncementBanner />
-      <SidebarProvider>
+    <SidebarProvider>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none"
@@ -105,6 +104,7 @@ function Layout() {
         </a>
         <AppSidebar />
         <SidebarInset>
+          <AnnouncementBanner />
           <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
             <SidebarTrigger className="-ml-1 text-muted-foreground" />
             {pageTitle && (
@@ -133,7 +133,6 @@ function Layout() {
           <Footer />
         </SidebarInset>
       </SidebarProvider>
-    </>
   )
 }
 

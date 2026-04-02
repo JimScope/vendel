@@ -1,5 +1,6 @@
 import {
   Clock,
+  Contact,
   CreditCard,
   FileText,
   Home,
@@ -29,6 +30,7 @@ const baseItems: Item[] = [
   { icon: FileText, title: "sidebar.templates", path: "/templates" },
   { icon: Clock, title: "sidebar.scheduled", path: "/scheduled" },
   { icon: Smartphone, title: "sidebar.devices", path: "/devices" },
+  { icon: Contact, title: "sidebar.contacts", path: "/contacts" },
   { icon: Webhook, title: "sidebar.webhooks", path: "/webhooks" },
   { icon: Key, title: "sidebar.integrations", path: "/integrations" },
   { icon: CreditCard, title: "sidebar.billing", path: "/billing" },

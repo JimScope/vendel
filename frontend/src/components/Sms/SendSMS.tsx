@@ -21,8 +21,11 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { TagInput } from "@/components/ui/tag-input"
 import { Textarea } from "@/components/ui/textarea"
+import { useContactGroupList } from "@/hooks/useContactGroupList"
+import { useContactList } from "@/hooks/useContactList"
 import { useDeviceList } from "@/hooks/useDeviceList"
 import { useSendSMS } from "@/hooks/useSMSMutations"
+import type { Contact } from "@/types/collections"
 
 const formSchema = z.object({
   recipients: z
@@ -30,6 +33,7 @@ const formSchema = z.object({
     .min(1, "At least one recipient is required"),
   from: z.array(z.string()).min(1, "Device is required"),
   body: z.string().min(1, "Message body is required"),
+  group_ids: z.array(z.string()).optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -38,6 +42,8 @@ const SendSMS = () => {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const { data: devices } = useDeviceList()
+  const { data: contactGroups } = useContactGroupList()
+  const { data: contacts } = useContactList()
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -46,6 +52,7 @@ const SendSMS = () => {
       recipients: [],
       from: [],
       body: "",
+      group_ids: [],
     },
   })
 
@@ -58,9 +65,20 @@ const SendSMS = () => {
   const sendSMSMutation = useSendSMS()
 
   const onSubmit = (data: FormData) => {
+    // Resolve group contacts and merge with manual recipients
+    let allRecipients = [...data.recipients]
+    if (data.group_ids && data.group_ids.length > 0 && contacts?.data) {
+      const groupContacts = (contacts.data as unknown as Contact[]).filter(
+        (c) =>
+          c.groups?.some((g) => data.group_ids?.includes(g)),
+      )
+      const groupPhones = groupContacts.map((c) => c.phone_number)
+      allRecipients = [...new Set([...allRecipients, ...groupPhones])]
+    }
+
     sendSMSMutation.mutate(
       {
-        recipients: data.recipients,
+        recipients: allRecipients,
         body: data.body,
         device_id: data.from[0],
       },
@@ -88,6 +106,28 @@ const SendSMS = () => {
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          {/* Send to Group Field */}
+          <Controller
+            name="group_ids"
+            control={form.control}
+            render={({ field }) => (
+              <Field>
+                <FieldLabel htmlFor={field.name}>
+                  {t("contacts.sendToGroup")}
+                </FieldLabel>
+                <MultiSelect
+                  options={(contactGroups?.data || []).map((group) => ({
+                    label: group.name,
+                    value: group.id,
+                  }))}
+                  onValueChange={field.onChange}
+                  defaultValue={field.value || []}
+                  placeholder={t("contacts.groups")}
+                />
+              </Field>
+            )}
+          />
+
           {/* Recipient Field */}
           <Controller
             name="recipients"
@@ -102,6 +142,10 @@ const SendSMS = () => {
                   id={field.name}
                   placeholder={t("sms.recipientPlaceholder")}
                   aria-invalid={fieldState.invalid}
+                  suggestions={((contacts?.data || []) as unknown as Contact[]).map((c) => ({
+                    label: c.name,
+                    value: c.phone_number,
+                  }))}
                 />
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />

@@ -211,6 +211,21 @@ export interface UserBalance {
   wallet_id: string
 }
 
+// ── Contacts ────────────────────────────────────────────────────────
+
+export interface Contact extends BaseRecord {
+  name: string
+  phone_number: string
+  groups: string[]
+  notes: string
+  user: string
+}
+
+export interface ContactGroup extends BaseRecord {
+  name: string
+  user: string
+}
+
 // ── System Config ────────────────────────────────────────────────────
 
 export interface SystemConfig extends BaseRecord {

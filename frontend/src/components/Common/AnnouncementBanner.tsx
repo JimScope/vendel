@@ -40,9 +40,9 @@ function AnnouncementBanner() {
   )
 
   return (
-    <div className="flex w-full items-center gap-2 bg-brand px-4 py-2 text-sm text-neutral-900 dark:text-neutral-900">
-      <Megaphone className="size-4 shrink-0" />
-      <p className="min-w-0 flex-1 truncate">{content}</p>
+    <div className="flex w-full items-start gap-2 bg-brand px-4 py-2 text-sm text-neutral-900 dark:text-neutral-900">
+      <Megaphone className="mt-0.5 size-4 shrink-0" />
+      <p className="min-w-0 flex-1">{content}</p>
       <button
         type="button"
         onClick={handleDismiss}
