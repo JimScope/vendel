@@ -290,9 +290,7 @@ function TopUpDialog({ trigger }: TopUpDialogProps) {
                     className="shrink-0"
                     onClick={() => copyToClipboard(topUpResult.wallet_address!)}
                     aria-label={
-                      copiedText
-                        ? t("common.copied")
-                        : t("plans.copyAddress")
+                      copiedText ? t("common.copied") : t("plans.copyAddress")
                     }
                   >
                     {copiedText ? (
@@ -314,9 +312,7 @@ function TopUpDialog({ trigger }: TopUpDialogProps) {
                   <ExternalLink className="h-7 w-7 text-primary" />
                 </div>
                 <Button
-                  onClick={() =>
-                    window.open(topUpResult.payment_url, "_blank")
-                  }
+                  onClick={() => window.open(topUpResult.payment_url, "_blank")}
                   size="lg"
                   className="gap-2"
                 >
@@ -354,10 +350,7 @@ function TopUpDialog({ trigger }: TopUpDialogProps) {
 
         {step === "result" && (
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-            >
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>
               {t("common.done")}
             </Button>
           </DialogFooter>

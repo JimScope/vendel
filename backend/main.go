@@ -1,6 +1,7 @@
 package main
 
 import (
+	"vendel/commands"
 	"vendel/cronjobs"
 	"vendel/handlers"
 	"vendel/hooks"
@@ -19,6 +20,9 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
+
+// version is set at build time via -ldflags "-X main.version=..."
+var version = "dev"
 
 func main() {
 	// Load .env file (from cwd or parent dir)
@@ -77,6 +81,9 @@ func main() {
 
 	// ── Cron jobs ────────────────────────────────────────────────────
 	cronjobs.RegisterCronJobs(app)
+
+	// ── CLI commands ─────────────────────────────────────────────────
+	app.RootCmd.AddCommand(commands.NewUpdateCommand(version))
 
 	// ── Start ────────────────────────────────────────────────────────
 	if err := app.Start(); err != nil {

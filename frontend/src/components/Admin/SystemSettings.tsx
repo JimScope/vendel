@@ -8,7 +8,6 @@ import {
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import useCustomToast from "@/hooks/useCustomToast"
 import {
   Card,
   CardContent,
@@ -20,7 +19,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Switch } from "@/components/ui/switch"
-import { useSystemConfig, useSaveSystemConfig } from "@/hooks/useSystemConfig"
+import useCustomToast from "@/hooks/useCustomToast"
+import { useSaveSystemConfig, useSystemConfig } from "@/hooks/useSystemConfig"
 import type { SystemConfig } from "@/types/collections"
 
 function EnvHint({ envSet }: { envSet: boolean }) {
@@ -44,9 +44,6 @@ function SystemSettings() {
   const [draft, setDraft] = useState<Record<string, string>>({})
 
   // Sync draft from server data whenever it changes (initial load + after save refetch)
-  const configDataKey = JSON.stringify(
-    (configs?.data as SystemConfig[])?.map((c) => [c.key, c.value]),
-  )
   useEffect(() => {
     if (!configs?.data) return
     const server: Record<string, string> = {}
@@ -54,7 +51,7 @@ function SystemSettings() {
       server[c.key] = c.value
     }
     setDraft(server)
-  }, [configDataKey])
+  }, [configs.data])
 
   if (isLoading) {
     return (
@@ -205,7 +202,9 @@ function SystemSettings() {
               <div className="border-t px-4 py-3 space-y-3">
                 <div className="grid gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="td-api-key" className="text-xs">API Key</Label>
+                    <Label htmlFor="td-api-key" className="text-xs">
+                      API Key
+                    </Label>
                     <EnvHint envSet={hasEnv("trondealer_api_key")} />
                   </div>
                   <Input
@@ -213,21 +212,33 @@ function SystemSettings() {
                     type="password"
                     value={get("trondealer_api_key")}
                     onChange={(e) => set("trondealer_api_key", e.target.value)}
-                    placeholder={hasEnv("trondealer_api_key") ? t("admin.envVarConfigured") : "td_..."}
+                    placeholder={
+                      hasEnv("trondealer_api_key")
+                        ? t("admin.envVarConfigured")
+                        : "td_..."
+                    }
                     className="h-8 text-xs"
                   />
                 </div>
                 <div className="grid gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="td-webhook-secret" className="text-xs">Webhook Secret</Label>
+                    <Label htmlFor="td-webhook-secret" className="text-xs">
+                      Webhook Secret
+                    </Label>
                     <EnvHint envSet={hasEnv("trondealer_webhook_secret")} />
                   </div>
                   <Input
                     id="td-webhook-secret"
                     type="password"
                     value={get("trondealer_webhook_secret")}
-                    onChange={(e) => set("trondealer_webhook_secret", e.target.value)}
-                    placeholder={hasEnv("trondealer_webhook_secret") ? t("admin.envVarConfigured") : "Webhook secret"}
+                    onChange={(e) =>
+                      set("trondealer_webhook_secret", e.target.value)
+                    }
+                    placeholder={
+                      hasEnv("trondealer_webhook_secret")
+                        ? t("admin.envVarConfigured")
+                        : "Webhook secret"
+                    }
                     className="h-8 text-xs"
                   />
                 </div>
@@ -257,20 +268,28 @@ function SystemSettings() {
               <div className="border-t px-4 py-3 space-y-3">
                 <div className="grid gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="qvapay-app-id" className="text-xs">App ID</Label>
+                    <Label htmlFor="qvapay-app-id" className="text-xs">
+                      App ID
+                    </Label>
                     <EnvHint envSet={hasEnv("qvapay_app_id")} />
                   </div>
                   <Input
                     id="qvapay-app-id"
                     value={get("qvapay_app_id")}
                     onChange={(e) => set("qvapay_app_id", e.target.value)}
-                    placeholder={hasEnv("qvapay_app_id") ? t("admin.envVarConfigured") : "QvaPay App ID"}
+                    placeholder={
+                      hasEnv("qvapay_app_id")
+                        ? t("admin.envVarConfigured")
+                        : "QvaPay App ID"
+                    }
                     className="h-8 text-xs"
                   />
                 </div>
                 <div className="grid gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="qvapay-app-secret" className="text-xs">App Secret</Label>
+                    <Label htmlFor="qvapay-app-secret" className="text-xs">
+                      App Secret
+                    </Label>
                     <EnvHint envSet={hasEnv("qvapay_app_secret")} />
                   </div>
                   <Input
@@ -278,7 +297,11 @@ function SystemSettings() {
                     type="password"
                     value={get("qvapay_app_secret")}
                     onChange={(e) => set("qvapay_app_secret", e.target.value)}
-                    placeholder={hasEnv("qvapay_app_secret") ? t("admin.envVarConfigured") : "QvaPay App Secret"}
+                    placeholder={
+                      hasEnv("qvapay_app_secret")
+                        ? t("admin.envVarConfigured")
+                        : "QvaPay App Secret"
+                    }
                     className="h-8 text-xs"
                   />
                 </div>
@@ -308,7 +331,9 @@ function SystemSettings() {
               <div className="border-t px-4 py-3 space-y-3">
                 <div className="grid gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="stripe-secret-key" className="text-xs">Secret Key</Label>
+                    <Label htmlFor="stripe-secret-key" className="text-xs">
+                      Secret Key
+                    </Label>
                     <EnvHint envSet={hasEnv("stripe_secret_key")} />
                   </div>
                   <Input
@@ -316,21 +341,33 @@ function SystemSettings() {
                     type="password"
                     value={get("stripe_secret_key")}
                     onChange={(e) => set("stripe_secret_key", e.target.value)}
-                    placeholder={hasEnv("stripe_secret_key") ? t("admin.envVarConfigured") : "sk_..."}
+                    placeholder={
+                      hasEnv("stripe_secret_key")
+                        ? t("admin.envVarConfigured")
+                        : "sk_..."
+                    }
                     className="h-8 text-xs"
                   />
                 </div>
                 <div className="grid gap-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="stripe-webhook-secret" className="text-xs">Webhook Secret</Label>
+                    <Label htmlFor="stripe-webhook-secret" className="text-xs">
+                      Webhook Secret
+                    </Label>
                     <EnvHint envSet={hasEnv("stripe_webhook_secret")} />
                   </div>
                   <Input
                     id="stripe-webhook-secret"
                     type="password"
                     value={get("stripe_webhook_secret")}
-                    onChange={(e) => set("stripe_webhook_secret", e.target.value)}
-                    placeholder={hasEnv("stripe_webhook_secret") ? t("admin.envVarConfigured") : "whsec_..."}
+                    onChange={(e) =>
+                      set("stripe_webhook_secret", e.target.value)
+                    }
+                    placeholder={
+                      hasEnv("stripe_webhook_secret")
+                        ? t("admin.envVarConfigured")
+                        : "whsec_..."
+                    }
                     className="h-8 text-xs"
                   />
                 </div>

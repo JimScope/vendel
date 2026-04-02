@@ -85,14 +85,14 @@ function Terms() {
                   Be at least 18 years old or the age of legal majority in your
                   jurisdiction
                 </li>
-                <li>Have the legal capacity to enter into binding agreements</li>
+                <li>
+                  Have the legal capacity to enter into binding agreements
+                </li>
                 <li>
                   Not be located in a jurisdiction where the Service is
                   prohibited
                 </li>
-                <li>
-                  Provide accurate and truthful registration information
-                </li>
+                <li>Provide accurate and truthful registration information</li>
               </ul>
             </div>
 
@@ -257,9 +257,7 @@ function Terms() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold">
-              9. Intellectual Property
-            </h2>
+            <h2 className="text-xl font-semibold">9. Intellectual Property</h2>
             <p className="text-muted-foreground leading-relaxed">
               All content, features, and functionality of the Service —
               including but not limited to software, text, graphics, logos, and

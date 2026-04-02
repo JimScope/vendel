@@ -175,4 +175,5 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 			"next_run": nextRun,
 		})
 	}).Bind(apis.RequireAuth("users"))
+
 }
