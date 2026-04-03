@@ -335,6 +335,8 @@ func init() {
 			{"app_name", "Vendel", "Application display name"},
 			{"sender_email", "noreply@vendel.cc", "Email address used for transactional emails"},
 			{"support_email", "support@vendel.cc", "Support email address"},
+			{"banner_text", "", "Announcement banner text (empty = hidden)"},
+			{"banner_url", "", "Optional link URL for the banner"},
 			{"maintenance_mode", "false", "Enable/disable maintenance mode"},
 			{"default_payment_method", "invoice", "Default payment method (invoice or authorized)"},
 			{"webhook_timeout", "10", "Webhook delivery timeout in seconds"},

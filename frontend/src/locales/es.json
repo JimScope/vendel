@@ -523,6 +523,10 @@
     "envOverrideHint": "Las variables de entorno tienen prioridad. Los valores aquí se usan como respaldo.",
     "envVarSet": "Configurado vía env",
     "envVarConfigured": "Configurado vía variable de entorno",
+    "bannerText": "Texto del banner",
+    "bannerTextPlaceholder": "Mensaje de anuncio...",
+    "bannerUrl": "Enlace del banner (opcional)",
+    "bannerUrlPlaceholder": "https://...",
     "configSaved": "Configuración guardada",
     "configSaveFailed": "Error al guardar configuración"
   },

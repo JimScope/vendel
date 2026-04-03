@@ -12,6 +12,8 @@ export interface AppConfig {
   supportEmail: string
   maintenanceMode: boolean
   paymentProviders: PaymentProvider[]
+  bannerText: string
+  bannerUrl: string
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -19,6 +21,8 @@ const DEFAULT_CONFIG: AppConfig = {
   supportEmail: "support@example.com",
   maintenanceMode: false,
   paymentProviders: [],
+  bannerText: "",
+  bannerUrl: "",
 }
 
 export function useAppConfig() {
@@ -40,6 +44,8 @@ export function useAppConfig() {
     maintenanceMode: data?.maintenance_mode === "true",
     paymentProviders:
       data?.payment_providers ?? DEFAULT_CONFIG.paymentProviders,
+    bannerText: data?.banner_text ?? DEFAULT_CONFIG.bannerText,
+    bannerUrl: data?.banner_url ?? DEFAULT_CONFIG.bannerUrl,
   }
 
   return {

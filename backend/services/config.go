@@ -23,7 +23,7 @@ func GetSystemConfigValue(app core.App, key string) string {
 
 // GetAppSettings returns public app settings.
 func GetAppSettings(app core.App) map[string]any {
-	keys := []string{"app_name", "support_email"}
+	keys := []string{"app_name", "support_email", "banner_text", "banner_url"}
 	result := make(map[string]any)
 	for _, k := range keys {
 		result[k] = GetSystemConfigValue(app, k)

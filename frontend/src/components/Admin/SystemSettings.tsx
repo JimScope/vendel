@@ -163,6 +163,30 @@ function SystemSettings() {
               onCheckedChange={toggle("maintenance_mode")}
             />
           </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="banner-text">{t("admin.bannerText")}</Label>
+            <Input
+              id="banner-text"
+              value={get("banner_text")}
+              onChange={(e) => set("banner_text", e.target.value)}
+              placeholder={t("admin.bannerTextPlaceholder")}
+              className="w-full"
+              maxLength={200}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="banner-url">{t("admin.bannerUrl")}</Label>
+            <Input
+              id="banner-url"
+              type="url"
+              value={get("banner_url")}
+              onChange={(e) => set("banner_url", e.target.value)}
+              placeholder={t("admin.bannerUrlPlaceholder")}
+              className="w-[300px]"
+            />
+          </div>
         </CardContent>
       </Card>
 

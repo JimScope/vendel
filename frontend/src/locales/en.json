@@ -523,6 +523,10 @@
     "envOverrideHint": "Environment variables take priority. Values here are used as fallback.",
     "envVarSet": "Set via env",
     "envVarConfigured": "Configured via environment variable",
+    "bannerText": "Banner text",
+    "bannerTextPlaceholder": "Announcement message...",
+    "bannerUrl": "Banner link (optional)",
+    "bannerUrlPlaceholder": "https://...",
     "configSaved": "Configuration saved",
     "configSaveFailed": "Failed to save configuration"
   },
