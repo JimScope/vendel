@@ -96,43 +96,41 @@ function Layout() {
 
   return (
     <SidebarProvider>
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none"
-        >
-          {t("common.skipToContent")}
-        </a>
-        <AppSidebar />
-        <SidebarInset>
-          <AnnouncementBanner />
-          <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
-            <SidebarTrigger className="-ml-1 text-muted-foreground" />
-            {pageTitle && (
-              <>
-                <Separator orientation="vertical" className="mx-1 h-4" />
-                <span className="text-sm text-muted-foreground">
-                  {pageTitle}
-                </span>
-              </>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-none"
+      >
+        {t("common.skipToContent")}
+      </a>
+      <AppSidebar />
+      <SidebarInset>
+        <AnnouncementBanner />
+        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+          <SidebarTrigger className="-ml-1 text-muted-foreground" />
+          {pageTitle && (
+            <>
+              <Separator orientation="vertical" className="mx-1 h-4" />
+              <span className="text-sm text-muted-foreground">{pageTitle}</span>
+            </>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            <TopUpPopover />
+            {config.maintenanceMode && (
+              <Badge variant="destructive" className="gap-1.5">
+                <Construction className="size-3" />
+                {t("maintenance.maintenanceMode")}
+              </Badge>
             )}
-            <div className="ml-auto flex items-center gap-2">
-              <TopUpPopover />
-              {config.maintenanceMode && (
-                <Badge variant="destructive" className="gap-1.5">
-                  <Construction className="size-3" />
-                  {t("maintenance.maintenanceMode")}
-                </Badge>
-              )}
-            </div>
-          </header>
-          <main id="main-content" className="flex-1 p-6 md:p-8">
-            <div className="mx-auto max-w-7xl">
-              <Outlet />
-            </div>
-          </main>
-          <Footer />
-        </SidebarInset>
-      </SidebarProvider>
+          </div>
+        </header>
+        <main id="main-content" className="flex-1 p-6 md:p-8">
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
+        </main>
+        <Footer />
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
 

@@ -334,7 +334,10 @@
     "useTemplate": "Use a template...",
     "none": "None",
     "body": "Body",
-    "createTemplate": "Create Template"
+    "createTemplate": "Create Template",
+    "templatePreview": "Template preview",
+    "autoFilledHint": "{{name}} and {{phone}} are auto-filled from contacts",
+    "variableLabel": "Value for {{var}}"
   },
   "scheduled": {
     "title": "Scheduled SMS",

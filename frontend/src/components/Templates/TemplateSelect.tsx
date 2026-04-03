@@ -9,8 +9,30 @@ import {
 } from "@/components/ui/select"
 import { useTemplateList } from "@/hooks/useTemplateList"
 
+const VARIABLE_REGEX = /\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g
+const RESERVED_VARIABLES = new Set(["name", "phone"])
+
+export interface SelectedTemplate {
+  id: string
+  body: string
+  customVariables: string[]
+}
+
+function extractCustomVariables(body: string): string[] {
+  const seen = new Set<string>()
+  const vars: string[] = []
+  for (const match of body.matchAll(VARIABLE_REGEX)) {
+    const name = match[1]
+    if (!seen.has(name) && !RESERVED_VARIABLES.has(name)) {
+      seen.add(name)
+      vars.push(name)
+    }
+  }
+  return vars
+}
+
 interface TemplateSelectProps {
-  onSelect: (body: string) => void
+  onSelect: (template: SelectedTemplate | null) => void
 }
 
 export const TemplateSelect = ({ onSelect }: TemplateSelectProps) => {
@@ -28,12 +50,17 @@ export const TemplateSelect = ({ onSelect }: TemplateSelectProps) => {
       onValueChange={(value) => {
         if (value === "__none__") {
           setSelected("")
+          onSelect(null)
           return
         }
         setSelected(value)
         const template = templates.data.find((t) => t.id === value)
         if (template) {
-          onSelect(template.body)
+          onSelect({
+            id: template.id,
+            body: template.body,
+            customVariables: extractCustomVariables(template.body),
+          })
         }
       }}
     >

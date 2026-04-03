@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"vendel/middleware"
-	"vendel/services"
+	"fmt"
 	"net/http"
 	"regexp"
+	"vendel/middleware"
+	"vendel/services"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/apis"
@@ -15,195 +16,285 @@ var e164Regex = regexp.MustCompile(`^\+[1-9]\d{1,14}$`)
 
 // RegisterSMSRoutes registers custom SMS API routes.
 func RegisterSMSRoutes(se *core.ServeEvent) {
-	// POST /api/sms/send — Send SMS (auth: JWT or API key)
-	se.Router.POST("/api/sms/send", func(e *core.RequestEvent) error {
-		userId, err := middleware.ResolveAuthOrAPIKey(e)
-		if err != nil {
-			return apis.NewUnauthorizedError("Authentication required", nil)
-		}
+	se.Router.POST("/api/sms/send", handleSendSMS)
+	se.Router.POST("/api/sms/send-template", handleSendSMSTemplate)
+	se.Router.POST("/api/sms/report", handleSMSReport)
+	se.Router.POST("/api/sms/incoming", handleIncomingSMS)
+	se.Router.GET("/api/sms/pending", handlePendingMessages)
+	se.Router.POST("/api/sms/fcm-token", handleFCMToken)
+}
 
-		var body struct {
-			Recipients []string `json:"recipients"`
-			Body       string   `json:"body"`
-			DeviceID   string   `json:"device_id"`
-			GroupID    string   `json:"group_id"`
-		}
-		if err := e.BindBody(&body); err != nil {
-			return apis.NewBadRequestError("Invalid request body", nil)
-		}
+// handleSendSMS sends an SMS with a direct body (auth: JWT or API key).
+func handleSendSMS(e *core.RequestEvent) error {
+	userId, err := middleware.ResolveAuthOrAPIKey(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Authentication required", nil)
+	}
 
-		// Resolve group contacts into recipients
-		if body.GroupID != "" {
-			groupContacts, _ := e.App.FindRecordsByFilter(
-				"contacts",
-				"user = {:userId} && groups.id ?= {:groupId}",
-				"", 0, 0,
-				dbx.Params{"userId": userId, "groupId": body.GroupID},
-			)
-			seen := make(map[string]bool)
-			for _, r := range body.Recipients {
-				seen[r] = true
+	var body struct {
+		Recipients []string `json:"recipients"`
+		Body       string   `json:"body"`
+		DeviceID   string   `json:"device_id"`
+		GroupID    string   `json:"group_id"`
+	}
+	if err := e.BindBody(&body); err != nil {
+		return apis.NewBadRequestError("Invalid request body", nil)
+	}
+
+	recipients, err := resolveRecipients(e.App, userId, body.Recipients, body.GroupID)
+	if err != nil {
+		return apis.NewBadRequestError(err.Error(), nil)
+	}
+
+	if body.Body == "" {
+		return apis.NewBadRequestError("Message body required", nil)
+	}
+	body.Body = services.StripInvisibleUnicode(body.Body)
+	if len(body.Body) > services.MaxMessageBodyLength {
+		return apis.NewBadRequestError(
+			fmt.Sprintf("Message body exceeds %d character limit", services.MaxMessageBodyLength), nil)
+	}
+
+	messages, err := services.SendSMS(e.App, userId, recipients, body.Body, body.DeviceID, nil)
+	if err != nil {
+		return handleServiceError(e, err)
+	}
+
+	return e.JSON(http.StatusOK, buildSendResponse(messages, len(recipients)))
+}
+
+// handleSendSMSTemplate sends an SMS using a saved template (auth: JWT or API key).
+func handleSendSMSTemplate(e *core.RequestEvent) error {
+	userId, err := middleware.ResolveAuthOrAPIKey(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Authentication required", nil)
+	}
+
+	var body struct {
+		Recipients []string          `json:"recipients"`
+		TemplateID string            `json:"template_id"`
+		Variables  map[string]string `json:"variables"`
+		DeviceID   string            `json:"device_id"`
+		GroupID    string            `json:"group_id"`
+	}
+	if err := e.BindBody(&body); err != nil {
+		return apis.NewBadRequestError("Invalid request body", nil)
+	}
+
+	recipients, err := resolveRecipients(e.App, userId, body.Recipients, body.GroupID)
+	if err != nil {
+		return apis.NewBadRequestError(err.Error(), nil)
+	}
+
+	tmpl, err := resolveTemplate(e.App, userId, body.TemplateID, body.Variables)
+	if err != nil {
+		return apis.NewBadRequestError(err.Error(), nil)
+	}
+
+	messages, err := services.SendSMS(e.App, userId, recipients, "", body.DeviceID, tmpl)
+	if err != nil {
+		return handleServiceError(e, err)
+	}
+
+	return e.JSON(http.StatusOK, buildSendResponse(messages, len(recipients)))
+}
+
+// resolveTemplate validates ownership and builds TemplateOptions from a template ID.
+func resolveTemplate(app core.App, userId, templateId string, variables map[string]string) (*services.TemplateOptions, error) {
+	if templateId == "" {
+		return nil, fmt.Errorf("template_id required")
+	}
+
+	record, err := app.FindRecordById("sms_templates", templateId)
+	if err != nil {
+		return nil, fmt.Errorf("template not found")
+	}
+	if record.GetString("user") != userId {
+		return nil, fmt.Errorf("template does not belong to user")
+	}
+
+	templateBody := services.GetRecordBody(record)
+
+	vars := services.ExtractVariables(templateBody)
+	_, custom := services.ClassifyVariables(vars)
+	for _, v := range custom {
+		if _, ok := variables[v]; !ok {
+			return nil, fmt.Errorf("missing variable: %s", v)
+		}
+	}
+
+	return &services.TemplateOptions{
+		TemplateBody: templateBody,
+		Variables:    variables,
+	}, nil
+}
+
+// handleSMSReport processes a device ACK callback (auth: device API key).
+func handleSMSReport(e *core.RequestEvent) error {
+	device, err := middleware.AuthenticateDevice(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Invalid API key", nil)
+	}
+
+	var body struct {
+		MessageID    string `json:"message_id"`
+		Status       string `json:"status"`
+		ErrorMessage string `json:"error_message"`
+	}
+	if err := e.BindBody(&body); err != nil {
+		return apis.NewBadRequestError("Invalid request body", nil)
+	}
+
+	validStatuses := map[string]bool{"sent": true, "delivered": true, "failed": true}
+	if !validStatuses[body.Status] {
+		return apis.NewBadRequestError("Invalid status: must be sent, delivered, or failed", nil)
+	}
+
+	if err := services.ProcessSMSAck(e.App, device.Id, body.MessageID, body.Status, body.ErrorMessage); err != nil {
+		return apis.NewNotFoundError(err.Error(), nil)
+	}
+
+	return e.JSON(http.StatusOK, map[string]any{
+		"success":    true,
+		"message_id": body.MessageID,
+		"status":     body.Status,
+	})
+}
+
+// handleIncomingSMS processes an incoming SMS from a device (auth: device API key).
+func handleIncomingSMS(e *core.RequestEvent) error {
+	device, err := middleware.AuthenticateDevice(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Invalid API key", nil)
+	}
+
+	var body struct {
+		FromNumber string `json:"from_number"`
+		Body       string `json:"body"`
+		Timestamp  string `json:"timestamp"`
+	}
+	if err := e.BindBody(&body); err != nil {
+		return apis.NewBadRequestError("Invalid request body", nil)
+	}
+
+	userId := device.GetString("user")
+	message, err := services.HandleIncomingSMS(e.App, userId, device.Id, body.FromNumber, body.Body, body.Timestamp)
+	if err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
+	}
+
+	return e.JSON(http.StatusOK, map[string]any{
+		"success":    true,
+		"message_id": message.Id,
+	})
+}
+
+// handlePendingMessages returns pending messages for a device (auth: device API key).
+func handlePendingMessages(e *core.RequestEvent) error {
+	device, err := middleware.AuthenticateDevice(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Invalid API key", nil)
+	}
+
+	claimed, err := services.ClaimPendingMessages(e.App, device.Id)
+	if err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to claim messages", nil)
+	}
+
+	type pendingMsg struct {
+		MessageID string `json:"message_id"`
+		Recipient string `json:"recipient"`
+		Body      string `json:"body"`
+	}
+	msgs := make([]pendingMsg, 0, len(claimed))
+	for _, r := range claimed {
+		msgs = append(msgs, pendingMsg{
+			MessageID: r.Id,
+			Recipient: r.GetString("to"),
+			Body:      services.GetRecordBody(r),
+		})
+	}
+
+	return e.JSON(http.StatusOK, map[string]any{
+		"device_id": device.Id,
+		"messages":  msgs,
+	})
+}
+
+// handleFCMToken updates a device's FCM token (auth: device API key).
+func handleFCMToken(e *core.RequestEvent) error {
+	device, err := middleware.AuthenticateDevice(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Invalid API key", nil)
+	}
+
+	var body struct {
+		FCMToken string `json:"fcm_token"`
+	}
+	if err := e.BindBody(&body); err != nil {
+		return apis.NewBadRequestError("Invalid request body", nil)
+	}
+
+	device.Set("fcm_token", body.FCMToken)
+	if err := e.App.Save(device); err != nil {
+		return apis.NewApiError(http.StatusInternalServerError, "Failed to update token", nil)
+	}
+
+	return e.JSON(http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// resolveRecipients expands group contacts and validates E.164 format.
+func resolveRecipients(app core.App, userId string, recipients []string, groupID string) ([]string, error) {
+	result := make([]string, len(recipients))
+	copy(result, recipients)
+
+	if groupID != "" {
+		groupContacts, _ := app.FindRecordsByFilter(
+			"contacts",
+			"user = {:userId} && groups.id ?= {:groupId}",
+			"", 0, 0,
+			dbx.Params{"userId": userId, "groupId": groupID},
+		)
+		seen := make(map[string]bool)
+		for _, r := range result {
+			seen[r] = true
+		}
+		for _, c := range groupContacts {
+			phone := c.GetString("phone_number")
+			if !seen[phone] {
+				result = append(result, phone)
+				seen[phone] = true
 			}
-			for _, c := range groupContacts {
-				phone := c.GetString("phone_number")
-				if !seen[phone] {
-					body.Recipients = append(body.Recipients, phone)
-					seen[phone] = true
-				}
-			}
 		}
+	}
 
-		if len(body.Recipients) == 0 {
-			return apis.NewBadRequestError("At least one recipient required", nil)
+	if len(result) == 0 {
+		return nil, fmt.Errorf("at least one recipient required")
+	}
+	for _, r := range result {
+		if !e164Regex.MatchString(r) {
+			return nil, fmt.Errorf("invalid phone number: %s. Must be E.164 format (e.g. +1234567890)", r)
 		}
-		for _, r := range body.Recipients {
-			if !e164Regex.MatchString(r) {
-				return apis.NewBadRequestError("Invalid phone number: "+r+". Must be E.164 format (e.g. +1234567890)", nil)
-			}
-		}
-		if body.Body == "" {
-			return apis.NewBadRequestError("Message body required", nil)
-		}
-		if len(body.Body) > services.MaxMessageBodyLength {
-			return apis.NewBadRequestError("Message body exceeds 1600 character limit", nil)
-		}
+	}
+	return result, nil
+}
 
-		messages, err := services.SendSMS(e.App, userId, body.Recipients, body.Body, body.DeviceID)
-		if err != nil {
-			return handleServiceError(e, err)
-		}
+// buildSendResponse creates the standard response for send endpoints.
+func buildSendResponse(messages []*core.Record, recipientCount int) map[string]any {
+	ids := make([]string, len(messages))
+	for i, m := range messages {
+		ids[i] = m.Id
+	}
 
-		// Build response
-		ids := make([]string, len(messages))
-		for i, m := range messages {
-			ids[i] = m.Id
-		}
+	var batchId string
+	if len(messages) > 0 {
+		batchId = messages[0].GetString("batch_id")
+	}
 
-		var batchId string
-		if len(messages) > 0 {
-			batchId = messages[0].GetString("batch_id")
-		}
-
-		return e.JSON(http.StatusOK, map[string]any{
-			"batch_id":         batchId,
-			"message_ids":      ids,
-			"recipients_count": len(body.Recipients),
-			"status":           "accepted",
-		})
-	})
-
-	// POST /api/sms/report — Device ACK callback (auth: device API key)
-	se.Router.POST("/api/sms/report", func(e *core.RequestEvent) error {
-		device, err := middleware.AuthenticateDevice(e)
-		if err != nil {
-			return apis.NewUnauthorizedError("Invalid API key", nil)
-		}
-
-		var body struct {
-			MessageID    string `json:"message_id"`
-			Status       string `json:"status"`
-			ErrorMessage string `json:"error_message"`
-		}
-		if err := e.BindBody(&body); err != nil {
-			return apis.NewBadRequestError("Invalid request body", nil)
-		}
-
-		// Only allow terminal statuses from device reports
-		validStatuses := map[string]bool{"sent": true, "delivered": true, "failed": true}
-		if !validStatuses[body.Status] {
-			return apis.NewBadRequestError("Invalid status: must be sent, delivered, or failed", nil)
-		}
-
-		if err := services.ProcessSMSAck(e.App, device.Id, body.MessageID, body.Status, body.ErrorMessage); err != nil {
-			return apis.NewNotFoundError(err.Error(), nil)
-		}
-
-		return e.JSON(http.StatusOK, map[string]any{
-			"success":    true,
-			"message_id": body.MessageID,
-			"status":     body.Status,
-		})
-	})
-
-	// POST /api/sms/incoming — Incoming SMS from device (auth: device API key)
-	se.Router.POST("/api/sms/incoming", func(e *core.RequestEvent) error {
-		device, err := middleware.AuthenticateDevice(e)
-		if err != nil {
-			return apis.NewUnauthorizedError("Invalid API key", nil)
-		}
-
-		var body struct {
-			FromNumber string `json:"from_number"`
-			Body       string `json:"body"`
-			Timestamp  string `json:"timestamp"`
-		}
-		if err := e.BindBody(&body); err != nil {
-			return apis.NewBadRequestError("Invalid request body", nil)
-		}
-
-		userId := device.GetString("user")
-		message, err := services.HandleIncomingSMS(e.App, userId, device.Id, body.FromNumber, body.Body, body.Timestamp)
-		if err != nil {
-			return apis.NewApiError(http.StatusInternalServerError, err.Error(), nil)
-		}
-
-		return e.JSON(http.StatusOK, map[string]any{
-			"success":    true,
-			"message_id": message.Id,
-		})
-	})
-
-	// GET /api/sms/pending — Pending messages for devices: Android (post-FCM tickle) and modems (startup recovery) (auth: device API key)
-	se.Router.GET("/api/sms/pending", func(e *core.RequestEvent) error {
-		device, err := middleware.AuthenticateDevice(e)
-		if err != nil {
-			return apis.NewUnauthorizedError("Invalid API key", nil)
-		}
-
-		claimed, err := services.ClaimPendingMessages(e.App, device.Id)
-		if err != nil {
-			return apis.NewApiError(http.StatusInternalServerError, "Failed to claim messages", nil)
-		}
-
-		type pendingMsg struct {
-			MessageID string `json:"message_id"`
-			Recipient string `json:"recipient"`
-			Body      string `json:"body"`
-		}
-		msgs := make([]pendingMsg, 0, len(claimed))
-		for _, r := range claimed {
-			msgs = append(msgs, pendingMsg{
-				MessageID: r.Id,
-				Recipient: r.GetString("to"),
-				Body:      services.GetRecordBody(r),
-			})
-		}
-
-		return e.JSON(http.StatusOK, map[string]any{
-			"device_id": device.Id,
-			"messages":  msgs,
-		})
-	})
-
-	// POST /api/sms/fcm-token — Update device FCM token (auth: device API key)
-	se.Router.POST("/api/sms/fcm-token", func(e *core.RequestEvent) error {
-		device, err := middleware.AuthenticateDevice(e)
-		if err != nil {
-			return apis.NewUnauthorizedError("Invalid API key", nil)
-		}
-
-		var body struct {
-			FCMToken string `json:"fcm_token"`
-		}
-		if err := e.BindBody(&body); err != nil {
-			return apis.NewBadRequestError("Invalid request body", nil)
-		}
-
-		device.Set("fcm_token", body.FCMToken)
-		if err := e.App.Save(device); err != nil {
-			return apis.NewApiError(http.StatusInternalServerError, "Failed to update token", nil)
-		}
-
-		return e.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
+	return map[string]any{
+		"batch_id":         batchId,
+		"message_ids":      ids,
+		"recipients_count": recipientCount,
+		"status":           "accepted",
+	}
 }

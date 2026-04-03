@@ -5,7 +5,10 @@ import { Controller, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { MultiSelect } from "@/components/Common/MultiSelect"
-import { TemplateSelect } from "@/components/Templates/TemplateSelect"
+import {
+  type SelectedTemplate,
+  TemplateSelect,
+} from "@/components/Templates/TemplateSelect"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -18,13 +21,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { TagInput } from "@/components/ui/tag-input"
 import { Textarea } from "@/components/ui/textarea"
 import { useContactGroupList } from "@/hooks/useContactGroupList"
 import { useContactList } from "@/hooks/useContactList"
 import { useDeviceList } from "@/hooks/useDeviceList"
-import { useSendSMS } from "@/hooks/useSMSMutations"
+import { useSendSMS, useSendSMSTemplate } from "@/hooks/useSMSMutations"
 import type { Contact } from "@/types/collections"
 
 const formSchema = z.object({
@@ -32,15 +36,20 @@ const formSchema = z.object({
     .array(z.e164().min(1, "Recipient is required"))
     .min(1, "At least one recipient is required"),
   from: z.array(z.string()).min(1, "Device is required"),
-  body: z.string().min(1, "Message body is required"),
+  body: z.string(),
   group_ids: z.array(z.string()).optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
 
+const RESERVED_VAR_REGEX = /\{\{(name|phone)\}\}/
+
 const SendSMS = () => {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<SelectedTemplate | null>(null)
+  const [templateVars, setTemplateVars] = useState<Record<string, string>>({})
   const { data: devices } = useDeviceList()
   const { data: contactGroups } = useContactGroupList()
   const { data: contacts } = useContactList()
@@ -63,36 +72,80 @@ const SendSMS = () => {
   }, [devices, form])
 
   const sendSMSMutation = useSendSMS()
+  const sendTemplateMutation = useSendSMSTemplate()
+  const isSending = sendSMSMutation.isPending || sendTemplateMutation.isPending
 
-  const onSubmit = (data: FormData) => {
-    // Resolve group contacts and merge with manual recipients
-    let allRecipients = [...data.recipients]
+  const resolveAllRecipients = (data: FormData): string[] => {
+    const result = [...data.recipients]
     if (data.group_ids && data.group_ids.length > 0 && contacts?.data) {
       const groupContacts = (contacts.data as unknown as Contact[]).filter(
-        (c) =>
-          c.groups?.some((g) => data.group_ids?.includes(g)),
+        (c) => c.groups?.some((g) => data.group_ids?.includes(g)),
       )
-      const groupPhones = groupContacts.map((c) => c.phone_number)
-      allRecipients = [...new Set([...allRecipients, ...groupPhones])]
+      for (const c of groupContacts) {
+        if (!result.includes(c.phone_number)) result.push(c.phone_number)
+      }
     }
-
-    sendSMSMutation.mutate(
-      {
-        recipients: allRecipients,
-        body: data.body,
-        device_id: data.from[0],
-      },
-      {
-        onSuccess: () => {
-          form.reset()
-          setIsOpen(false)
-        },
-      },
-    )
+    return result
   }
 
+  const onSubmit = (data: FormData) => {
+    if (!selectedTemplate && !data.body) {
+      form.setError("body", { message: "Message body or template required" })
+      return
+    }
+
+    if (selectedTemplate) {
+      const missing = selectedTemplate.customVariables.filter(
+        (v) => !templateVars[v]?.trim(),
+      )
+      if (missing.length > 0) {
+        form.setError("body", {
+          message: `Missing variables: ${missing.join(", ")}`,
+        })
+        return
+      }
+    }
+
+    const allRecipients = resolveAllRecipients(data)
+    const onSuccess = () => {
+      form.reset()
+      setSelectedTemplate(null)
+      setTemplateVars({})
+      setIsOpen(false)
+    }
+
+    if (selectedTemplate) {
+      sendTemplateMutation.mutate(
+        {
+          recipients: allRecipients,
+          template_id: selectedTemplate.id,
+          variables: templateVars,
+          device_id: data.from[0],
+        },
+        { onSuccess },
+      )
+    } else {
+      sendSMSMutation.mutate(
+        { recipients: allRecipients, body: data.body, device_id: data.from[0] },
+        { onSuccess },
+      )
+    }
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open)
+    if (!open) {
+      setSelectedTemplate(null)
+      setTemplateVars({})
+    }
+  }
+
+  const hasReservedVars = selectedTemplate
+    ? RESERVED_VAR_REGEX.test(selectedTemplate.body)
+    : false
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="h-4 w-4" />
@@ -142,7 +195,9 @@ const SendSMS = () => {
                   id={field.name}
                   placeholder={t("sms.recipientPlaceholder")}
                   aria-invalid={fieldState.invalid}
-                  suggestions={((contacts?.data || []) as unknown as Contact[]).map((c) => ({
+                  suggestions={(
+                    (contacts?.data || []) as unknown as Contact[]
+                  ).map((c) => ({
                     label: c.name,
                     value: c.phone_number,
                   }))}
@@ -179,42 +234,82 @@ const SendSMS = () => {
           />
 
           {/* Template Select */}
-          <TemplateSelect onSelect={(body) => form.setValue("body", body)} />
+          <TemplateSelect
+            onSelect={(template) => {
+              setSelectedTemplate(template)
+              setTemplateVars({})
+              form.setValue("body", "")
+              form.clearErrors("body")
+            }}
+          />
 
-          {/* Message Body Field */}
-          <Controller
-            name="body"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={field.name}>
-                  {t("sms.body")} <span className="text-destructive">*</span>
-                </FieldLabel>
-                <Textarea
-                  {...field}
-                  id={field.name}
-                  placeholder={t("sms.bodyPlaceholder")}
-                  rows={3}
-                  aria-invalid={fieldState.invalid}
-                />
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
+          {selectedTemplate ? (
+            <>
+              {/* Template Preview */}
+              <Field>
+                <FieldLabel>{t("templates.templatePreview")}</FieldLabel>
+                <div className="rounded-md border bg-muted/50 p-3 text-sm whitespace-pre-wrap">
+                  {selectedTemplate.body}
+                </div>
+                {hasReservedVars && (
+                  <p className="text-muted-foreground text-xs mt-1">
+                    {t("templates.autoFilledHint")}
+                  </p>
                 )}
               </Field>
-            )}
-          />
+
+              {/* Custom Variable Inputs */}
+              {selectedTemplate.customVariables.map((v) => (
+                <Field key={v}>
+                  <FieldLabel>
+                    {v} <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    value={templateVars[v] || ""}
+                    onChange={(e) =>
+                      setTemplateVars((prev) => ({
+                        ...prev,
+                        [v]: e.target.value,
+                      }))
+                    }
+                    placeholder={t("templates.variableLabel", { var: v })}
+                    required
+                  />
+                </Field>
+              ))}
+            </>
+          ) : (
+            /* Message Body Field */
+            <Controller
+              name="body"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    {t("sms.body")} <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Textarea
+                    {...field}
+                    id={field.name}
+                    placeholder={t("sms.bodyPlaceholder")}
+                    rows={3}
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          )}
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button
-                variant="outline"
-                type="button"
-                disabled={sendSMSMutation.isPending}
-              >
+              <Button variant="outline" type="button" disabled={isSending}>
                 {t("common.cancel")}
               </Button>
             </DialogClose>
-            <LoadingButton type="submit" loading={sendSMSMutation.isPending}>
+            <LoadingButton type="submit" loading={isSending}>
               {t("common.send")}
             </LoadingButton>
           </DialogFooter>
