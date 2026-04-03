@@ -58,6 +58,20 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 			envHints[configKey] = os.Getenv(envKey) != ""
 		}
 
+		// Strip secret values — never return them, admin uses env_hints to know if set
+		secretKeys := map[string]bool{
+			"trondealer_api_key":        true,
+			"trondealer_webhook_secret": true,
+			"qvapay_app_secret":         true,
+			"stripe_secret_key":         true,
+			"stripe_webhook_secret":     true,
+		}
+		for _, r := range records {
+			if secretKeys[r.GetString("key")] {
+				r.Set("value", "")
+			}
+		}
+
 		return e.JSON(http.StatusOK, map[string]any{"data": records, "env_hints": envHints})
 	}).Bind(apis.RequireAuth("users"))
 
@@ -77,7 +91,16 @@ func RegisterUtilRoutes(se *core.ServeEvent) {
 			return apis.NewApiError(http.StatusInternalServerError, "system_config collection not found", nil)
 		}
 
+		secretKeys := map[string]bool{
+			"trondealer_api_key": true, "trondealer_webhook_secret": true,
+			"qvapay_app_secret": true, "stripe_secret_key": true, "stripe_webhook_secret": true,
+		}
+
 		for key, value := range body {
+			// Don't overwrite secrets with empty values (GET strips them)
+			if value == "" && secretKeys[key] {
+				continue
+			}
 			record, _ := e.App.FindFirstRecordByFilter("system_config", "key = {:key}", map[string]any{"key": key})
 			if record != nil {
 				record.Set("value", value)
