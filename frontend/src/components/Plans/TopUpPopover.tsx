@@ -46,12 +46,9 @@ function TopUpPopover() {
           {hasProviders && (
             <TopUpDialog
               trigger={
-                <button
-                  type="button"
-                  className="w-full rounded-md border border-dashed border-brand/40 py-2 text-xs font-medium text-brand transition-colors hover:bg-brand/5"
-                >
+                <Button variant="outline" size="sm" className="w-full">
                   {t("plans.addFunds")}
-                </button>
+                </Button>
               }
             />
           )}

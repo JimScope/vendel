@@ -1,5 +1,6 @@
 import { Wallet } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useBalance } from "@/hooks/useBalance"
@@ -35,12 +36,9 @@ function BalanceCard() {
         <CardContent>
           <TopUpDialog
             trigger={
-              <button
-                type="button"
-                className="w-full rounded-lg border border-dashed border-brand/40 py-2.5 text-sm font-medium text-brand transition-colors hover:bg-brand/5"
-              >
+              <Button variant="outline" className="w-full">
                 {t("plans.addFunds")}
-              </button>
+              </Button>
             }
           />
         </CardContent>

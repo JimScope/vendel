@@ -207,7 +207,8 @@
     "admin": "Admin",
     "settings": "Configuración",
     "userSettings": "Configuración de usuario",
-    "logOut": "Cerrar sesión"
+    "logOut": "Cerrar sesión",
+    "contacts": "Contactos"
   },
   "appearance": {
     "appearance": "Apariencia",
@@ -603,6 +604,29 @@
     "viewDocsDesc": "Guías, instrucciones de configuración y descripción de la plataforma",
     "viewApiRef": "Referencia de la API",
     "viewApiRefDesc": "Endpoints, parámetros y ejemplos de código para enviar SMS"
+  },
+  "contacts": {
+    "title": "Contactos",
+    "description": "Administra tu lista de contactos y grupos",
+    "addContact": "Agregar contacto",
+    "editContact": "Editar contacto",
+    "deleteContact": "Eliminar contacto",
+    "deleteContactDesc": "Esto eliminará permanentemente este contacto.",
+    "noContacts": "Sin contactos",
+    "noContactsDesc": "Agrega contactos manualmente o importa desde un archivo vCard.",
+    "name": "Nombre",
+    "phoneNumber": "Número de teléfono",
+    "notes": "Notas",
+    "groups": "Grupos",
+    "addGroup": "Agregar grupo",
+    "groupName": "Nombre del grupo",
+    "import": "Importar",
+    "importVcard": "Importar vCard",
+    "importDesc": "Importa contactos desde un archivo .vcf exportado de tu teléfono o cliente de correo.",
+    "selectFile": "Seleccionar archivo .vcf",
+    "importToGroup": "Agregar a grupo (opcional)",
+    "imported": "{{imported}} contactos importados, {{skipped}} omitidos",
+    "sendToGroup": "Enviar a grupo"
   },
   "errors": {
     "notFound": "404",
