@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/test.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/test.yml"
+
+jobs:
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          WEBHOOK_ENCRYPTION_KEY: ci-test-encryption-key
+        run: go test ./... -count=1 -race -timeout 60s
+
+      - name: Verify build
+        working-directory: backend
+        run: go build ./...
