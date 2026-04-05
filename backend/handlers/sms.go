@@ -35,13 +35,13 @@ func handleSendSMS(e *core.RequestEvent) error {
 		Recipients []string `json:"recipients"`
 		Body       string   `json:"body"`
 		DeviceID   string   `json:"device_id"`
-		GroupID    string   `json:"group_id"`
+		GroupIDs   []string `json:"group_ids"`
 	}
 	if err := e.BindBody(&body); err != nil {
 		return apis.NewBadRequestError("Invalid request body", nil)
 	}
 
-	recipients, err := resolveRecipients(e.App, userId, body.Recipients, body.GroupID)
+	recipients, err := resolveRecipients(e.App, userId, body.Recipients, body.GroupIDs)
 	if err != nil {
 		return apis.NewBadRequestError(err.Error(), nil)
 	}
@@ -75,13 +75,13 @@ func handleSendSMSTemplate(e *core.RequestEvent) error {
 		TemplateID string            `json:"template_id"`
 		Variables  map[string]string `json:"variables"`
 		DeviceID   string            `json:"device_id"`
-		GroupID    string            `json:"group_id"`
+		GroupIDs   []string          `json:"group_ids"`
 	}
 	if err := e.BindBody(&body); err != nil {
 		return apis.NewBadRequestError("Invalid request body", nil)
 	}
 
-	recipients, err := resolveRecipients(e.App, userId, body.Recipients, body.GroupID)
+	recipients, err := resolveRecipients(e.App, userId, body.Recipients, body.GroupIDs)
 	if err != nil {
 		return apis.NewBadRequestError(err.Error(), nil)
 	}
@@ -244,21 +244,23 @@ func handleFCMToken(e *core.RequestEvent) error {
 }
 
 // resolveRecipients expands group contacts and validates E.164 format.
-func resolveRecipients(app core.App, userId string, recipients []string, groupID string) ([]string, error) {
-	result := make([]string, len(recipients))
-	copy(result, recipients)
+func resolveRecipients(app core.App, userId string, recipients []string, groupIDs []string) ([]string, error) {
+	seen := make(map[string]bool, len(recipients))
+	result := make([]string, 0, len(recipients))
+	for _, r := range recipients {
+		if !seen[r] {
+			result = append(result, r)
+			seen[r] = true
+		}
+	}
 
-	if groupID != "" {
+	for _, groupID := range groupIDs {
 		groupContacts, _ := app.FindRecordsByFilter(
 			"contacts",
 			"user = {:userId} && groups.id ?= {:groupId}",
 			"", 0, 0,
 			dbx.Params{"userId": userId, "groupId": groupID},
 		)
-		seen := make(map[string]bool)
-		for _, r := range result {
-			seen[r] = true
-		}
 		for _, c := range groupContacts {
 			phone := c.GetString("phone_number")
 			if !seen[phone] {

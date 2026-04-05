@@ -7,6 +7,7 @@ interface SMSMessageCreate {
   recipients: string[]
   body: string
   device_id?: string
+  group_ids?: string[]
 }
 
 interface SMSTemplateCreate {
@@ -14,6 +15,7 @@ interface SMSTemplateCreate {
   template_id: string
   variables?: Record<string, string>
   device_id?: string
+  group_ids?: string[]
 }
 
 export function useSendSMS() {

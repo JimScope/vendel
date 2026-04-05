@@ -32,9 +32,7 @@ import { useSendSMS, useSendSMSTemplate } from "@/hooks/useSMSMutations"
 import type { Contact } from "@/types/collections"
 
 const formSchema = z.object({
-  recipients: z
-    .array(z.e164().min(1, "Recipient is required"))
-    .min(1, "At least one recipient is required"),
+  recipients: z.array(z.e164().min(1, "Recipient is required")),
   from: z.array(z.string()).min(1, "Device is required"),
   body: z.string(),
   group_ids: z.array(z.string()).optional(),
@@ -75,20 +73,17 @@ const SendSMS = () => {
   const sendTemplateMutation = useSendSMSTemplate()
   const isSending = sendSMSMutation.isPending || sendTemplateMutation.isPending
 
-  const resolveAllRecipients = (data: FormData): string[] => {
-    const result = [...data.recipients]
-    if (data.group_ids && data.group_ids.length > 0 && contacts?.data) {
-      const groupContacts = (contacts.data as unknown as Contact[]).filter(
-        (c) => c.groups?.some((g) => data.group_ids?.includes(g)),
-      )
-      for (const c of groupContacts) {
-        if (!result.includes(c.phone_number)) result.push(c.phone_number)
-      }
-    }
-    return result
-  }
-
   const onSubmit = (data: FormData) => {
+    const hasRecipients =
+      data.recipients.length > 0 ||
+      (data.group_ids && data.group_ids.length > 0)
+    if (!hasRecipients) {
+      form.setError("recipients", {
+        message: "At least one recipient or group required",
+      })
+      return
+    }
+
     if (!selectedTemplate && !data.body) {
       form.setError("body", { message: "Message body or template required" })
       return
@@ -106,7 +101,6 @@ const SendSMS = () => {
       }
     }
 
-    const allRecipients = resolveAllRecipients(data)
     const onSuccess = () => {
       form.reset()
       setSelectedTemplate(null)
@@ -117,16 +111,22 @@ const SendSMS = () => {
     if (selectedTemplate) {
       sendTemplateMutation.mutate(
         {
-          recipients: allRecipients,
+          recipients: data.recipients,
           template_id: selectedTemplate.id,
           variables: templateVars,
           device_id: data.from[0],
+          group_ids: data.group_ids,
         },
         { onSuccess },
       )
     } else {
       sendSMSMutation.mutate(
-        { recipients: allRecipients, body: data.body, device_id: data.from[0] },
+        {
+          recipients: data.recipients,
+          body: data.body,
+          device_id: data.from[0],
+          group_ids: data.group_ids,
+        },
         { onSuccess },
       )
     }
