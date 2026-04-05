@@ -334,7 +334,10 @@
     "useTemplate": "Usar una plantilla...",
     "none": "Ninguna",
     "body": "Contenido",
-    "createTemplate": "Crear plantilla"
+    "createTemplate": "Crear plantilla",
+    "templatePreview": "Vista previa de la plantilla",
+    "autoFilledHint": "{{name}} y {{phone}} se completan automáticamente desde los contactos",
+    "variableLabel": "Valor para {{var}}"
   },
   "scheduled": {
     "title": "SMS programados",

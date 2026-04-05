@@ -125,7 +125,12 @@ const AddContact = ({ open, onOpenChange }: AddContactProps) => {
                       <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" type="text" {...field} required />
+                      <Input
+                        placeholder="John Doe"
+                        type="text"
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

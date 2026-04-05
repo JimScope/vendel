@@ -185,7 +185,9 @@ const EditScheduledSMS = ({ schedule, onSuccess }: EditScheduledSMSProps) => {
 
               <div className="space-y-2">
                 <TemplateSelect
-                  onSelect={(body) => form.setValue("body", body)}
+                  onSelect={(tmpl) => {
+                    if (tmpl) form.setValue("body", tmpl.body)
+                  }}
                 />
               </div>
 

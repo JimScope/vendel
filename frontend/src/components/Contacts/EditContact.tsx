@@ -94,9 +94,7 @@ const EditContact = ({ contact, onSuccess }: EditContactProps) => {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>{t("contacts.editContact")}</DialogTitle>
-              <DialogDescription>
-                {t("contacts.description")}
-              </DialogDescription>
+              <DialogDescription>{t("contacts.description")}</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <FormField
@@ -109,7 +107,12 @@ const EditContact = ({ contact, onSuccess }: EditContactProps) => {
                       <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" type="text" {...field} required />
+                      <Input
+                        placeholder="John Doe"
+                        type="text"
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

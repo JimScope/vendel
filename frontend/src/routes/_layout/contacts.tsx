@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Plus, Users } from "lucide-react"
-import { Suspense, useMemo } from "react"
-import { useState } from "react"
+import { Suspense, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { DataTable } from "@/components/Common/DataTable"
@@ -37,18 +36,12 @@ function ContactsEmptyState({ onAddContact }: { onAddContact: () => void }) {
   )
 }
 
-function ContactsTableContent({
-  onAddContact,
-}: { onAddContact: () => void }) {
+function ContactsTableContent({ onAddContact }: { onAddContact: () => void }) {
   const { t } = useTranslation()
   const { data: contacts } = useContactListSuspense()
   const { data: groups } = useContactGroupList()
   const columns = useMemo(
-    () =>
-      getColumns(
-        t,
-        ((groups?.data ?? []) as unknown as ContactGroup[]),
-      ),
+    () => getColumns(t, (groups?.data ?? []) as unknown as ContactGroup[]),
     [t, groups],
   )
 

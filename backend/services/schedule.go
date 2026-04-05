@@ -47,7 +47,7 @@ func ProcessDueSchedules(app core.App) error {
 		deviceId := record.GetString("device_id")
 
 		// Send the SMS
-		_, err := SendSMS(app, userId, recipients, body, deviceId)
+		_, err := SendSMS(app, userId, recipients, body, deviceId, nil)
 		if err != nil {
 			app.Logger().Warn("scheduled SMS: send failed",
 				slog.String("id", record.Id), slog.Any("error", err))
