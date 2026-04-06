@@ -18,15 +18,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: frontend/.nvmrc
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Build frontend
-        run: npm ci --prefix frontend && npm run build --prefix frontend
+        run: cd frontend && bun install --frozen-lockfile && bun run build
 
       - name: Copy frontend to backend
         run: cp -r frontend/dist/* backend/ui/dist/
