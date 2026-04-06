@@ -22,6 +22,8 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 	se.Router.POST("/api/sms/incoming", handleIncomingSMS)
 	se.Router.GET("/api/sms/pending", handlePendingMessages)
 	se.Router.POST("/api/sms/fcm-token", handleFCMToken)
+	se.Router.GET("/api/sms/status/{id}", handleMessageStatus)
+	se.Router.GET("/api/sms/batch/{batchId}", handleBatchStatus)
 }
 
 // handleSendSMS sends an SMS with a direct body (auth: JWT or API key).
@@ -241,6 +243,76 @@ func handleFCMToken(e *core.RequestEvent) error {
 	}
 
 	return e.JSON(http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// handleMessageStatus returns the status of a single SMS message (auth: JWT or API key).
+func handleMessageStatus(e *core.RequestEvent) error {
+	userId, err := middleware.ResolveAuthOrAPIKey(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Authentication required", nil)
+	}
+
+	messageId := e.Request.PathValue("id")
+	record, err := e.App.FindFirstRecordByFilter(
+		"sms_messages",
+		"id = {:id} && user = {:userId}",
+		dbx.Params{"id": messageId, "userId": userId},
+	)
+	if err != nil {
+		return apis.NewNotFoundError("Message not found", nil)
+	}
+
+	return e.JSON(http.StatusOK, map[string]any{
+		"id":            record.Id,
+		"batch_id":      record.GetString("batch_id"),
+		"recipient":     record.GetString("recipient"),
+		"status":        record.GetString("status"),
+		"error_message": record.GetString("error_message"),
+		"device_id":     record.GetString("device"),
+		"created":       record.GetDateTime("created"),
+		"updated":       record.GetDateTime("updated"),
+	})
+}
+
+// handleBatchStatus returns the status of all messages in a batch (auth: JWT or API key).
+func handleBatchStatus(e *core.RequestEvent) error {
+	userId, err := middleware.ResolveAuthOrAPIKey(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Authentication required", nil)
+	}
+
+	batchId := e.Request.PathValue("batchId")
+	messages, err := e.App.FindRecordsByFilter(
+		"sms_messages",
+		"batch_id = {:batchId} && user = {:userId}",
+		"-created", 0, 0,
+		dbx.Params{"batchId": batchId, "userId": userId},
+	)
+	if err != nil || len(messages) == 0 {
+		return apis.NewNotFoundError("Batch not found", nil)
+	}
+
+	counts := map[string]int{}
+	items := make([]map[string]any, len(messages))
+	for i, m := range messages {
+		status := m.GetString("status")
+		counts[status]++
+		items[i] = map[string]any{
+			"id":            m.Id,
+			"recipient":     m.GetString("recipient"),
+			"status":        status,
+			"error_message": m.GetString("error_message"),
+			"created":       m.GetDateTime("created"),
+			"updated":       m.GetDateTime("updated"),
+		}
+	}
+
+	return e.JSON(http.StatusOK, map[string]any{
+		"batch_id":   batchId,
+		"total":      len(messages),
+		"status_counts": counts,
+		"messages":   items,
+	})
 }
 
 // resolveRecipients expands group contacts and validates E.164 format.
