@@ -1,4 +1,4 @@
-import { FlaskConical, Loader2 } from "lucide-react"
+import { FlaskConical, LoaderCircle } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
@@ -26,7 +26,7 @@ const TestWebhook = ({ webhookId, onSuccess }: TestWebhookProps) => {
       disabled={testMutation.isPending}
     >
       {testMutation.isPending ? (
-        <Loader2 className="animate-spin" />
+        <LoaderCircle className="animate-spin" />
       ) : (
         <FlaskConical />
       )}

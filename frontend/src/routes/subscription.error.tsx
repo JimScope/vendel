@@ -1,5 +1,5 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
-import { XCircle } from "lucide-react"
+import { CircleX } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ function SubscriptionError() {
     <AuthLayout>
       <div className="flex flex-col items-center gap-6 text-center">
         <div className="rounded-full bg-destructive/10 p-4">
-          <XCircle className="h-12 w-12 text-destructive" />
+          <CircleX className="h-12 w-12 text-destructive" />
         </div>
 
         <h1 className="text-2xl">{t("subscription.failed")}</h1>

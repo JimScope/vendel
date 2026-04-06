@@ -3,7 +3,7 @@ import {
   Contact,
   CreditCard,
   FileText,
-  Home,
+  House,
   Key,
   MessageSquare,
   Smartphone,
@@ -25,7 +25,7 @@ import { type Item, Main } from "./Main"
 import { User } from "./User"
 
 const baseItems: Item[] = [
-  { icon: Home, title: "sidebar.dashboard", path: "/" },
+  { icon: House, title: "sidebar.dashboard", path: "/" },
   { icon: MessageSquare, title: "sidebar.sms", path: "/sms" },
   { icon: FileText, title: "sidebar.templates", path: "/templates" },
   { icon: Clock, title: "sidebar.scheduled", path: "/scheduled" },
