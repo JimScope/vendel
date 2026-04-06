@@ -1,5 +1,5 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
-import { CheckCircle } from "lucide-react"
+import { CircleCheckBig } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ function SubscriptionSuccess() {
     <AuthLayout>
       <div className="flex flex-col items-center gap-6 text-center">
         <div className="rounded-full bg-green-500/10 p-4">
-          <CheckCircle className="h-12 w-12 text-green-500" />
+          <CircleCheckBig className="h-12 w-12 text-green-500" />
         </div>
 
         <h1 className="text-2xl">{t("subscription.activated")}</h1>

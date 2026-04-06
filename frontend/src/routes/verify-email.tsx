@@ -1,5 +1,5 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
-import { CheckCircle, Loader2, XCircle } from "lucide-react"
+import { CircleCheckBig, LoaderCircle, CircleX } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
@@ -45,7 +45,7 @@ function VerifyEmailPending() {
   return (
     <AuthLayout>
       <div className="flex flex-col items-center gap-6 text-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <LoaderCircle className="h-16 w-16 animate-spin text-primary" />
         <h1 className="text-2xl">{t("auth.verifyingEmail")}</h1>
         <p className="text-muted-foreground">{t("auth.pleaseWait")}</p>
       </div>
@@ -65,7 +65,7 @@ function VerifyEmail() {
       <div className="flex flex-col items-center gap-6 text-center">
         {status === "success" && (
           <>
-            <CheckCircle className="h-16 w-16 text-green-500" />
+            <CircleCheckBig className="h-16 w-16 text-green-500" />
             <h1 className="text-2xl">{t("auth.emailVerified")}</h1>
             <p className="text-muted-foreground">
               {t("auth.emailVerifiedSuccess")}
@@ -78,7 +78,7 @@ function VerifyEmail() {
 
         {status === "error" && (
           <>
-            <XCircle className="h-16 w-16 text-destructive" />
+            <CircleX className="h-16 w-16 text-destructive" />
             <h1 className="text-2xl">{t("auth.verificationFailed")}</h1>
             <p className="text-muted-foreground">
               {errorMessage || t(errorKey)}
