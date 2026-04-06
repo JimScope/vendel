@@ -461,7 +461,19 @@
     "keyRotated": "Key Rotated",
     "keyRotatedMsg": "Your old key has been revoked. Copy your new API key now — you won't be able to see it again.",
     "expirationOptional": "Expiration (optional)",
-    "rotateKeyButton": "Rotate Key"
+    "rotateKeyButton": "Rotate Key",
+    "sdksTitle": "SDKs & Documentation",
+    "sdksDesc": "Official client libraries and resources to integrate with the platform",
+    "sdkInstall": "Install",
+    "sdkDocs": "Documentation",
+    "sdkJsTitle": "JavaScript / TypeScript",
+    "sdkJsDesc": "Official SDK for Node.js, Deno, and browser environments",
+    "sdkPythonTitle": "Python",
+    "sdkPythonDesc": "Official SDK for Python 3.8+ applications",
+    "sdkGoTitle": "Go",
+    "sdkGoDesc": "Official SDK for Go applications and microservices",
+    "docsApiTitle": "API Reference",
+    "docsApiDesc": "Complete REST API documentation with examples and endpoint details"
   },
   "settings": {
     "title": "User Settings",

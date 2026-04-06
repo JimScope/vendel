@@ -461,7 +461,19 @@
     "keyRotated": "Clave rotada",
     "keyRotatedMsg": "Tu clave anterior ha sido revocada. Copia tu nueva clave API ahora — no podrás verla de nuevo.",
     "expirationOptional": "Expiración (opcional)",
-    "rotateKeyButton": "Rotar clave"
+    "rotateKeyButton": "Rotar clave",
+    "sdksTitle": "SDKs y documentacion",
+    "sdksDesc": "Bibliotecas cliente oficiales y recursos para integrarse con la plataforma",
+    "sdkInstall": "Instalar",
+    "sdkDocs": "Documentacion",
+    "sdkJsTitle": "JavaScript / TypeScript",
+    "sdkJsDesc": "SDK oficial para entornos Node.js, Deno y navegador",
+    "sdkPythonTitle": "Python",
+    "sdkPythonDesc": "SDK oficial para aplicaciones Python 3.8+",
+    "sdkGoTitle": "Go",
+    "sdkGoDesc": "SDK oficial para aplicaciones Go y microservicios",
+    "docsApiTitle": "Referencia de API",
+    "docsApiDesc": "Documentacion completa de la API REST con ejemplos y detalles de endpoints"
   },
   "settings": {
     "title": "Configuración de usuario",
