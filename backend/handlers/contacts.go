@@ -5,11 +5,13 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"vendel/middleware"
 )
 
 var phoneCleanRegex = regexp.MustCompile(`[^\d+]`)
@@ -72,6 +74,119 @@ func RegisterContactRoutes(se *core.ServeEvent) {
 			"total":    len(contacts),
 		})
 	}).Bind(apis.RequireAuth("users"))
+
+	// GET /api/contacts — list contacts (JWT + API key auth)
+	se.Router.GET("/api/contacts", func(e *core.RequestEvent) error {
+		userId, err := middleware.ResolveAuthOrAPIKey(e)
+		if err != nil {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+
+		page, perPage := parsePagination(e)
+		offset := (page - 1) * perPage
+
+		filter := "user = {:userId}"
+		params := dbx.Params{"userId": userId}
+
+		if search := strings.TrimSpace(e.Request.URL.Query().Get("search")); search != "" {
+			filter += " && (name ~ {:search} || phone_number ~ {:search})"
+			params["search"] = search
+		}
+
+		if groupId := strings.TrimSpace(e.Request.URL.Query().Get("group_id")); groupId != "" {
+			filter += " && groups.id ?= {:groupId}"
+			params["groupId"] = groupId
+		}
+
+		records, err := e.App.FindRecordsByFilter(
+			"contacts",
+			filter,
+			"-created",
+			perPage,
+			offset,
+			params,
+		)
+		if err != nil {
+			records = []*core.Record{}
+		}
+
+		totalItems, _ := e.App.CountRecords("contacts", dbx.NewExp(filter, params))
+		totalPages := int(totalItems) / perPage
+		if int(totalItems)%perPage != 0 {
+			totalPages++
+		}
+
+		items := make([]map[string]any, 0, len(records))
+		for _, r := range records {
+			items = append(items, map[string]any{
+				"id":           r.Id,
+				"name":         r.GetString("name"),
+				"phone_number": r.GetString("phone_number"),
+				"groups":       r.GetStringSlice("groups"),
+				"notes":        r.GetString("notes"),
+				"created":      r.GetDateTime("created"),
+				"updated":      r.GetDateTime("updated"),
+			})
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"items":       items,
+			"page":        page,
+			"per_page":    perPage,
+			"total_items": totalItems,
+			"total_pages": totalPages,
+		})
+	})
+
+	// GET /api/contacts/groups — list contact groups (JWT + API key auth)
+	se.Router.GET("/api/contacts/groups", func(e *core.RequestEvent) error {
+		userId, err := middleware.ResolveAuthOrAPIKey(e)
+		if err != nil {
+			return apis.NewUnauthorizedError("Authentication required", nil)
+		}
+
+		page, perPage := parsePagination(e)
+		offset := (page - 1) * perPage
+
+		filter := "user = {:userId}"
+		params := dbx.Params{"userId": userId}
+
+		records, err := e.App.FindRecordsByFilter(
+			"contact_groups",
+			filter,
+			"name",
+			perPage,
+			offset,
+			params,
+		)
+		if err != nil {
+			records = []*core.Record{}
+		}
+
+		totalItems, _ := e.App.CountRecords("contact_groups", dbx.NewExp(filter, params))
+		totalPages := int(totalItems) / perPage
+		if int(totalItems)%perPage != 0 {
+			totalPages++
+		}
+
+		items := make([]map[string]any, 0, len(records))
+		for _, r := range records {
+			items = append(items, map[string]any{
+				"id":      r.Id,
+				"name":    r.GetString("name"),
+				"created": r.GetDateTime("created"),
+				"updated": r.GetDateTime("updated"),
+			})
+		}
+
+		return e.JSON(http.StatusOK, map[string]any{
+			"items":       items,
+			"page":        page,
+			"per_page":    perPage,
+			"total_items": totalItems,
+			"total_pages": totalPages,
+		})
+	})
 }
 
 type vcardEntry struct {
@@ -119,4 +234,28 @@ func parseVCard(r io.Reader) []vcardEntry {
 	}
 
 	return entries
+}
+
+// parsePagination extracts page and per_page query params with defaults and bounds.
+func parsePagination(e *core.RequestEvent) (page int, perPage int) {
+	page = 1
+	perPage = 50
+
+	if v := e.Request.URL.Query().Get("page"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	if v := e.Request.URL.Query().Get("per_page"); v != "" {
+		if pp, err := strconv.Atoi(v); err == nil && pp > 0 {
+			perPage = pp
+		}
+	}
+
+	if perPage > 200 {
+		perPage = 200
+	}
+
+	return page, perPage
 }

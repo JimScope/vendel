@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Plus, Users } from "lucide-react"
+import { Plus, Search, Users } from "lucide-react"
 import { Suspense, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -7,12 +7,22 @@ import { DataTable } from "@/components/Common/DataTable"
 import AddContact from "@/components/Contacts/AddContact"
 import AddGroup from "@/components/Contacts/AddGroup"
 import { getColumns } from "@/components/Contacts/columns"
+import ExportContacts from "@/components/Contacts/ExportContacts"
 import ImportContacts from "@/components/Contacts/ImportContacts"
+import ManageGroups from "@/components/Contacts/ManageGroups"
 import PendingContacts from "@/components/Pending/PendingContacts"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useContactGroupList } from "@/hooks/useContactGroupList"
-import { useContactListSuspense } from "@/hooks/useContactList"
+import { useContactList, useContactListSuspense } from "@/hooks/useContactList"
 import type { Contact, ContactGroup } from "@/types/collections"
 
 export const Route = createFileRoute("/_layout/contacts")({
@@ -36,32 +46,68 @@ function ContactsEmptyState({ onAddContact }: { onAddContact: () => void }) {
   )
 }
 
-function ContactsTableContent({ onAddContact }: { onAddContact: () => void }) {
+interface ContactsTableContentProps {
+  onAddContact: () => void
+  search: string
+  groupFilter: string
+}
+
+function ContactsTableContent({
+  onAddContact,
+  search,
+  groupFilter,
+}: ContactsTableContentProps) {
   const { t } = useTranslation()
   const { data: contacts } = useContactListSuspense()
   const { data: groups } = useContactGroupList()
-  const columns = useMemo(
-    () => getColumns(t, (groups?.data ?? []) as unknown as ContactGroup[]),
-    [t, groups],
-  )
+  const groupList = (groups?.data ?? []) as unknown as ContactGroup[]
+  const allContacts = (contacts?.data ?? []) as unknown as Contact[]
+  const columns = useMemo(() => getColumns(t, groupList), [t, groupList])
 
-  if (!contacts?.data || contacts.data.length === 0) {
+  if (allContacts.length === 0) {
     return <ContactsEmptyState onAddContact={onAddContact} />
   }
+
+  const filteredContacts = allContacts.filter((contact) => {
+    const searchLower = search.toLowerCase()
+    const matchesSearch =
+      !search ||
+      contact.name.toLowerCase().includes(searchLower) ||
+      contact.phone_number.toLowerCase().includes(searchLower)
+
+    const matchesGroup =
+      !groupFilter || (contact.groups || []).includes(groupFilter)
+
+    return matchesSearch && matchesGroup
+  })
 
   return (
     <DataTable
       columns={columns}
-      data={(contacts?.data ?? []) as unknown as Contact[]}
+      data={filteredContacts}
       caption={t("contacts.title")}
     />
   )
 }
 
-function ContactsTable({ onAddContact }: { onAddContact: () => void }) {
+interface ContactsTableProps {
+  onAddContact: () => void
+  search: string
+  groupFilter: string
+}
+
+function ContactsTable({
+  onAddContact,
+  search,
+  groupFilter,
+}: ContactsTableProps) {
   return (
     <Suspense fallback={<PendingContacts />}>
-      <ContactsTableContent onAddContact={onAddContact} />
+      <ContactsTableContent
+        onAddContact={onAddContact}
+        search={search}
+        groupFilter={groupFilter}
+      />
     </Suspense>
   )
 }
@@ -70,6 +116,13 @@ function Contacts() {
   const { t } = useTranslation()
   const { config } = useAppConfig()
   const [addContactOpen, setAddContactOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const [groupFilter, setGroupFilter] = useState("")
+  const { data: groups } = useContactGroupList()
+  const { data: contacts } = useContactList()
+
+  const groupList = (groups?.data ?? []) as unknown as ContactGroup[]
+  const allContacts = (contacts?.data ?? []) as unknown as Contact[]
 
   return (
     <div className="flex flex-col gap-6">
@@ -80,12 +133,42 @@ function Contacts() {
           <p className="text-muted-foreground">{t("contacts.description")}</p>
         </div>
         <div className="flex items-center gap-2">
+          <ExportContacts contacts={allContacts} groups={groupList} />
           <ImportContacts />
+          <ManageGroups />
           <AddGroup />
           <AddContact open={addContactOpen} onOpenChange={setAddContactOpen} />
         </div>
       </div>
-      <ContactsTable onAddContact={() => setAddContactOpen(true)} />
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("contacts.searchPlaceholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={groupFilter} onValueChange={setGroupFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder={t("contacts.filterByGroup")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("contacts.allGroups")}</SelectItem>
+            {groupList.map((group) => (
+              <SelectItem key={group.id} value={group.id}>
+                {group.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <ContactsTable
+        onAddContact={() => setAddContactOpen(true)}
+        search={search}
+        groupFilter={groupFilter === "all" ? "" : groupFilter}
+      />
     </div>
   )
 }

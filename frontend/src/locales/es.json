@@ -629,7 +629,20 @@
     "selectFile": "Seleccionar archivo .vcf",
     "importToGroup": "Agregar a grupo (opcional)",
     "imported": "{{imported}} contactos importados, {{skipped}} omitidos",
-    "sendToGroup": "Enviar a grupo"
+    "sendToGroup": "Enviar a grupo",
+    "manageGroups": "Gestionar grupos",
+    "editGroup": "Editar grupo",
+    "deleteGroup": "Eliminar grupo",
+    "deleteGroupDesc": "¿Estás seguro de que deseas eliminar este grupo? Los contactos del grupo no se eliminarán.",
+    "noGroups": "Sin grupos aún",
+    "noGroupsDesc": "Crea un grupo para organizar tus contactos",
+    "export": "Exportar",
+    "exportCSV": "Exportar CSV",
+    "exportVCard": "Exportar vCard",
+    "search": "Buscar",
+    "searchPlaceholder": "Buscar por nombre o teléfono...",
+    "filterByGroup": "Filtrar por grupo",
+    "allGroups": "Todos los grupos"
   },
   "errors": {
     "notFound": "404",

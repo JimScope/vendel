@@ -5,10 +5,10 @@ import { useRealtimeQuery } from "./useRealtimeQuery"
 export const contactGroupListQueryOptions = queryOptions({
   queryKey: ["contact-groups"],
   queryFn: async () => {
-    const result = await pb.collection("contact_groups").getList(1, 100, {
+    const items = await pb.collection("contact_groups").getFullList({
       sort: "name",
     })
-    return { data: result.items, count: result.totalItems }
+    return { data: items, count: items.length }
   },
   staleTime: 60_000,
 })
