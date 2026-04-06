@@ -1,4 +1,4 @@
-import { Download, ExternalLink, Loader2, Smartphone } from "lucide-react"
+import { Download, ExternalLink, LoaderCircle, Smartphone } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -64,7 +64,7 @@ export default function AndroidAppDownload() {
         >
           <Button size="sm" disabled={isLoading || !downloadUrl}>
             {isLoading ? (
-              <Loader2 className="size-3.5 animate-spin" />
+              <LoaderCircle className="size-3.5 animate-spin" />
             ) : (
               <Download className="size-3.5" />
             )}

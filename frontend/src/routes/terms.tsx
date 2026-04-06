@@ -1,5 +1,5 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, LoaderCircle } from "lucide-react"
 
 import useAppConfig from "@/hooks/useAppConfig"
 
@@ -15,7 +15,7 @@ function Terms() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
