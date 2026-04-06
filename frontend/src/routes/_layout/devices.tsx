@@ -77,12 +77,12 @@ function Devices() {
   return (
     <div className="flex flex-col gap-6">
       <title>{`${t("sidebar.devices")} - ${config.appName}`}</title>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl">{t("sidebar.devices")}</h1>
           <p className="text-muted-foreground">{t("devices.description")}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline">

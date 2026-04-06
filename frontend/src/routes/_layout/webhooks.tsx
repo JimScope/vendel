@@ -57,7 +57,7 @@ function Webhooks() {
   return (
     <div className="flex flex-col gap-6">
       <title>{`${t("webhooks.title")} - ${config.appName}`}</title>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl">{t("webhooks.title")}</h1>
           <p className="text-muted-foreground">{t("webhooks.description")}</p>
