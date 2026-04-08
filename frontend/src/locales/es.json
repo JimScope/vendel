@@ -586,7 +586,13 @@
     "addFunds": "Agregar fondos",
     "selectProvider": "Selecciona el método de pago",
     "selectAmount": "Selecciona el monto",
-    "customAmount": "Personalizado"
+    "customAmount": "Personalizado",
+    "redeemPromo": "Canjear código promocional",
+    "redeemPromoDescription": "Ingresa un código promocional para agregar fondos a tu balance",
+    "promoPlaceholder": "Ingresa el código",
+    "redeem": "Canjear",
+    "promoApplied": "${{amount}} agregados a tu balance",
+    "promoInvalid": "Código promocional inválido o expirado"
   },
   "billing": {
     "title": "Facturación",

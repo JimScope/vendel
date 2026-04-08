@@ -1,15 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"os"
 	"vendel/cronjobs"
 	"vendel/handlers"
 	"vendel/hooks"
 	"vendel/middleware"
 	"vendel/services"
 	"vendel/ui"
-	"fmt"
-	"log"
-	"os"
 
 	_ "vendel/migrations"
 
@@ -55,6 +55,7 @@ func main() {
 		handlers.RegisterApiKeyRoutes(se)
 		handlers.RegisterContactRoutes(se)
 		handlers.RegisterUtilRoutes(se)
+		handlers.RegisterPromoRoutes(se)
 
 		// Global middleware
 		se.Router.BindFunc(middleware.SecurityHeadersMiddleware)

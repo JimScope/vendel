@@ -586,7 +586,13 @@
     "addFunds": "Add Funds",
     "selectProvider": "Select payment method",
     "selectAmount": "Select amount",
-    "customAmount": "Custom"
+    "customAmount": "Custom",
+    "redeemPromo": "Redeem Promo Code",
+    "redeemPromoDescription": "Enter a promo code to add funds to your balance",
+    "promoPlaceholder": "Enter promo code",
+    "redeem": "Redeem",
+    "promoApplied": "${{amount}} added to your balance",
+    "promoInvalid": "Invalid or expired promo code"
   },
   "billing": {
     "title": "Billing",

@@ -1,9 +1,10 @@
-import { Wallet } from "lucide-react"
+import { Gift, Wallet } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useBalance } from "@/hooks/useBalance"
+import RedeemPromoDialog from "./RedeemPromoDialog"
 import TopUpDialog from "./TopUpDialog"
 
 function BalanceCard() {
@@ -32,8 +33,8 @@ function BalanceCard() {
           </span>
         </CardTitle>
       </CardHeader>
-      {hasProviders && (
-        <CardContent>
+      <CardContent className="flex flex-col gap-2">
+        {hasProviders && (
           <TopUpDialog
             trigger={
               <Button variant="outline" className="w-full">
@@ -41,8 +42,16 @@ function BalanceCard() {
               </Button>
             }
           />
-        </CardContent>
-      )}
+        )}
+        <RedeemPromoDialog
+          trigger={
+            <Button variant="ghost" className="w-full gap-2">
+              <Gift className="h-4 w-4" />
+              {t("plans.redeemPromo")}
+            </Button>
+          }
+        />
+      </CardContent>
     </Card>
   )
 }

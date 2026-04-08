@@ -1,4 +1,4 @@
-import { Wallet } from "lucide-react"
+import { Gift, Wallet } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/popover"
 import useAppConfig from "@/hooks/useAppConfig"
 import { useBalance } from "@/hooks/useBalance"
+import RedeemPromoDialog from "./RedeemPromoDialog"
 import TopUpDialog from "./TopUpDialog"
 
 function TopUpPopover() {
@@ -52,6 +53,14 @@ function TopUpPopover() {
               }
             />
           )}
+          <RedeemPromoDialog
+            trigger={
+              <Button variant="ghost" size="sm" className="w-full gap-1.5">
+                <Gift className="size-3.5" />
+                {t("plans.redeemPromo")}
+              </Button>
+            }
+          />
         </div>
       </PopoverContent>
     </Popover>
