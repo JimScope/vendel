@@ -10,7 +10,7 @@ import (
 
 // RegisterCronJobs registers all periodic background tasks.
 func RegisterCronJobs(app *pocketbase.PocketBase) {
-	register(app, "monthly-quota-reset", "0 0 1 * *", services.ResetMonthlyQuotas, "monthly quota reset failed")
+	register(app, "daily-quota-reset", "0 0 * * *", services.ResetMonthlyQuotas, "quota reset failed")
 	register(app, "daily-renewal-check", "0 8 * * *", services.CheckRenewals, "renewal check failed")
 	register(app, "retry-failed-sms", "*/15 * * * *", services.RetryFailedMessages, "retry failed SMS")
 	register(app, "retry-failed-webhooks", "*/1 * * * *", services.RetryFailedWebhooks, "retry failed webhooks")

@@ -34,20 +34,18 @@ func GetUserQuota(app core.App, userId string) (map[string]any, error) {
 		return nil, fmt.Errorf("plan not found")
 	}
 
-	// Calculate reset date
+	// Calculate reset date: 30 days after last_reset_date for all users
 	var resetDate string
 	lastReset := quota.GetDateTime("last_reset_date")
 	if !lastReset.IsZero() {
-		t := lastReset.Time()
-		nextMonth := t.AddDate(0, 1, 0)
-		resetDate = time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+		resetDate = lastReset.Time().AddDate(0, 0, 30).Format("2006-01-02")
 	}
 
 	scheduledCount, _ := countActiveScheduledSMS(app, userId)
 	integrationCount, _ := countIntegrations(app, userId)
 
 	return map[string]any{
-		"plan":                  plan.GetString("name"),
+		"plan":                 plan.GetString("name"),
 		"sms_sent_this_month":  quota.GetInt("sms_sent_this_month"),
 		"max_sms_per_month":    plan.GetInt("max_sms_per_month"),
 		"devices_registered":   quota.GetInt("devices_registered"),
@@ -248,8 +246,9 @@ func CreateDefaultQuota(app core.App, userId string) error {
 	return err
 }
 
-// ResetMonthlyQuotas resets all SMS counters (called by cron on the 1st of each month).
+// ResetMonthlyQuotas resets SMS counters for users whose 30-day cycle has elapsed.
 func ResetMonthlyQuotas(app core.App) error {
+	now := time.Now().UTC()
 	records, err := app.FindRecordsByFilter("user_quotas", "1=1", "", 0, 0)
 	if err != nil {
 		return err
@@ -257,6 +256,13 @@ func ResetMonthlyQuotas(app core.App) error {
 
 	resetCount := 0
 	for _, q := range records {
+		lastReset := q.GetDateTime("last_reset_date")
+		if lastReset.IsZero() {
+			continue
+		}
+		if now.Before(lastReset.Time().AddDate(0, 0, 30)) {
+			continue // cycle hasn't elapsed yet
+		}
 		q.Set("sms_sent_this_month", 0)
 		q.Set("last_reset_date", types.NowDateTime())
 		if err := app.Save(q); err == nil {
