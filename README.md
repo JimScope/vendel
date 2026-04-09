@@ -12,6 +12,10 @@
   <a href="./README.es.md">Leer en Español</a>
 </p>
 
+<p align="center">
+  <a href="https://www.producthunt.com/products/vendel?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-vendel" target="_blank" rel="noopener noreferrer"><img alt="Vendel - An open source SMS gateway for your own devices | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1119265&amp;theme=dark&amp;t=1775751459800"></a>
+</p>
+
 Vendel is a full-stack platform for SMS management and delivery through connected devices. It allows sending SMS messages using registered devices (Android phones or modems) as gateways, with quota management, webhooks, and multi-user support.
 
 <p align="center">
