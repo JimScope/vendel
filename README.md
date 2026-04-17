@@ -238,8 +238,8 @@ npx playwright test --ui
 
 ## Deployment
 
-- **Backend**: Automatically deployed to [Render](https://render.com) on push to `main`
-- **Frontend**: Automatically deployed to [Cloudflare Pages](https://pages.cloudflare.com) on push to `main`
+- **Backend**: Deployed to [Render](https://render.com) (manual deploy)
+- **Frontend**: Deployed to [Cloudflare Pages](https://pages.cloudflare.com) (manual deploy)
 - **Releases**: Create a tag (`git tag v0.1.0 && git push --tags`) to publish a Docker image to GHCR and build Go binaries via GoReleaser
 - **Modem Agent**: Create a tag (`git tag modem-agent/v0.1.0 && git push --tags`) to build modem agent binaries
 
