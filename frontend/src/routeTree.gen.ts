@@ -149,6 +149,7 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof LayoutIndexRoute
   '/check-email': typeof CheckEmailRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -170,7 +171,6 @@ export interface FileRoutesByFullPath {
   '/oauth-callback/$provider': typeof OauthCallbackProviderRoute
   '/subscription/error': typeof SubscriptionErrorRoute
   '/subscription/success': typeof SubscriptionSuccessRoute
-  '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesByTo {
   '/check-email': typeof CheckEmailRoute
@@ -225,6 +225,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/check-email'
     | '/login'
     | '/privacy'
@@ -246,7 +247,6 @@ export interface FileRouteTypes {
     | '/oauth-callback/$provider'
     | '/subscription/error'
     | '/subscription/success'
-    | '/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/check-email'
@@ -374,7 +374,7 @@ declare module '@tanstack/react-router' {
     '/_layout': {
       id: '/_layout'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }

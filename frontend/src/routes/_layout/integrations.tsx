@@ -117,9 +117,7 @@ function SdkCard({
           {icon}
         </div>
         <div className="flex-1">
-          <CardTitle className="text-sm font-medium">
-            {t(titleKey)}
-          </CardTitle>
+          <CardTitle className="text-sm font-medium">{t(titleKey)}</CardTitle>
           <CardDescription className="text-xs">{t(descKey)}</CardDescription>
         </div>
       </CardHeader>
@@ -185,11 +183,7 @@ function Integrations() {
                 {t("apiKeys.docsApiDesc")}
               </CardDescription>
             </div>
-            <a
-              href={SDK_DOCS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={SDK_DOCS_URL} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
                 <ExternalLink className="size-3.5" />
                 {t("apiKeys.sdkDocs")}

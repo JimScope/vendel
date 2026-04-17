@@ -1,5 +1,5 @@
 import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
-import { CircleCheckBig, LoaderCircle, CircleX } from "lucide-react"
+import { CircleCheckBig, CircleX, LoaderCircle } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import { Button } from "@/components/ui/button"
