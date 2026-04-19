@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+
+	agentcore "github.com/JimScope/vendel/agent-core"
 )
 
 var version = "dev"
@@ -31,9 +33,9 @@ func main() {
 }
 
 func runBind(bindCfg BindConfig, vendelURL string) {
-	client := NewVendelClient(vendelURL, bindCfg.APIKey)
+	client := agentcore.New(vendelURL, bindCfg.APIKey)
 
-	remoteCfg, err := client.FetchSMPPConfig()
+	remoteCfg, err := FetchSMPPConfig(client)
 	if err != nil {
 		log.Printf("failed to fetch SMPP config: %v", err)
 		return
@@ -60,7 +62,7 @@ func runBind(bindCfg BindConfig, vendelURL string) {
 	}
 
 	log.Printf("[%s] connecting to SSE for real-time dispatch", remoteCfg.DeviceID)
-	client.ConnectSSE(func(msg PendingMessage) {
+	client.ConnectSSE("smpp", func(msg agentcore.PendingMessage) {
 		log.Printf("[%s] received message %s -> %s", remoteCfg.DeviceID, msg.MessageID, msg.Recipient)
 		bind.Send(msg)
 	})

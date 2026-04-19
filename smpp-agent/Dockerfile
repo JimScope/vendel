@@ -1,9 +1,11 @@
 # Stage 1: Build
+# Build context must be the repo root so agent-core/ is available via replace.
 FROM golang:1.26-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
+WORKDIR /src
+COPY agent-core /src/agent-core
+COPY smpp-agent /src/smpp-agent
+WORKDIR /src/smpp-agent
 RUN go mod download
-COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/vendel-smpp-agent -ldflags="-s -w" .
 
 # Stage 2: Runtime

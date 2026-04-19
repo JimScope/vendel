@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	agentcore "github.com/JimScope/vendel/agent-core"
 	"github.com/linxGnu/gosmpp"
 	"github.com/linxGnu/gosmpp/data"
 	"github.com/linxGnu/gosmpp/pdu"
@@ -27,7 +28,7 @@ const (
 // responses back to Vendel message IDs.
 type smppBind struct {
 	cfg        *RemoteSMPPConfig
-	client     *VendelClient
+	client     *agentcore.Client
 	session    *gosmpp.Session
 	sourceAddr pdu.Address
 	throttle   *rate.Limiter
@@ -42,7 +43,7 @@ type smppBind struct {
 	smscToVendel map[string]string
 }
 
-func newSMPPBind(cfg *RemoteSMPPConfig, client *VendelClient) (*smppBind, error) {
+func newSMPPBind(cfg *RemoteSMPPConfig, client *agentcore.Client) (*smppBind, error) {
 	if cfg.UseTLS {
 		log.Printf("[%s] WARNING: use_tls=true is not yet supported; connecting over plain TCP", cfg.DeviceID)
 	}
@@ -131,7 +132,7 @@ func (b *smppBind) Close() error {
 }
 
 // Send submits an SMS over the SMPP bind and records it for later correlation.
-func (b *smppBind) Send(msg PendingMessage) {
+func (b *smppBind) Send(msg agentcore.PendingMessage) {
 	if err := b.throttle.Wait(context.Background()); err != nil {
 		log.Printf("[%s] throttle error: %v", b.cfg.DeviceID, err)
 		return

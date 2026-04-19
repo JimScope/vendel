@@ -16,6 +16,8 @@ dependencies:
       - 'modem-agent/go.sum'
       - 'smpp-agent/go.mod'
       - 'smpp-agent/go.sum'
+      - 'agent-core/go.mod'
+      - 'agent-core/go.sum'
 
 go:
   - changed-files:
@@ -23,3 +25,4 @@ go:
       - 'backend/**/*.go'
       - 'modem-agent/**/*.go'
       - 'smpp-agent/**/*.go'
+      - 'agent-core/**/*.go'

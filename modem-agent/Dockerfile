@@ -1,9 +1,11 @@
 # Stage 1: Build
+# Build context must be the repo root so agent-core/ is available via replace.
 FROM golang:1.26-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
+WORKDIR /src
+COPY agent-core /src/agent-core
+COPY modem-agent /src/modem-agent
+WORKDIR /src/modem-agent
 RUN go mod download
-COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/vendel-modem-agent -ldflags="-s -w" .
 
 # Stage 2: Runtime
