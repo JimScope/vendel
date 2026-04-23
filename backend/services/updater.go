@@ -124,10 +124,13 @@ func fetchLatestRelease() (*ReleaseInfo, error) {
 	if assetURL == "" {
 		return nil, fmt.Errorf("no asset found for platform %s in release %s", platform, version)
 	}
+	if checksumURL == "" {
+		return nil, fmt.Errorf("checksums.txt not published for release %s", version)
+	}
 
-	var checksum string
-	if checksumURL != "" {
-		checksum, _ = fetchChecksum(checksumURL, archiveName)
+	checksum, err := fetchChecksum(checksumURL, archiveName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch checksum: %w", err)
 	}
 
 	return &ReleaseInfo{
@@ -169,10 +172,19 @@ func DetectPlatform() string {
 // The temp directory is created next to the current binary to avoid cross-device rename issues.
 // Returns the path to the extracted binary.
 func DownloadAndVerify(assetURL, expectedChecksum string) (string, error) {
-	// Create temp dir next to the binary (same filesystem) to allow atomic rename
+	if expectedChecksum == "" {
+		return "", fmt.Errorf("refusing to download without a checksum")
+	}
+
+	// Resolve symlinks so the temp dir lands on the same filesystem as the
+	// real binary — required for the atomic os.Rename in ApplyUpdate.
 	currentBinary, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("cannot determine binary path: %w", err)
+	}
+	currentBinary, err = filepath.EvalSymlinks(currentBinary)
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve binary path: %w", err)
 	}
 	binaryDir := filepath.Dir(currentBinary)
 
@@ -212,13 +224,11 @@ func DownloadAndVerify(assetURL, expectedChecksum string) (string, error) {
 	}
 	f.Close()
 
-	// Verify checksum
-	if expectedChecksum != "" {
-		actual := hex.EncodeToString(hasher.Sum(nil))
-		if actual != expectedChecksum {
-			os.RemoveAll(tmpDir)
-			return "", fmt.Errorf("checksum mismatch: expected %s, got %s", expectedChecksum, actual)
-		}
+	// Verify checksum (mandatory)
+	actual := hex.EncodeToString(hasher.Sum(nil))
+	if actual != expectedChecksum {
+		os.RemoveAll(tmpDir)
+		return "", fmt.Errorf("checksum mismatch: expected %s, got %s", expectedChecksum, actual)
 	}
 
 	// Extract binary from tar.gz

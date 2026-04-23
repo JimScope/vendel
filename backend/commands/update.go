@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"vendel/services"
 
 	"github.com/spf13/cobra"
@@ -18,6 +19,13 @@ func NewUpdateCommand(version string) *cobra.Command {
 
 			if version == "dev" || version == "docker" || version == "" {
 				return fmt.Errorf("self-update is not available in %s mode", version)
+			}
+
+			if isRunningInDocker() {
+				return fmt.Errorf("self-update is not supported inside Docker; use `docker compose pull && docker compose up -d` instead")
+			}
+			if isRunningInNixOS() {
+				return fmt.Errorf("self-update is not supported on NixOS; manage vendel through your nix configuration")
 			}
 
 			fmt.Print("[1/3] Checking for updates... ")
@@ -58,4 +66,14 @@ func NewUpdateCommand(version string) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func isRunningInDocker() bool {
+	_, err := os.Stat("/.dockerenv")
+	return err == nil
+}
+
+func isRunningInNixOS() bool {
+	_, err := os.Stat("/etc/NIXOS")
+	return err == nil
 }
