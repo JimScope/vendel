@@ -6,7 +6,7 @@ require (
 	firebase.google.com/go/v4 v4.19.0
 	github.com/joho/godotenv v1.5.1
 	github.com/pocketbase/dbx v1.12.0
-	github.com/pocketbase/pocketbase v0.37.3
+	github.com/pocketbase/pocketbase v0.37.4
 	github.com/spf13/cobra v1.10.2
 	google.golang.org/api v0.274.0
 )
@@ -84,5 +84,5 @@ require (
 	modernc.org/libc v1.72.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.49.1 // indirect
+	modernc.org/sqlite v1.50.0 // indirect
 )
