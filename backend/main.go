@@ -60,6 +60,7 @@ func main() {
 		handlers.RegisterContactRoutes(se)
 		handlers.RegisterUtilRoutes(se)
 		handlers.RegisterPromoRoutes(se)
+		handlers.RegisterDeviceListRoutes(se)
 
 		// Global middleware
 		se.Router.BindFunc(middleware.SecurityHeadersMiddleware)

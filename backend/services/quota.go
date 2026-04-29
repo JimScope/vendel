@@ -45,16 +45,16 @@ func GetUserQuota(app core.App, userId string) (map[string]any, error) {
 	integrationCount, _ := countIntegrations(app, userId)
 
 	return map[string]any{
-		"plan":                 plan.GetString("name"),
-		"sms_sent_this_month":  quota.GetInt("sms_sent_this_month"),
-		"max_sms_per_month":    plan.GetInt("max_sms_per_month"),
-		"devices_registered":   quota.GetInt("devices_registered"),
-		"max_devices":          plan.GetInt("max_devices"),
-		"reset_date":           resetDate,
-		"scheduled_sms_active": scheduledCount,
-		"max_scheduled_sms":    plan.GetInt("max_scheduled_sms"),
-		"integrations_created": integrationCount,
-		"max_integrations":     plan.GetInt("max_integrations"),
+		"plan":                plan.GetString("name"),
+		"sms_sent_this_month": quota.GetInt("sms_sent_this_month"),
+		"max_sms_per_month":   plan.GetInt("max_sms_per_month"),
+		"devices_registered":  quota.GetInt("devices_registered"),
+		"max_devices":         plan.GetInt("max_devices"),
+		"reset_date":          resetDate,
+		"scheduled_sms_count": scheduledCount,
+		"max_scheduled_sms":   plan.GetInt("max_scheduled_sms"),
+		"integrations_count":  integrationCount,
+		"max_integrations":    plan.GetInt("max_integrations"),
 	}, nil
 }
 

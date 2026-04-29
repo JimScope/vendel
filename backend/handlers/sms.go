@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
+	"time"
 	"vendel/middleware"
 	"vendel/services"
 
@@ -24,6 +26,7 @@ func RegisterSMSRoutes(se *core.ServeEvent) {
 	se.Router.POST("/api/sms/fcm-token", handleFCMToken)
 	se.Router.GET("/api/sms/status/{id}", handleMessageStatus)
 	se.Router.GET("/api/sms/batch/{batchId}", handleBatchStatus)
+	se.Router.GET("/api/sms/messages", handleListMessages)
 }
 
 // handleSendSMS sends an SMS with a direct body (auth: JWT or API key).
@@ -312,6 +315,107 @@ func handleBatchStatus(e *core.RequestEvent) error {
 		"total":      len(messages),
 		"status_counts": counts,
 		"messages":   items,
+	})
+}
+
+// handleListMessages returns a paginated list of the user's SMS messages
+// (auth: JWT or API key). Supports filtering by status, device, batch,
+// recipient, and a created-at date range.
+func handleListMessages(e *core.RequestEvent) error {
+	userId, err := middleware.ResolveAuthOrAPIKey(e)
+	if err != nil {
+		return apis.NewUnauthorizedError("Authentication required", nil)
+	}
+
+	page, perPage := parsePagination(e)
+	offset := (page - 1) * perPage
+
+	filter := "user = {:userId}"
+	params := dbx.Params{"userId": userId}
+
+	q := e.Request.URL.Query()
+
+	if status := strings.TrimSpace(q.Get("status")); status != "" {
+		filter += " && status = {:status}"
+		params["status"] = status
+	}
+
+	if deviceID := strings.TrimSpace(q.Get("device_id")); deviceID != "" {
+		filter += " && device = {:deviceId}"
+		params["deviceId"] = deviceID
+	}
+
+	if batchID := strings.TrimSpace(q.Get("batch_id")); batchID != "" {
+		filter += " && batch_id = {:batchId}"
+		params["batchId"] = batchID
+	}
+
+	if recipient := strings.TrimSpace(q.Get("recipient")); recipient != "" {
+		filter += " && to = {:recipient}"
+		params["recipient"] = recipient
+	}
+
+	if from := strings.TrimSpace(q.Get("from")); from != "" {
+		t, err := time.Parse(time.RFC3339, from)
+		if err != nil {
+			return apis.NewBadRequestError("Invalid 'from' timestamp; expected ISO8601 (RFC3339)", nil)
+		}
+		filter += " && created >= {:fromDate}"
+		params["fromDate"] = t.UTC().Format("2006-01-02 15:04:05.000Z")
+	}
+
+	if to := strings.TrimSpace(q.Get("to")); to != "" {
+		t, err := time.Parse(time.RFC3339, to)
+		if err != nil {
+			return apis.NewBadRequestError("Invalid 'to' timestamp; expected ISO8601 (RFC3339)", nil)
+		}
+		filter += " && created <= {:toDate}"
+		params["toDate"] = t.UTC().Format("2006-01-02 15:04:05.000Z")
+	}
+
+	records, err := e.App.FindRecordsByFilter(
+		"sms_messages",
+		filter,
+		"-created",
+		perPage,
+		offset,
+		params,
+	)
+	if err != nil {
+		records = []*core.Record{}
+	}
+
+	totalItems, _ := e.App.CountRecords("sms_messages", dbx.NewExp(filter, params))
+	totalPages := int(totalItems) / perPage
+	if int(totalItems)%perPage != 0 {
+		totalPages++
+	}
+
+	items := make([]map[string]any, 0, len(records))
+	for _, r := range records {
+		items = append(items, map[string]any{
+			"id":            r.Id,
+			"batch_id":      r.GetString("batch_id"),
+			"recipient":     r.GetString("to"),
+			"from_number":   r.GetString("from_number"),
+			"body":          services.GetRecordBody(r),
+			"status":        r.GetString("status"),
+			"message_type":  r.GetString("message_type"),
+			"error_message": r.GetString("error_message"),
+			"device_id":     r.GetString("device"),
+			"sent_at":       r.GetDateTime("sent_at"),
+			"delivered_at":  r.GetDateTime("delivered_at"),
+			"created":       r.GetDateTime("created"),
+			"updated":       r.GetDateTime("updated"),
+		})
+	}
+
+	return e.JSON(http.StatusOK, map[string]any{
+		"items":       items,
+		"page":        page,
+		"per_page":    perPage,
+		"total_items": totalItems,
+		"total_pages": totalPages,
 	})
 }
 
