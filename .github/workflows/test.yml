@@ -31,8 +31,34 @@ jobs:
         working-directory: backend
         env:
           WEBHOOK_ENCRYPTION_KEY: ci-test-encryption-key
-        run: go test ./... -count=1 -race -timeout 60s
+        run: go test ./... -count=1 -race -timeout 60s -coverprofile=coverage.out
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.out
+          if-no-files-found: warn
 
       - name: Verify build
         working-directory: backend
         run: go build ./...
+
+  govulncheck:
+    name: Go Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: backend/go.mod
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        working-directory: backend
+        run: govulncheck ./...

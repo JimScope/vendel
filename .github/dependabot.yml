@@ -34,3 +34,19 @@ updates:
     commit-message:
       prefix: ⬆
     labels: [dependencies, internal]
+  # Go modules (backend)
+  - package-ecosystem: gomod
+    directory: /backend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ⬆
+    labels: [dependencies, internal]
+  # Go modules (modem-agent)
+  - package-ecosystem: gomod
+    directory: /modem-agent
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ⬆
+    labels: [dependencies, internal]
