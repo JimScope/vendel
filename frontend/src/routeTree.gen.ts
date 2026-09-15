@@ -9,62 +9,31 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VerifyEmailRouteImport } from './routes/verify-email'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as CheckEmailRouteImport } from './routes/check-email'
 import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as CheckEmailRouteImport } from './routes/check-email'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
-import { Route as SubscriptionSuccessRouteImport } from './routes/subscription.success'
-import { Route as SubscriptionErrorRouteImport } from './routes/subscription.error'
-import { Route as LayoutWebhooksRouteImport } from './routes/_layout/webhooks'
-import { Route as LayoutTemplatesRouteImport } from './routes/_layout/templates'
-import { Route as LayoutSmsRouteImport } from './routes/_layout/sms'
-import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
-import { Route as LayoutScheduledRouteImport } from './routes/_layout/scheduled'
-import { Route as LayoutIntegrationsRouteImport } from './routes/_layout/integrations'
-import { Route as LayoutDevicesRouteImport } from './routes/_layout/devices'
-import { Route as LayoutContactsRouteImport } from './routes/_layout/contacts'
-import { Route as LayoutBillingRouteImport } from './routes/_layout/billing'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutBillingRouteImport } from './routes/_layout/billing'
+import { Route as LayoutContactsRouteImport } from './routes/_layout/contacts'
+import { Route as LayoutDevicesRouteImport } from './routes/_layout/devices'
+import { Route as LayoutIntegrationsRouteImport } from './routes/_layout/integrations'
+import { Route as LayoutScheduledRouteImport } from './routes/_layout/scheduled'
+import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutSmsRouteImport } from './routes/_layout/sms'
+import { Route as LayoutTemplatesRouteImport } from './routes/_layout/templates'
+import { Route as LayoutWebhooksRouteImport } from './routes/_layout/webhooks'
+import { Route as SubscriptionErrorRouteImport } from './routes/subscription.error'
+import { Route as SubscriptionSuccessRouteImport } from './routes/subscription.success'
 
-const VerifyEmailRoute = VerifyEmailRouteImport.update({
-  id: '/verify-email',
-  path: '/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecoverPasswordRoute = RecoverPasswordRouteImport.update({
-  id: '/recover-password',
-  path: '/recover-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const LayoutRoute = LayoutRouteImport.update({
+  id: '/_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckEmailRoute = CheckEmailRouteImport.update({
@@ -72,8 +41,39 @@ const CheckEmailRoute = CheckEmailRouteImport.update({
   path: '/check-email',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LayoutRoute = LayoutRouteImport.update({
-  id: '/_layout',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecoverPasswordRoute = RecoverPasswordRouteImport.update({
+  id: '/recover-password',
+  path: '/recover-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
@@ -81,54 +81,9 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any)
-const SubscriptionSuccessRoute = SubscriptionSuccessRouteImport.update({
-  id: '/subscription/success',
-  path: '/subscription/success',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SubscriptionErrorRoute = SubscriptionErrorRouteImport.update({
-  id: '/subscription/error',
-  path: '/subscription/error',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LayoutWebhooksRoute = LayoutWebhooksRouteImport.update({
-  id: '/webhooks',
-  path: '/webhooks',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutTemplatesRoute = LayoutTemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutSmsRoute = LayoutSmsRouteImport.update({
-  id: '/sms',
-  path: '/sms',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutScheduledRoute = LayoutScheduledRouteImport.update({
-  id: '/scheduled',
-  path: '/scheduled',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutIntegrationsRoute = LayoutIntegrationsRouteImport.update({
-  id: '/integrations',
-  path: '/integrations',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutDevicesRoute = LayoutDevicesRouteImport.update({
-  id: '/devices',
-  path: '/devices',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutContactsRoute = LayoutContactsRouteImport.update({
-  id: '/contacts',
-  path: '/contacts',
+const LayoutAdminRoute = LayoutAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutBillingRoute = LayoutBillingRouteImport.update({
@@ -136,10 +91,55 @@ const LayoutBillingRoute = LayoutBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutAdminRoute = LayoutAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const LayoutContactsRoute = LayoutContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
   getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutDevicesRoute = LayoutDevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutIntegrationsRoute = LayoutIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutScheduledRoute = LayoutScheduledRouteImport.update({
+  id: '/scheduled',
+  path: '/scheduled',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSmsRoute = LayoutSmsRouteImport.update({
+  id: '/sms',
+  path: '/sms',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutTemplatesRoute = LayoutTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutWebhooksRoute = LayoutWebhooksRouteImport.update({
+  id: '/webhooks',
+  path: '/webhooks',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const SubscriptionErrorRoute = SubscriptionErrorRouteImport.update({
+  id: '/subscription/error',
+  path: '/subscription/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscriptionSuccessRoute = SubscriptionSuccessRouteImport.update({
+  id: '/subscription/success',
+  path: '/subscription/success',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -302,53 +302,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/verify-email': {
-      id: '/verify-email'
-      path: '/verify-email'
-      fullPath: '/verify-email'
-      preLoaderRoute: typeof VerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recover-password': {
-      id: '/recover-password'
-      path: '/recover-password'
-      fullPath: '/recover-password'
-      preLoaderRoute: typeof RecoverPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/check-email': {
@@ -358,11 +316,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_layout': {
-      id: '/_layout'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof LayoutRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recover-password': {
+      id: '/recover-password'
+      path: '/recover-password'
+      fullPath: '/recover-password'
+      preLoaderRoute: typeof RecoverPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout/': {
@@ -372,74 +372,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/subscription/success': {
-      id: '/subscription/success'
-      path: '/subscription/success'
-      fullPath: '/subscription/success'
-      preLoaderRoute: typeof SubscriptionSuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/subscription/error': {
-      id: '/subscription/error'
-      path: '/subscription/error'
-      fullPath: '/subscription/error'
-      preLoaderRoute: typeof SubscriptionErrorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_layout/webhooks': {
-      id: '/_layout/webhooks'
-      path: '/webhooks'
-      fullPath: '/webhooks'
-      preLoaderRoute: typeof LayoutWebhooksRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/templates': {
-      id: '/_layout/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof LayoutTemplatesRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/sms': {
-      id: '/_layout/sms'
-      path: '/sms'
-      fullPath: '/sms'
-      preLoaderRoute: typeof LayoutSmsRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/settings': {
-      id: '/_layout/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof LayoutSettingsRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/scheduled': {
-      id: '/_layout/scheduled'
-      path: '/scheduled'
-      fullPath: '/scheduled'
-      preLoaderRoute: typeof LayoutScheduledRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/integrations': {
-      id: '/_layout/integrations'
-      path: '/integrations'
-      fullPath: '/integrations'
-      preLoaderRoute: typeof LayoutIntegrationsRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/devices': {
-      id: '/_layout/devices'
-      path: '/devices'
-      fullPath: '/devices'
-      preLoaderRoute: typeof LayoutDevicesRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/contacts': {
-      id: '/_layout/contacts'
-      path: '/contacts'
-      fullPath: '/contacts'
-      preLoaderRoute: typeof LayoutContactsRouteImport
+    '/_layout/admin': {
+      id: '/_layout/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/billing': {
@@ -449,12 +386,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutBillingRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/admin': {
-      id: '/_layout/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof LayoutAdminRouteImport
+    '/_layout/contacts': {
+      id: '/_layout/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof LayoutContactsRouteImport
       parentRoute: typeof LayoutRoute
+    }
+    '/_layout/devices': {
+      id: '/_layout/devices'
+      path: '/devices'
+      fullPath: '/devices'
+      preLoaderRoute: typeof LayoutDevicesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/integrations': {
+      id: '/_layout/integrations'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof LayoutIntegrationsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/scheduled': {
+      id: '/_layout/scheduled'
+      path: '/scheduled'
+      fullPath: '/scheduled'
+      preLoaderRoute: typeof LayoutScheduledRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/settings': {
+      id: '/_layout/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof LayoutSettingsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/sms': {
+      id: '/_layout/sms'
+      path: '/sms'
+      fullPath: '/sms'
+      preLoaderRoute: typeof LayoutSmsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/templates': {
+      id: '/_layout/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof LayoutTemplatesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/webhooks': {
+      id: '/_layout/webhooks'
+      path: '/webhooks'
+      fullPath: '/webhooks'
+      preLoaderRoute: typeof LayoutWebhooksRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/subscription/error': {
+      id: '/subscription/error'
+      path: '/subscription/error'
+      fullPath: '/subscription/error'
+      preLoaderRoute: typeof SubscriptionErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscription/success': {
+      id: '/subscription/success'
+      path: '/subscription/success'
+      fullPath: '/subscription/success'
+      preLoaderRoute: typeof SubscriptionSuccessRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }

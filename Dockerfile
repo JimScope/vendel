@@ -10,7 +10,7 @@ ENV NODE_ENV=production
 RUN ["bun", "run", "build"]
 
 # Stage 2: Build Go binary
-FROM golang:1.26-alpine AS go-builder
+FROM golang:1.27-alpine AS go-builder
 RUN apk add --no-cache tzdata
 WORKDIR /app
 
