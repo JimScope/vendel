@@ -136,6 +136,37 @@ func TestCreditBalanceAndDebitAccounting(t *testing.T) {
 	}
 }
 
+// TestCreditRejectsMissingTxHash verifies the REL-5 guard: a credit/deposit
+// event with no idempotency key (empty txHash) is rejected rather than credited
+// without protection, since the idempotency marker would not be written and a
+// redelivery could double-credit.
+func TestCreditRejectsMissingTxHash(t *testing.T) {
+	app := setupServicesTestApp(t)
+	defer app.Cleanup()
+
+	userID := seededUserID(t, app)
+
+	if _, err := services.ProcessPaymentCredit(app, userID, "", 25.0); err == nil {
+		t.Fatal("expected error crediting with empty tx hash, got nil")
+	}
+
+	// The balance must be untouched by the rejected credit.
+	if bal, _ := services.GetBalance(app, userID); bal != 0 {
+		t.Fatalf("balance after rejected credit = %v, want 0", bal)
+	}
+
+	// Deposits route through the same guarded path.
+	if err := services.SetWalletInfo(app, userID, "0xNOHASH", "wallet-nohash"); err != nil {
+		t.Fatalf("SetWalletInfo failed: %v", err)
+	}
+	if _, err := services.ProcessDeposit(app, "0xNOHASH", "", 40.0, "USDT"); err == nil {
+		t.Fatal("expected error on deposit with empty tx hash, got nil")
+	}
+	if bal, _ := services.GetBalance(app, userID); bal != 0 {
+		t.Fatalf("balance after rejected deposit = %v, want 0", bal)
+	}
+}
+
 // assertMarkerCount asserts how many idempotency markers exist for a tx id.
 func assertMarkerCount(t testing.TB, app core.App, txID string, want int) {
 	t.Helper()

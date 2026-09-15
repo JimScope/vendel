@@ -58,59 +58,67 @@ func isTerminalFailure(msg *core.Record, errMsg string) bool {
 // assigning them as soon as a device becomes available.
 func RetryFailedMessages(app core.App) error {
 	cutoff := FilterTime(time.Now().UTC().Add(-SMSRetryCutoff))
+	now := time.Now().UTC()
 
-	records, err := app.FindRecordsByFilter(
-		"sms_messages",
+	// PERF-1: cache device resolution per userId for this cron pass so a backlog
+	// of N failed messages for the same user costs one resolveDevices query, not
+	// N. The cache is created fresh each pass and shared with the pending rescue,
+	// so it never serves stale device sets across passes.
+	deviceCache := make(map[string][]*core.Record)
+
+	retried := 0
+	skipped := 0
+	requeued := make([]*core.Record, 0)
+
+	// REL-4: drain the whole eligible backlog in bounded batches instead of a
+	// single 50-row query that silently ignored anything beyond it.
+	err := processInBatches(app, "sms_messages",
 		"status = 'failed' && message_type = 'outgoing' && retry_count < {:maxRetries} && created >= {:cutoff}",
-		"", 50, 0,
+		"created",
 		dbx.Params{"maxRetries": SMSMaxRetries, "cutoff": cutoff},
-	)
+		func(record *core.Record) bool {
+			// Skip permanent failures — they stay 'failed'.
+			if isPermanentFailure(record.GetString("error_message")) {
+				skipped++
+				return false
+			}
+
+			// Enforce exponential backoff based on retry_count.
+			retryCount := record.GetInt("retry_count")
+			if retryCount > 0 && retryCount <= len(SMSRetryBackoffs) {
+				lastRetry := record.GetDateTime("last_retry_at").Time()
+				if !lastRetry.IsZero() {
+					requiredWait := SMSRetryBackoffs[retryCount-1]
+					if now.Sub(lastRetry) < requiredWait {
+						return false // not enough time has passed; stays 'failed'
+					}
+				}
+			}
+
+			// Messages can lose their device (e.g. it was deleted) — re-resolve
+			// so the retry has a transport to go through.
+			if record.GetString("device") == "" {
+				if !assignAvailableDevice(app, record, deviceCache) {
+					return false // no device; stays 'failed'
+				}
+			}
+
+			record.Set("status", "assigned")
+			record.Set("retry_count", retryCount+1)
+			record.Set("last_retry_at", types.NowDateTime())
+			record.Set("error_message", "")
+			if err := app.Save(record); err != nil {
+				return false // save failed; stays 'failed'
+			}
+			retried++
+			requeued = append(requeued, record)
+			return true // left the 'failed' set
+		})
 	if err != nil {
 		return err
 	}
 
-	now := time.Now().UTC()
-	retried := 0
-	skipped := 0
-	requeued := make([]*core.Record, 0, len(records))
-	for _, record := range records {
-		// Skip permanent failures
-		if isPermanentFailure(record.GetString("error_message")) {
-			skipped++
-			continue
-		}
-
-		// Enforce exponential backoff based on retry_count
-		retryCount := record.GetInt("retry_count")
-		if retryCount > 0 && retryCount <= len(SMSRetryBackoffs) {
-			lastRetry := record.GetDateTime("last_retry_at").Time()
-			if !lastRetry.IsZero() {
-				requiredWait := SMSRetryBackoffs[retryCount-1]
-				if now.Sub(lastRetry) < requiredWait {
-					continue // not enough time has passed
-				}
-			}
-		}
-
-		// Messages can lose their device (e.g. it was deleted) — re-resolve
-		// so the retry has a transport to go through.
-		if record.GetString("device") == "" {
-			if !assignAvailableDevice(app, record) {
-				continue
-			}
-		}
-
-		record.Set("status", "assigned")
-		record.Set("retry_count", retryCount+1)
-		record.Set("last_retry_at", types.NowDateTime())
-		record.Set("error_message", "")
-		if err := app.Save(record); err == nil {
-			retried++
-			requeued = append(requeued, record)
-		}
-	}
-
-	requeued = append(requeued, rescuePendingMessages(app, cutoff)...)
+	requeued = append(requeued, rescuePendingMessages(app, cutoff, deviceCache)...)
 	requeued = append(requeued, rescueStaleSendingMessages(app)...)
 
 	// Re-dispatch outside the loop: one FCM tickle per device, one provider
@@ -128,35 +136,37 @@ func RetryFailedMessages(app core.App) error {
 // "pending" (created while the user had no usable device). Messages older
 // than the retry cutoff are marked failed so their state is honest and the
 // sms_failed webhook fires.
-func rescuePendingMessages(app core.App, cutoff string) []*core.Record {
-	records, err := app.FindRecordsByFilter(
-		"sms_messages",
+func rescuePendingMessages(app core.App, cutoff string, deviceCache map[string][]*core.Record) []*core.Record {
+	rescued := make([]*core.Record, 0)
+
+	// REL-4: drain all pending messages in bounded batches, not just the first 50.
+	err := processInBatches(app, "sms_messages",
 		"status = 'pending' && message_type = 'outgoing'",
-		"", 50, 0,
-	)
+		"created", nil,
+		func(record *core.Record) bool {
+			if assignAvailableDevice(app, record, deviceCache) {
+				record.Set("status", "assigned")
+				if err := app.Save(record); err != nil {
+					return false // stays 'pending'
+				}
+				rescued = append(rescued, record)
+				return true // left the 'pending' set
+			}
+
+			// Still no device — fail messages past the retry window instead of
+			// leaving them in limbo forever.
+			if record.GetString("created") < cutoff {
+				if err := MarkMessageTerminal(app, record, "failed", "no device available"); err != nil {
+					app.Logger().Warn("failed to expire pending message",
+						slog.String("message", record.Id), slog.Any("error", err))
+					return false // still 'pending'
+				}
+				return true // left the 'pending' set (now 'failed')
+			}
+			return false // within window, no device yet — stays 'pending'
+		})
 	if err != nil {
 		app.Logger().Warn("failed to query pending messages", slog.Any("error", err))
-		return nil
-	}
-
-	rescued := make([]*core.Record, 0, len(records))
-	for _, record := range records {
-		if assignAvailableDevice(app, record) {
-			record.Set("status", "assigned")
-			if err := app.Save(record); err == nil {
-				rescued = append(rescued, record)
-			}
-			continue
-		}
-
-		// Still no device — fail messages past the retry window instead of
-		// leaving them in limbo forever.
-		if record.GetString("created") < cutoff {
-			if err := MarkMessageTerminal(app, record, "failed", "no device available"); err != nil {
-				app.Logger().Warn("failed to expire pending message",
-					slog.String("message", record.Id), slog.Any("error", err))
-			}
-		}
 	}
 	return rescued
 }
@@ -170,35 +180,36 @@ func rescuePendingMessages(app core.App, cutoff string) []*core.Record {
 // (sent but never reported) in exchange for never losing a message.
 func rescueStaleSendingMessages(app core.App) []*core.Record {
 	staleCutoff := FilterTime(time.Now().UTC().Add(-SMSSendingStaleAfter))
+	rescued := make([]*core.Record, 0)
 
-	records, err := app.FindRecordsByFilter(
-		"sms_messages",
+	// REL-4: drain all stale-sending messages in bounded batches. Every record
+	// here is acted on (re-queued or expired), so its `updated` timestamp moves
+	// past the stale cutoff and it leaves the eligible set.
+	err := processInBatches(app, "sms_messages",
 		"status = 'sending' && message_type = 'outgoing' && updated < {:staleCutoff}",
-		"", 50, 0,
-		dbx.Params{"staleCutoff": staleCutoff},
-	)
+		"created", dbx.Params{"staleCutoff": staleCutoff},
+		func(record *core.Record) bool {
+			retryCount := record.GetInt("retry_count")
+			if retryCount >= SMSMaxRetries {
+				if err := MarkMessageTerminal(app, record, "failed", "agent claimed the message but never reported a result"); err != nil {
+					app.Logger().Warn("failed to expire stale sending message",
+						slog.String("message", record.Id), slog.Any("error", err))
+					return false // still 'sending'
+				}
+				return true // left the 'sending' set (now 'failed')
+			}
+
+			record.Set("status", "assigned")
+			record.Set("retry_count", retryCount+1)
+			record.Set("last_retry_at", types.NowDateTime())
+			if err := app.Save(record); err != nil {
+				return false // still 'sending'
+			}
+			rescued = append(rescued, record)
+			return true // left the 'sending' set
+		})
 	if err != nil {
 		app.Logger().Warn("failed to query stale sending messages", slog.Any("error", err))
-		return nil
-	}
-
-	rescued := make([]*core.Record, 0, len(records))
-	for _, record := range records {
-		retryCount := record.GetInt("retry_count")
-		if retryCount >= SMSMaxRetries {
-			if err := MarkMessageTerminal(app, record, "failed", "agent claimed the message but never reported a result"); err != nil {
-				app.Logger().Warn("failed to expire stale sending message",
-					slog.String("message", record.Id), slog.Any("error", err))
-			}
-			continue
-		}
-
-		record.Set("status", "assigned")
-		record.Set("retry_count", retryCount+1)
-		record.Set("last_retry_at", types.NowDateTime())
-		if err := app.Save(record); err == nil {
-			rescued = append(rescued, record)
-		}
 	}
 	if len(rescued) > 0 {
 		app.Logger().Info("rescued stale sending messages", slog.Int("count", len(rescued)))
@@ -208,9 +219,24 @@ func rescueStaleSendingMessages(app core.App) []*core.Record {
 
 // assignAvailableDevice resolves a device for the message's user and sets the
 // device + from_number fields. Returns false when no device is available.
-func assignAvailableDevice(app core.App, record *core.Record) bool {
-	devices, err := resolveDevices(app, record.GetString("user"), "", smsprovider.DefaultAEUM())
-	if err != nil || len(devices) == 0 {
+//
+// PERF-1: device resolution is cached per userId in deviceCache for the current
+// cron pass, so re-resolving the same per-user device set for every record is
+// avoided. A nil/empty result is cached too (comma-ok distinguishes "resolved
+// to none" from "not yet resolved"), so users with no device cost one query,
+// not one per record.
+func assignAvailableDevice(app core.App, record *core.Record, deviceCache map[string][]*core.Record) bool {
+	userId := record.GetString("user")
+	devices, ok := deviceCache[userId]
+	if !ok {
+		resolved, err := resolveDevices(app, userId, "", smsprovider.DefaultAEUM())
+		if err != nil {
+			resolved = nil
+		}
+		devices = resolved
+		deviceCache[userId] = devices
+	}
+	if len(devices) == 0 {
 		return false
 	}
 	device := devices[0]

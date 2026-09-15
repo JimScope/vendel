@@ -10,6 +10,14 @@ const DefaultAppName = "Vendel"
 
 const MaxMessageBodyLength = 1600
 
+// MaxRecipientsPerRequest caps how many recipients a single send request may
+// target (after group expansion and de-duplication). Without it a request —
+// or a group that expands to thousands of contacts — could reserve a huge
+// quota block and create thousands of rows in one call. The cap is enforced
+// before any quota is reserved or record created, so an over-sized request is
+// rejected cleanly with a 400-style error.
+const MaxRecipientsPerRequest = 500
+
 // ── API Keys & Device Keys ──────────────────────────────────────────
 
 const (
@@ -85,6 +93,17 @@ var SMSRetryBackoffs = []time.Duration{
 	1 * time.Hour,    // after 2nd failure
 	6 * time.Hour,    // after 3rd failure
 }
+
+// ── Cron Batch Draining ─────────────────────────────────────────────
+
+const (
+	// CronDrainBatchSize is how many records a batched cron drain fetches per
+	// query. CronMaxDrainBatches caps the number of batches processed in a
+	// single pass, so a large backlog is drained (up to
+	// CronDrainBatchSize*CronMaxDrainBatches records) without an unbounded loop.
+	CronDrainBatchSize  = 50
+	CronMaxDrainBatches = 10 // up to 500 records per drain per pass
+)
 
 // ── External Service Timeouts ───────────────────────────────────────
 

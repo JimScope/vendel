@@ -26,6 +26,13 @@ func SendSMS(app core.App, userId string, recipients []string, body string, devi
 		return nil, fmt.Errorf("no recipients provided")
 	}
 
+	// Defense-in-depth recipient cap: handlers.resolveRecipients enforces this
+	// too, but scheduled sends and any other in-process caller reach SendSMS
+	// directly, so guard here before reserving quota / creating records.
+	if len(recipients) > MaxRecipientsPerRequest {
+		return nil, fmt.Errorf("too many recipients: %d exceeds the limit of %d per request", len(recipients), MaxRecipientsPerRequest)
+	}
+
 	// Reserve quota up front (atomic check-and-increment); release on failure.
 	if err := ReserveSMSQuota(app, userId, len(recipients)); err != nil {
 		return nil, err

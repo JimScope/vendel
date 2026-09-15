@@ -180,6 +180,15 @@ func FindProcessedTransaction(app core.App, transactionID string) (*core.Record,
 // creditAndActivate is the shared logic for all deposit/payment flows:
 // credit balance, then auto-activate a pending/past_due subscription if sufficient.
 func creditAndActivate(app core.App, userId, txHash string, amount float64, asset string) (map[string]any, error) {
+	// REL-5: refuse to credit without an idempotency key. The payment_idempotency
+	// marker is only written when txHash != "", so crediting an event with an
+	// empty transaction id would leave the credit unprotected — a webhook redelivery
+	// would double-credit. Reject instead so the caller surfaces the error rather
+	// than silently applying an unguarded credit.
+	if txHash == "" {
+		return nil, fmt.Errorf("credit rejected: missing transaction id (idempotency key required)")
+	}
+
 	var newBalance float64
 	alreadyProcessed := false
 

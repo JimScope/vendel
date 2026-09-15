@@ -129,54 +129,57 @@ func CancelSubscription(app core.App, userId string, immediate bool) (*core.Reco
 func CheckRenewals(app core.App) error {
 	now := FilterNow()
 
-	subs, err := app.FindRecordsByFilter(
-		"subscriptions",
+	// PERF-2: page through due renewals in bounded batches instead of loading
+	// every matching subscription at once. ProcessBalanceRenewal moves the
+	// subscription out of this filter (renewed period_end in the future, or
+	// past_due on failure), so each processed record leaves the eligible set.
+	count := 0
+	err := processInBatches(app, "subscriptions",
 		"status = 'active' && payment_method = 'balance' && current_period_end <= {:now} && cancel_at_period_end = false",
-		"", 0, 0,
+		"current_period_end",
 		dbx.Params{"now": now},
-	)
+		func(sub *core.Record) bool {
+			if err := ProcessBalanceRenewal(app, sub.Id); err != nil {
+				app.Logger().Warn("renewal failed", slog.String("subscription", sub.Id), slog.Any("error", err))
+			}
+			count++
+			return true // status/period changed — left the eligible set
+		})
 	if err != nil {
 		return err
-	}
-
-	for _, sub := range subs {
-		if err := ProcessBalanceRenewal(app, sub.Id); err != nil {
-			app.Logger().Warn("renewal failed", slog.String("subscription", sub.Id), slog.Any("error", err))
-		}
 	}
 
 	finalizePeriodEndCancellations(app, now)
 	downgradeExpiredPastDue(app)
 
-	app.Logger().Info("Processed subscription renewals", slog.Int("count", len(subs)))
+	app.Logger().Info("Processed subscription renewals", slog.Int("count", count))
 	return nil
 }
 
 // finalizePeriodEndCancellations cancels subscriptions whose period elapsed
 // with cancel_at_period_end set, downgrading the user to the free plan.
 func finalizePeriodEndCancellations(app core.App, now string) {
-	subs, err := app.FindRecordsByFilter(
-		"subscriptions",
+	// PERF-2: page through in bounded batches; each canceled subscription leaves
+	// the 'active' filter set.
+	err := processInBatches(app, "subscriptions",
 		"status = 'active' && cancel_at_period_end = true && current_period_end <= {:now}",
-		"", 0, 0,
+		"current_period_end",
 		dbx.Params{"now": now},
-	)
+		func(sub *core.Record) bool {
+			sub.Set("status", "canceled")
+			if err := app.Save(sub); err != nil {
+				app.Logger().Warn("failed to cancel subscription at period end",
+					slog.String("subscription", sub.Id), slog.Any("error", err))
+				return false // stays 'active'
+			}
+			if err := downgradeToFreePlan(app, sub.GetString("user")); err != nil {
+				app.Logger().Warn("failed to downgrade after period-end cancellation",
+					slog.String("subscription", sub.Id), slog.Any("error", err))
+			}
+			return true // left the 'active' set
+		})
 	if err != nil {
 		app.Logger().Warn("failed to query period-end cancellations", slog.Any("error", err))
-		return
-	}
-
-	for _, sub := range subs {
-		sub.Set("status", "canceled")
-		if err := app.Save(sub); err != nil {
-			app.Logger().Warn("failed to cancel subscription at period end",
-				slog.String("subscription", sub.Id), slog.Any("error", err))
-			continue
-		}
-		if err := downgradeToFreePlan(app, sub.GetString("user")); err != nil {
-			app.Logger().Warn("failed to downgrade after period-end cancellation",
-				slog.String("subscription", sub.Id), slog.Any("error", err))
-		}
 	}
 }
 
@@ -190,28 +193,28 @@ const pastDueGracePeriod = 7 * 24 * time.Hour
 // has elapsed without payment, downgrading the user to the free plan.
 func downgradeExpiredPastDue(app core.App) {
 	cutoff := FilterTime(time.Now().UTC().Add(-pastDueGracePeriod))
-	subs, err := app.FindRecordsByFilter(
-		"subscriptions",
+
+	// PERF-2: page through in bounded batches; each canceled subscription leaves
+	// the 'past_due' filter set.
+	err := processInBatches(app, "subscriptions",
 		"status = 'past_due' && current_period_end <= {:cutoff}",
-		"", 0, 0,
+		"current_period_end",
 		dbx.Params{"cutoff": cutoff},
-	)
+		func(sub *core.Record) bool {
+			sub.Set("status", "canceled")
+			if err := app.Save(sub); err != nil {
+				app.Logger().Warn("failed to cancel expired past_due subscription",
+					slog.String("subscription", sub.Id), slog.Any("error", err))
+				return false // stays 'past_due'
+			}
+			if err := downgradeToFreePlan(app, sub.GetString("user")); err != nil {
+				app.Logger().Warn("failed to downgrade expired past_due subscription",
+					slog.String("subscription", sub.Id), slog.Any("error", err))
+			}
+			return true // left the 'past_due' set
+		})
 	if err != nil {
 		app.Logger().Warn("failed to query expired past_due subscriptions", slog.Any("error", err))
-		return
-	}
-
-	for _, sub := range subs {
-		sub.Set("status", "canceled")
-		if err := app.Save(sub); err != nil {
-			app.Logger().Warn("failed to cancel expired past_due subscription",
-				slog.String("subscription", sub.Id), slog.Any("error", err))
-			continue
-		}
-		if err := downgradeToFreePlan(app, sub.GetString("user")); err != nil {
-			app.Logger().Warn("failed to downgrade expired past_due subscription",
-				slog.String("subscription", sub.Id), slog.Any("error", err))
-		}
 	}
 }
 

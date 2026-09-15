@@ -57,17 +57,19 @@ func BroadcastModemStatus(app core.App) {
 		return
 	}
 
+	// PERF-3: build the set of currently-subscribed "modem/<id>" topics ONCE by
+	// scanning every client a single time, instead of re-scanning all clients
+	// for each device (O(devices*clients) → O(devices+clients*subs)).
+	connectedTopics := make(map[string]bool)
+	for _, client := range app.SubscriptionsBroker().Clients() {
+		for topic := range client.Subscriptions("modem/") {
+			connectedTopics[topic] = true
+		}
+	}
+
 	online := make(map[string]bool, len(devices))
 	for _, d := range devices {
-		topic := "modem/" + d.Id
-		connected := false
-		for _, client := range app.SubscriptionsBroker().Clients() {
-			if client.HasSubscription(topic) {
-				connected = true
-				break
-			}
-		}
-		online[d.Id] = connected
+		online[d.Id] = connectedTopics["modem/"+d.Id]
 	}
 
 	data, err := json.Marshal(online)

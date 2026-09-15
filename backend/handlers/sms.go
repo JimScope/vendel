@@ -16,6 +16,11 @@ import (
 
 var e164Regex = regexp.MustCompile(`^\+[1-9]\d{1,14}$`)
 
+// contactPageSize bounds how many group contacts are loaded per query when
+// expanding groups into recipients, so a large group is paged through instead
+// of loaded all at once (PERF-2).
+const contactPageSize = 200
+
 // RegisterSMSRoutes registers custom SMS API routes.
 func RegisterSMSRoutes(se *core.ServeEvent) {
 	se.Router.POST("/api/sms/send", handleSendSMS)
@@ -311,10 +316,10 @@ func handleBatchStatus(e *core.RequestEvent) error {
 	}
 
 	return e.JSON(http.StatusOK, map[string]any{
-		"batch_id":   batchId,
-		"total":      len(messages),
+		"batch_id":      batchId,
+		"total":         len(messages),
 		"status_counts": counts,
-		"messages":   items,
+		"messages":      items,
 	})
 }
 
@@ -445,23 +450,44 @@ func resolveRecipients(app core.App, userId string, recipients []string, groupID
 	}
 
 	for _, groupID := range groupIDs {
-		groupContacts, _ := app.FindRecordsByFilter(
-			"contacts",
-			"user = {:userId} && groups.id ?= {:groupId}",
-			"", 0, 0,
-			dbx.Params{"userId": userId, "groupId": groupID},
-		)
-		for _, c := range groupContacts {
-			phone := c.GetString("phone_number")
-			if !seen[phone] {
-				result = append(result, phone)
-				seen[phone] = true
+		// PERF-2: page through group contacts in bounded batches instead of
+		// loading the whole group at once. Sorting by id gives stable pagination.
+		for offset := 0; ; offset += contactPageSize {
+			groupContacts, err := app.FindRecordsByFilter(
+				"contacts",
+				"user = {:userId} && groups.id ?= {:groupId}",
+				"id", contactPageSize, offset,
+				dbx.Params{"userId": userId, "groupId": groupID},
+			)
+			if err != nil || len(groupContacts) == 0 {
+				break
+			}
+			for _, c := range groupContacts {
+				phone := c.GetString("phone_number")
+				if !seen[phone] {
+					result = append(result, phone)
+					seen[phone] = true
+				}
+			}
+			if len(groupContacts) < contactPageSize {
+				break
+			}
+			// Once we've clearly exceeded the recipient cap, stop paging — the
+			// check below rejects the request anyway.
+			if len(result) > services.MaxRecipientsPerRequest {
+				break
 			}
 		}
 	}
 
 	if len(result) == 0 {
 		return nil, fmt.Errorf("at least one recipient required")
+	}
+	// Cap total recipients (direct + group-expanded) before any quota is
+	// reserved or records are created downstream. A group that expands beyond
+	// the cap is rejected here too.
+	if len(result) > services.MaxRecipientsPerRequest {
+		return nil, fmt.Errorf("too many recipients: %d exceeds the limit of %d per request", len(result), services.MaxRecipientsPerRequest)
 	}
 	for _, r := range result {
 		if !e164Regex.MatchString(r) {

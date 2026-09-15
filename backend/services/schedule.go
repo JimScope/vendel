@@ -15,75 +15,77 @@ import (
 func ProcessDueSchedules(app core.App) error {
 	now := FilterNow()
 
-	records, err := app.FindRecordsByFilter(
-		"scheduled_sms",
-		"status = 'active' && next_run_at != '' && next_run_at <= {:now}",
-		"", 50, 0,
-		dbx.Params{"now": now},
-	)
-	if err != nil {
-		return err
-	}
-
-	if len(records) == 0 {
-		return nil
-	}
-
 	dispatched := 0
 	failed := 0
-	for _, record := range records {
-		// Decode recipients
-		var recipients []string
-		recipientsJSON := record.GetString("recipients")
-		if err := json.Unmarshal([]byte(recipientsJSON), &recipients); err != nil {
-			app.Logger().Warn("scheduled SMS: invalid recipients JSON",
-				slog.String("id", record.Id), slog.Any("error", err))
-			failed++
-			continue
-		}
 
-		userId := record.GetString("user")
-		body := GetRecordBody(record)
-		deviceId := record.GetString("device_id")
-
-		// Send the SMS
-		_, err := SendSMS(app, userId, recipients, body, deviceId, nil)
-		if err != nil {
-			app.Logger().Warn("scheduled SMS: send failed",
-				slog.String("id", record.Id), slog.Any("error", err))
-			failed++
-			continue
-		}
-
-		// Update record after successful send
-		record.Set("last_run_at", time.Now().UTC().Format(time.RFC3339))
-
-		scheduleType := record.GetString("schedule_type")
-		if scheduleType == "one_time" {
-			record.Set("status", "completed")
-			record.Set("next_run_at", "")
-		} else if scheduleType == "recurring" {
-			cronExpr := record.GetString("cron_expression")
-			tz := record.GetString("timezone")
-			if tz == "" {
-				tz = "UTC"
-			}
-			nextRun, err := ComputeNextRun(cronExpr, tz)
-			if err != nil {
-				app.Logger().Warn("scheduled SMS: failed to compute next run",
+	// REL-4: drain all due schedules in bounded batches instead of a single
+	// 50-row query that silently left the rest for the next run.
+	err := processInBatches(app, "scheduled_sms",
+		"status = 'active' && next_run_at != '' && next_run_at <= {:now}",
+		"next_run_at",
+		dbx.Params{"now": now},
+		func(record *core.Record) bool {
+			// Decode recipients
+			var recipients []string
+			recipientsJSON := record.GetString("recipients")
+			if err := json.Unmarshal([]byte(recipientsJSON), &recipients); err != nil {
+				app.Logger().Warn("scheduled SMS: invalid recipients JSON",
 					slog.String("id", record.Id), slog.Any("error", err))
-			} else {
-				record.Set("next_run_at", nextRun)
+				failed++
+				return false // unchanged; skip past it this pass
 			}
-		}
 
-		if err := app.Save(record); err != nil {
-			app.Logger().Warn("scheduled SMS: failed to update record",
-				slog.String("id", record.Id), slog.Any("error", err))
-			failed++
-			continue
-		}
-		dispatched++
+			userId := record.GetString("user")
+			body := GetRecordBody(record)
+			deviceId := record.GetString("device_id")
+
+			// Send the SMS
+			if _, err := SendSMS(app, userId, recipients, body, deviceId, nil); err != nil {
+				app.Logger().Warn("scheduled SMS: send failed",
+					slog.String("id", record.Id), slog.Any("error", err))
+				failed++
+				return false // next_run_at unchanged; skip past it this pass
+			}
+
+			// Update record after successful send
+			record.Set("last_run_at", time.Now().UTC().Format(time.RFC3339))
+
+			// leftSet tracks whether the record still matches the due filter after
+			// the update. A recurring schedule whose next run can't be computed
+			// keeps next_run_at <= now, so it stays eligible — return false there
+			// so it is not re-sent again within the same pass (send once per pass).
+			leftSet := true
+			scheduleType := record.GetString("schedule_type")
+			if scheduleType == "one_time" {
+				record.Set("status", "completed")
+				record.Set("next_run_at", "")
+			} else if scheduleType == "recurring" {
+				cronExpr := record.GetString("cron_expression")
+				tz := record.GetString("timezone")
+				if tz == "" {
+					tz = "UTC"
+				}
+				nextRun, err := ComputeNextRun(cronExpr, tz)
+				if err != nil {
+					app.Logger().Warn("scheduled SMS: failed to compute next run",
+						slog.String("id", record.Id), slog.Any("error", err))
+					leftSet = false
+				} else {
+					record.Set("next_run_at", nextRun)
+				}
+			}
+
+			if err := app.Save(record); err != nil {
+				app.Logger().Warn("scheduled SMS: failed to update record",
+					slog.String("id", record.Id), slog.Any("error", err))
+				failed++
+				return false
+			}
+			dispatched++
+			return leftSet
+		})
+	if err != nil {
+		return err
 	}
 
 	if dispatched > 0 || failed > 0 {
