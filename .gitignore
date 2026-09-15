@@ -25,3 +25,9 @@ modem-agent/modems.yaml
 # Local agent / review tooling state (not part of the project)
 .claude/scheduled_tasks.lock
 .codex/
+
+# Documento de auditoría/mejoras: local-only, no versionado
+AUDITORIA.md
+
+# Worktrees temporales de subagentes
+.claude/worktrees/
