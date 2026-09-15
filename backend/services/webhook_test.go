@@ -1,6 +1,28 @@
 package services
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+func TestJitteredBackoff_WithinBounds(t *testing.T) {
+	// Every jittered value must land inside [base*(1-jitter), base*(1+jitter))
+	// and stay strictly positive, so the retry schedule keeps growing and never
+	// fires immediately. Sampled many times because the perturbation is random.
+	for _, base := range WebhookRetryBackoffs {
+		lo := time.Duration(float64(base) * (1 - WebhookRetryJitter))
+		hi := time.Duration(float64(base) * (1 + WebhookRetryJitter))
+		for i := 0; i < 10000; i++ {
+			got := jitteredBackoff(base)
+			if got <= 0 {
+				t.Fatalf("jitteredBackoff(%v) = %v, must stay positive", base, got)
+			}
+			if got < lo || got >= hi {
+				t.Fatalf("jitteredBackoff(%v) = %v, want within [%v, %v)", base, got, lo, hi)
+			}
+		}
+	}
+}
 
 func TestWebhookHost_LowercasesHostname(t *testing.T) {
 	cases := []struct {

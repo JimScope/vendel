@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math/rand/v2"
 	"net"
 	"net/http"
 	"net/url"
@@ -51,6 +52,23 @@ var webhookTransport = &http.Transport{
 
 // webhookRetryBackoffs aliases the shared constant for internal use.
 var webhookRetryBackoffs = WebhookRetryBackoffs
+
+// jitteredBackoff perturbs d by a uniform random factor within
+// ±WebhookRetryJitter and returns the result. Spreading retries this way
+// prevents a thundering herd: without jitter, webhooks that failed against the
+// same downed host during one event burst share an identical next_retry_at and
+// would hit the host in a synchronized spike the moment it recovers. The floor
+// factor (1-WebhookRetryJitter) stays positive, so the backoff never shrinks to
+// zero and the schedule keeps growing across attempts.
+//
+// rand/v2's top-level source is safe for concurrent use, which matters here:
+// scheduling happens both in the TriggerWebhooks fan-out goroutine and in the
+// RetryFailedWebhooks cron.
+func jitteredBackoff(d time.Duration) time.Duration {
+	// rand.Float64() ∈ [0,1) maps to a factor in [1-jitter, 1+jitter).
+	factor := 1 + WebhookRetryJitter*(2*rand.Float64()-1)
+	return time.Duration(float64(d) * factor)
+}
 
 // privateRanges defines IP ranges that should be blocked for webhook URLs.
 var privateRanges []*net.IPNet
@@ -352,7 +370,7 @@ func logDelivery(app core.App, webhook *core.Record, event, url string, payload 
 	// Manual test deliveries are never auto-retried.
 	if deliveryStatus == "failed" && event != "test" {
 		record.Set("retry_count", 0)
-		nextRetry := time.Now().UTC().Add(webhookRetryBackoffs[0])
+		nextRetry := time.Now().UTC().Add(jitteredBackoff(webhookRetryBackoffs[0]))
 		record.Set("next_retry_at", nextRetry.Format(time.RFC3339))
 	}
 
@@ -657,7 +675,7 @@ func RetryFailedWebhooks(app core.App) error {
 				record.Set("response_status", result.ResponseStatus)
 			}
 			if retryCount < WebhookMaxRetries {
-				nextRetry := time.Now().UTC().Add(webhookRetryBackoffs[retryCount])
+				nextRetry := time.Now().UTC().Add(jitteredBackoff(webhookRetryBackoffs[retryCount]))
 				record.Set("next_retry_at", nextRetry.Format(time.RFC3339))
 			} else {
 				record.Set("next_retry_at", "")
@@ -716,4 +734,3 @@ func RetryWebhookDelivery(app core.App, logId string) (*WebhookDeliveryResult, e
 
 	return result, nil
 }
-

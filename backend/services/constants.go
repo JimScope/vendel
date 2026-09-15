@@ -50,6 +50,15 @@ var WebhookRetryBackoffs = []time.Duration{
 	15 * time.Minute, // after 3rd failure
 }
 
+// WebhookRetryJitter is the maximum fraction by which each retry backoff is
+// randomly perturbed (±20%). Without it, every webhook that failed against the
+// same downed host during one burst shares an identical next_retry_at and they
+// all retry in a synchronized spike the moment the host recovers — the classic
+// thundering herd. Jittering spreads those retries across a window so a
+// recovering host is not hammered. The floor factor (1-jitter) stays positive,
+// so the backoff never collapses to zero and keeps growing across attempts.
+const WebhookRetryJitter = 0.2
+
 // ── SMS Retry ───────────────────────────────────────────────────────
 
 const (
