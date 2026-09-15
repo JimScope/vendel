@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -16,7 +17,6 @@ type QvaPayProvider struct {
 	AppSecret string
 	client    *http.Client
 }
-
 
 func (p *QvaPayProvider) Name() string          { return "qvapay" }
 func (p *QvaPayProvider) DisplayName() string   { return "QvaPay" }
@@ -81,7 +81,11 @@ func (p *QvaPayProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, error)
 			case float64:
 				amount = v
 			case string:
-				fmt.Sscanf(v, "%f", &amount)
+				parsed, err := strconv.ParseFloat(v, 64)
+				if err != nil {
+					return nil, fmt.Errorf("QvaPay webhook has unparseable amount %q: %w", v, err)
+				}
+				amount = parsed
 			}
 		}
 
@@ -122,9 +126,11 @@ func (p *QvaPayProvider) verifyTransaction(txUUID, expectedRemoteID string, expe
 
 	// Verify amount matches to prevent forged webhook payloads
 	if expectedAmount > 0 {
-		var verifiedAmount float64
 		amtStr := getAnyStringKey(data, "amount")
-		fmt.Sscanf(amtStr, "%f", &verifiedAmount)
+		verifiedAmount, err := strconv.ParseFloat(amtStr, 64)
+		if err != nil {
+			return fmt.Errorf("QvaPay transaction %s has unparseable amount %q: %w", txUUID, amtStr, err)
+		}
 		if verifiedAmount != expectedAmount {
 			return fmt.Errorf("QvaPay transaction %s amount mismatch: got %.2f, expected %.2f", txUUID, verifiedAmount, expectedAmount)
 		}

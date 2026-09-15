@@ -47,6 +47,7 @@ func main() {
 		configureEmailTemplates(se.App)
 		configureAuthSecurity(se.App)
 		configureRateLimits(se.App)
+		configureCORS(se)
 
 		if os.Getenv("WEBHOOK_ENCRYPTION_KEY") == "" {
 			return fmt.Errorf("WEBHOOK_ENCRYPTION_KEY environment variable is required")

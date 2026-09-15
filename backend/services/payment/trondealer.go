@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -22,7 +23,6 @@ type TronDealerProvider struct {
 	WebhookSecret string
 	client        *http.Client
 }
-
 
 func (p *TronDealerProvider) Name() string          { return "trondealer" }
 func (p *TronDealerProvider) DisplayName() string   { return "TronDealer" }
@@ -129,7 +129,11 @@ func (p *TronDealerProvider) ParseWebhook(req WebhookRequest) (*WebhookEvent, er
 	case float64:
 		amount = v
 	case string:
-		fmt.Sscanf(v, "%f", &amount)
+		parsed, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return nil, fmt.Errorf("TronDealer webhook has unparseable amount %q: %w", v, err)
+		}
+		amount = parsed
 	}
 
 	if toAddress == "" {

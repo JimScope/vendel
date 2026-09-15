@@ -13,20 +13,20 @@ cd frontend
 fnm use   # or: nvm use
 
 # Install dependencies
-npm install
+bun install
 ```
 
 ## Development
 
 ```bash
 # Start dev server at http://localhost:5173
-npm run dev
+bun run dev
 
 # Build for production
-npm run build
+bun run build
 
 # Lint and format (Biome)
-npm run lint
+bun run lint
 ```
 
 The dev server connects to the PocketBase backend via the [PocketBase JS SDK](https://github.com/pocketbase/js-sdk). Set `VITE_API_URL` in `frontend/.env` to point to a different backend:
@@ -52,8 +52,8 @@ End-to-end tests use [Playwright](https://playwright.dev/). The backend must be 
 
 ```bash
 # Run tests
-npx playwright test
+bunx playwright test
 
 # Interactive UI mode
-npx playwright test --ui
+bunx playwright test --ui
 ```

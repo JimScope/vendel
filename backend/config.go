@@ -2,11 +2,14 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"vendel/services"
 	"vendel/templates"
 
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -191,6 +194,45 @@ func configureRateLimits(app core.App) {
 	} else {
 		app.Logger().Info("Configured rate limits")
 	}
+}
+
+// configureCORS optionally pins the CORS allowed origins.
+//
+// PocketBase binds a permissive default CORS middleware (allowing all origins,
+// id "pbCors") in apis.Serve. When CORS_ORIGINS is set (a comma-separated list),
+// we replace that middleware in place with one restricted to the given origins.
+// The replacement is keyed by apis.DefaultCorsMiddlewareId so it overrides the
+// default while keeping the same priority.
+//
+// This is opt-in: when CORS_ORIGINS is unset the default "*" behavior is kept,
+// so existing deployments and the local dev workflow are unaffected. The
+// embedded SPA is served same-origin (not subject to CORS) and server-to-server
+// SDK clients do not rely on CORS either, so only cross-origin browser callers
+// are affected.
+func configureCORS(se *core.ServeEvent) {
+	raw := os.Getenv("CORS_ORIGINS")
+	if raw == "" {
+		return
+	}
+
+	origins := make([]string, 0)
+	for _, o := range strings.Split(raw, ",") {
+		if trimmed := strings.TrimSpace(o); trimmed != "" {
+			origins = append(origins, trimmed)
+		}
+	}
+	if len(origins) == 0 {
+		return
+	}
+
+	se.Router.Bind(apis.CORS(apis.CORSConfig{
+		AllowOrigins: origins,
+		AllowMethods: []string{
+			http.MethodGet, http.MethodHead, http.MethodPut,
+			http.MethodPatch, http.MethodPost, http.MethodDelete,
+		},
+	}))
+	se.App.Logger().Info("Pinned CORS origins", slog.Any("origins", origins))
 }
 
 // seedSuperuser ensures both a PocketBase _superusers record (for /_/ admin)
