@@ -98,6 +98,15 @@ func dispatchOne(app core.App, provider smsprovider.Provider, m *core.Record) {
 	result, err := provider.Send(context.Background(), req)
 	if err != nil {
 		app.Logger().Error("provider send failed", slog.String("provider", provider.Name()), slog.String("msgId", m.Id), slog.Any("err", err))
+		// REL-2: a provider.Send transport error must not leave the message
+		// orphaned in "assigned" — external "assigned" has no consumer (only the
+		// modem SSE hook tickles physical devices) and the retry cron only
+		// re-queues "failed". Mark it terminal so the retry cron can pick it up,
+		// and so MarkMessageTerminal releases the reserved quota once the message
+		// exhausts its retries (REL-1).
+		if markErr := MarkMessageTerminal(app, m, "failed", "provider send failed: "+err.Error()); markErr != nil {
+			app.Logger().Error("mark provider message failed", slog.String("provider", provider.Name()), slog.String("msgId", m.Id), slog.Any("err", markErr))
+		}
 		return
 	}
 

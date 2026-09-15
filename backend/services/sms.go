@@ -266,6 +266,12 @@ var statusToHookEvent = map[string]string{
 // and fires the outbound webhook. Callers may mutate other fields on msg
 // before calling — those writes ride along in the same Save.
 func MarkMessageTerminal(app core.App, msg *core.Record, status, errorMessage string) error {
+	// Capture "never sent" before mutating: a message that reached sent/delivered
+	// carries a sent_at, so a later failed delivery event must NOT refund the
+	// credit it already spent. Setting status="failed" never touches sent_at, so
+	// reading it up front is equivalent but clearer.
+	neverSent := msg.GetDateTime("sent_at").IsZero()
+
 	msg.Set("status", status)
 	if errorMessage != "" {
 		msg.Set("error_message", errorMessage)
@@ -279,6 +285,24 @@ func MarkMessageTerminal(app core.App, msg *core.Record, status, errorMessage st
 	if err := app.Save(msg); err != nil {
 		return err
 	}
+
+	// REL-1: release the up-front SMS quota reservation when an outgoing message
+	// reaches a *terminal* "failed" state without ever being sent. Guards:
+	//   - status == "failed": only failures release the reservation.
+	//   - neverSent: a sent/delivered message that later fails delivery keeps its
+	//     (already spent) credit — invariant (b).
+	//   - message_type == "outgoing": incoming messages never reserve quota.
+	//   - isTerminalFailure: RetryFailedMessages resurrects retryable "failed"
+	//     messages, so refunding on every failed transition would both
+	//     double-refund and under-count a message that later succeeds. Only the
+	//     final, non-retryable failure refunds — and it happens exactly once per
+	//     message, which makes the refund idempotent — invariant (c).
+	if status == "failed" && neverSent &&
+		msg.GetString("message_type") == "outgoing" &&
+		isTerminalFailure(msg, errorMessage) {
+		releaseQuota(app, msg.GetString("user"), 1)
+	}
+
 	if event, ok := statusToHookEvent[status]; ok {
 		TriggerWebhooks(app, msg.GetString("user"), msg, event)
 	}

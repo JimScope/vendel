@@ -33,6 +33,23 @@ func isPermanentFailure(errMsg string) bool {
 	return false
 }
 
+// isTerminalFailure reports whether a message that just reached "failed" is
+// genuinely terminal — i.e. RetryFailedMessages will never resurrect it. It is
+// the exact inverse of the retry-eligibility filter used by RetryFailedMessages
+// (retry_count < max && created >= cutoff && !permanent), so callers can release
+// the up-front quota reservation exactly once, at the moment the message stops
+// being retryable.
+func isTerminalFailure(msg *core.Record, errMsg string) bool {
+	if isPermanentFailure(errMsg) {
+		return true
+	}
+	if msg.GetInt("retry_count") >= SMSMaxRetries {
+		return true
+	}
+	cutoff := FilterTime(time.Now().UTC().Add(-SMSRetryCutoff))
+	return msg.GetString("created") < cutoff
+}
+
 // RetryFailedMessages retries failed outgoing messages with exponential backoff
 // and a maximum of SMSMaxRetries attempts. Permanent failures are skipped.
 // Retried messages go back to "assigned" and are re-dispatched (FCM tickle /

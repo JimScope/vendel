@@ -7,18 +7,21 @@ import (
 
 	_ "vendel/migrations"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 )
 
 // testDataDir holds a seeded PocketBase database shared by the DB-backed
-// service tests (balance idempotency, quota reservation). Mirrors the
-// bootstrap pattern used by handlers/testsetup_test.go. These tests live in
-// the external services_test package because vendel/migrations imports
+// service tests (balance idempotency, quota reservation, terminal-refund).
+// Mirrors the bootstrap pattern used by handlers/testsetup_test.go. These tests
+// live in the external services_test package because vendel/migrations imports
 // vendel/services — an internal test importing migrations would form a cycle.
 const testDataDir = "./test_pb_data"
 
-// testUserEmail identifies the seeded user used by DB-backed tests.
+// testUserEmail identifies the seeded user used by DB-backed tests that rely on
+// a pre-existing user (see seededUserID). Tests that need arbitrary users
+// create them on demand via makeTestUser instead.
 const testUserEmail = "svcuser@test.com"
 
 // setupServicesTestApp returns a fresh TestApp backed by the seeded database.
@@ -31,6 +34,18 @@ func setupServicesTestApp(t testing.TB) *tests.TestApp {
 	return testApp
 }
 
+// newTestApp is like setupServicesTestApp but also registers app.Cleanup with
+// the test, for tests that want automatic teardown.
+func newTestApp(t testing.TB) *tests.TestApp {
+	t.Helper()
+	app, err := tests.NewTestApp(testDataDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(app.Cleanup)
+	return app
+}
+
 // seededUserID returns the id of the seeded test user.
 func seededUserID(t testing.TB, app core.App) string {
 	rec, err := app.FindAuthRecordByEmail("users", testUserEmail)
@@ -38,6 +53,60 @@ func seededUserID(t testing.TB, app core.App) string {
 		t.Fatalf("failed to find seeded user: %v", err)
 	}
 	return rec.Id
+}
+
+// makeTestUser creates a users record and returns its id.
+func makeTestUser(t testing.TB, app core.App, email string) string {
+	t.Helper()
+	users, err := app.FindCollectionByNameOrId("users")
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := core.NewRecord(users)
+	u.SetEmail(email)
+	u.SetPassword("testpassword123")
+	u.Set("full_name", "Test User")
+	u.Set("is_active", true)
+	if err := app.Save(u); err != nil {
+		t.Fatal(err)
+	}
+	return u.Id
+}
+
+// makeOutgoingMessage creates an sms_messages record for the given user. status
+// and retry_count let callers control terminal/retryable state; sentAt marks a
+// message as already transmitted.
+func makeOutgoingMessage(t testing.TB, app core.App, userId, status string, retryCount int, sentAt bool) *core.Record {
+	t.Helper()
+	col, err := app.FindCollectionByNameOrId("sms_messages")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := core.NewRecord(col)
+	m.Set("user", userId)
+	m.Set("to", "+15005550006")
+	m.Set("body", "hello")
+	m.Set("message_type", "outgoing")
+	m.Set("status", status)
+	m.Set("retry_count", retryCount)
+	m.Set("webhook_sent", false)
+	if sentAt {
+		m.Set("sent_at", "2020-01-01 00:00:00.000Z")
+	}
+	if err := app.Save(m); err != nil {
+		t.Fatal(err)
+	}
+	return m
+}
+
+// quotaUsed returns the freshly-read sms_sent_this_month counter for a user.
+func quotaUsed(t testing.TB, app core.App, userId string) int {
+	t.Helper()
+	q, err := app.FindFirstRecordByFilter("user_quotas", "user = {:u}", dbx.Params{"u": userId})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return q.GetInt("sms_sent_this_month")
 }
 
 // TestMain generates the seed database if it doesn't exist, then runs tests.
