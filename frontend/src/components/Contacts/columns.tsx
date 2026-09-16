@@ -1,15 +1,14 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
-
 import { ContactActionsMenu } from "@/components/Contacts/ContactActionsMenu"
 import { Badge } from "@/components/ui/badge"
+import type { AppColumnDef } from "@/lib/table"
 import { formatDate } from "@/lib/utils"
 import type { Contact, ContactGroup } from "@/types/collections"
 
 export function getColumns(
   t: TFunction,
   groups: ContactGroup[],
-): ColumnDef<Contact>[] {
+): AppColumnDef<Contact>[] {
   const groupMap = new Map(groups.map((g) => [g.id, g.name]))
 
   return [

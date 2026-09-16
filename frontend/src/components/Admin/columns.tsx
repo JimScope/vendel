@@ -1,7 +1,6 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
-
 import { Badge } from "@/components/ui/badge"
+import type { AppColumnDef } from "@/lib/table"
 import { cn } from "@/lib/utils"
 import type { User } from "@/types/collections"
 import { UserActionsMenu } from "./UserActionsMenu"
@@ -10,7 +9,7 @@ export interface UserTableData extends User {
   isCurrentUser: boolean
 }
 
-export function getColumns(t: TFunction): ColumnDef<UserTableData>[] {
+export function getColumns(t: TFunction): AppColumnDef<UserTableData>[] {
   return [
     {
       accessorKey: "full_name",

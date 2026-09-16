@@ -1,13 +1,12 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
-
 import { DeviceCell } from "@/components/Devices/DeviceCell"
 import { Badge } from "@/components/ui/badge"
+import type { AppColumnDef } from "@/lib/table"
 import { cn, formatDate } from "@/lib/utils"
 import type { ScheduledSMS } from "@/types/collections"
 import { ScheduledSMSActionsMenu } from "./ScheduledSMSActionsMenu"
 
-export const getColumns = (t: TFunction): ColumnDef<ScheduledSMS>[] => [
+export const getColumns = (t: TFunction): AppColumnDef<ScheduledSMS>[] => [
   {
     accessorKey: "name",
     header: t("common.name"),

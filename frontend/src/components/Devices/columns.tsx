@@ -1,15 +1,14 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
-
 import { DeviceActionsMenu } from "@/components/Devices/DeviceActionsMenu"
 import { deviceIcon } from "@/components/Devices/DeviceCell"
+import type { AppColumnDef } from "@/lib/table"
 import { formatDate } from "@/lib/utils"
 import type { Device } from "@/types/collections"
 
 export function getColumns(
   t: TFunction,
   modemStatus?: Record<string, boolean>,
-): ColumnDef<Device>[] {
+): AppColumnDef<Device>[] {
   return [
     {
       accessorKey: "name",

@@ -1,11 +1,9 @@
 import {
-  type ColumnDef,
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
+  type PaginationState,
+  type RowData,
   type SortingState,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table"
 import {
   ArrowUpDown,
@@ -17,7 +15,6 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-
 import { Button } from "@/components/ui/button"
 import {
   Pagination,
@@ -40,9 +37,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { type AppColumnDef, tableFeaturesConfig } from "@/lib/table"
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
+interface DataTableProps<TData extends RowData> {
+  // Columns are heterogeneous, so each carries its own value type; the array
+  // is typed with the default (unknown) value generic, matching what useTable
+  // expects. (v9's stricter variance rejects a shared TValue generic here.)
+  columns: AppColumnDef<TData>[]
   data: TData[]
   caption?: string
   /** Total records on the server. List hooks only download the first page;
@@ -90,30 +91,35 @@ function generatePaginationItems(
 
 export { ArrowUpDown }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   caption,
   totalCount,
   loadedCount,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const { t } = useTranslation()
   const [sorting, setSorting] = useState<SortingState>([])
+  // Pagination is controlled in React so we can read pageIndex/pageSize
+  // directly (v9 removed table.getState()).
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
 
   const loaded = loadedCount ?? data.length
   const isTruncated = totalCount !== undefined && totalCount > loaded
 
-  const table = useReactTable({
+  const table = useTable({
+    features: tableFeaturesConfig,
     data,
     columns,
-    state: { sorting },
+    state: { sorting, pagination },
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    onPaginationChange: setPagination,
   })
 
-  const currentPage = table.getState().pagination.pageIndex + 1
+  const currentPage = pagination.pageIndex + 1
   const totalPages = table.getPageCount()
   const paginationItems = generatePaginationItems(currentPage, totalPages)
 
@@ -170,7 +176,7 @@ export function DataTable<TData, TValue>({
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
+                {row.getAllCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
@@ -195,13 +201,9 @@ export function DataTable<TData, TValue>({
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="text-sm text-muted-foreground">
               {t("common.showing")}{" "}
-              {table.getState().pagination.pageIndex *
-                table.getState().pagination.pageSize +
-                1}{" "}
-              {t("common.to")}{" "}
+              {pagination.pageIndex * pagination.pageSize + 1} {t("common.to")}{" "}
               {Math.min(
-                (table.getState().pagination.pageIndex + 1) *
-                  table.getState().pagination.pageSize,
+                (pagination.pageIndex + 1) * pagination.pageSize,
                 data.length,
               )}{" "}
               {t("common.of")}{" "}
@@ -213,15 +215,13 @@ export function DataTable<TData, TValue>({
                 {t("common.rowsPerPage")}
               </p>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${pagination.pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value))
                 }}
               >
                 <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
-                  />
+                  <SelectValue placeholder={pagination.pageSize} />
                 </SelectTrigger>
                 <SelectContent side="top">
                   {[5, 10, 25, 50].map((pageSize) => (

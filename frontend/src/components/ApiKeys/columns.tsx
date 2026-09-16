@@ -1,7 +1,6 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
-
 import { Badge } from "@/components/ui/badge"
+import type { AppColumnDef } from "@/lib/table"
 import { cn, formatDate } from "@/lib/utils"
 import type { ApiKey } from "@/types/collections"
 import { ApiKeyActionsMenu } from "./ApiKeyActionsMenu"
@@ -30,7 +29,7 @@ function isExpiringSoon(dateString: string): boolean {
   return diffDays > 0 && diffDays <= 7
 }
 
-export const getColumns = (t: TFunction): ColumnDef<ApiKey>[] => [
+export const getColumns = (t: TFunction): AppColumnDef<ApiKey>[] => [
   {
     accessorKey: "name",
     header: t("common.name"),

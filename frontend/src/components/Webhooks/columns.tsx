@@ -1,7 +1,6 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
-
 import { Badge } from "@/components/ui/badge"
+import type { AppColumnDef } from "@/lib/table"
 import { cn, formatDate } from "@/lib/utils"
 import type { WebhookEvent } from "@/lib/webhook-events"
 import type { WebhookConfig } from "@/types/collections"
@@ -14,7 +13,7 @@ const WEBHOOK_EVENT_KEYS = {
   sms_failed: "webhookEvents.sms_failed",
 } as const
 
-export function getColumns(t: TFunction): ColumnDef<WebhookConfig>[] {
+export function getColumns(t: TFunction): AppColumnDef<WebhookConfig>[] {
   return [
     {
       accessorKey: "url",

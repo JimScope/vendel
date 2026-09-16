@@ -1,8 +1,7 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
-
 import { DeviceCell } from "@/components/Devices/DeviceCell"
 import { Badge } from "@/components/ui/badge"
+import type { AppColumnDef } from "@/lib/table"
 import { formatDate } from "@/lib/utils"
 import type { SMSMessage } from "@/types/collections"
 import { SMSActionsMenu } from "./SMSActionsMenu"
@@ -27,7 +26,7 @@ function truncate(text: string, maxLength: number): string {
   return `${text.slice(0, maxLength)}...`
 }
 
-export function getColumns(t: TFunction): ColumnDef<SMSMessage>[] {
+export function getColumns(t: TFunction): AppColumnDef<SMSMessage>[] {
   return [
     {
       accessorKey: "to",

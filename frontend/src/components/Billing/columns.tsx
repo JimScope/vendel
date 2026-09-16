@@ -1,9 +1,8 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
 import { ExternalLink } from "lucide-react"
-
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import type { AppColumnDef } from "@/lib/table"
 import { cn } from "@/lib/utils"
 import type { Payment } from "@/types/collections"
 
@@ -29,7 +28,7 @@ const statusStyles: Record<string, string> = {
     "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
 }
 
-export function getColumns(t: TFunction): ColumnDef<Payment>[] {
+export function getColumns(t: TFunction): AppColumnDef<Payment>[] {
   return [
     {
       accessorKey: "paid_at",

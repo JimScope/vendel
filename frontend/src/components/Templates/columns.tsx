@@ -1,11 +1,11 @@
-import type { ColumnDef } from "@tanstack/react-table"
 import type { TFunction } from "i18next"
+import type { AppColumnDef } from "@/lib/table"
 
 import { formatDate } from "@/lib/utils"
 import type { SMSTemplate } from "@/types/collections"
 import { TemplateActionsMenu } from "./TemplateActionsMenu"
 
-export const getColumns = (t: TFunction): ColumnDef<SMSTemplate>[] => [
+export const getColumns = (t: TFunction): AppColumnDef<SMSTemplate>[] => [
   {
     accessorKey: "name",
     header: t("common.name"),
