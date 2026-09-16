@@ -35,11 +35,16 @@ jobs:
         with:
           go-version-file: backend/go.mod
 
+      # Use the annotated tag message as the release notes instead of an
+      # auto-generated commit list. Write `git tag -a` a curated changelog.
+      - name: Extract release notes from tag annotation
+        run: git tag -l --format='%(contents)' "${GITHUB_REF_NAME}" > "${RUNNER_TEMP}/release-notes.md"
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
-          args: release --clean
+          args: release --clean --release-notes=${{ runner.temp }}/release-notes.md
           workdir: backend
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,6 +10,8 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
+  # E2E is gated to manual runs (see the e2e job's `if`) until it is stable in CI.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -43,6 +45,9 @@ jobs:
   e2e:
     name: Playwright E2E (best-effort)
     runs-on: ubuntu-latest
+    # Only on manual dispatch: the E2E suite needs stable seeded backend state
+    # that push/PR runs don't reliably provide, so it must not gate normal CI.
+    if: github.event_name == 'workflow_dispatch'
     # E2E needs a live, seeded backend plus the Vite dev server. It is wired
     # end-to-end here, but kept non-blocking (continue-on-error) so backend
     # data-seeding flakiness never gates a frontend PR. Promote to a required

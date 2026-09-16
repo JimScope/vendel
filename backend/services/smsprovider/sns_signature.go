@@ -153,10 +153,11 @@ func fetchCertPublicKey(certURL string) (*rsa.PublicKey, error) {
 	// Validate the host at the sink so this request can never reach an
 	// attacker-chosen host, independent of any upstream check (SSRF defense in
 	// depth — also the guard the static analyzer sees right before the GET).
-	if _, err := validateAWSSNSURL(certURL); err != nil {
+	validated, err := validateAWSSNSURL(certURL)
+	if err != nil {
 		return nil, err
 	}
-	resp, err := httpClient.Get(certURL)
+	resp, err := httpClient.Get(validated.String())
 	if err != nil {
 		return nil, fmt.Errorf("download cert: %w", err)
 	}
@@ -251,10 +252,16 @@ func ConfirmSNSSubscription(subscribeURL string) error {
 	// already covers it upstream, but validating the host here too keeps this
 	// an AWS-SNS-only request even if call order ever changes — closing the
 	// SSRF sink at the source rather than relying on a prior step.
-	if _, err := validateAWSSNSURL(subscribeURL); err != nil {
+	// Use the parsed URL returned by the validator (host allowlisted against
+	// awsSNSHostRe) rather than the raw user-provided string, so the outbound
+	// request provably targets an AWS SNS endpoint. Rebuilding from the
+	// validated *url.URL also breaks the tainted-string flow that static
+	// analysis (CodeQL go/request-forgery) would otherwise flag.
+	validated, err := validateAWSSNSURL(subscribeURL)
+	if err != nil {
 		return fmt.Errorf("refusing to confirm subscription: %w", err)
 	}
-	resp, err := httpClient.Get(subscribeURL)
+	resp, err := httpClient.Get(validated.String())
 	if err != nil {
 		return fmt.Errorf("subscribe GET failed: %w", err)
 	}
