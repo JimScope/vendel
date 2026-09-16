@@ -34,7 +34,7 @@ jobs:
         run: go test ./... -count=1 -race -timeout 60s -coverprofile=coverage.out
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-coverage
           path: backend/coverage.out
