@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	firebase.google.com/go/v4 v4.21.0
-	github.com/aws/aws-sdk-go-v2 v1.47.0
+	github.com/aws/aws-sdk-go-v2 v1.47.1
 	github.com/aws/aws-sdk-go-v2/config v1.33.5
 	github.com/aws/aws-sdk-go-v2/service/pinpointsmsvoicev2 v1.40.0
 	github.com/aws/smithy-go v1.28.1
