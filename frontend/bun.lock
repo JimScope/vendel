@@ -30,7 +30,7 @@
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "cuer": "^0.0.4",
-        "i18next": "^26.5.5",
+        "i18next": "^26.5.11",
         "i18next-browser-languagedetector": "^8.2.1",
         "lucide-react": "^1.61.0",
         "next-themes": "^0.4.6",
@@ -510,7 +510,7 @@
 
     "html-parse-stringify": ["html-parse-stringify@4.0.1", "", {}, "sha512-0zHsZJrK7S3K2aucXWL6ycoYJ/iNtIcFHC/nYQgFklPtrv5LpJctIiSCroWZWeuoXvuyFdzp6KzjJQ+OT5MfFw=="],
 
-    "i18next": ["i18next@26.5.5", "", { "peerDependencies": { "typescript": "^5 || ^6 || ^7" }, "optionalPeers": ["typescript"] }, "sha512-txdaNOlnZCdiTMSlEzl5hUJU8TC9R4J/RCR1G7XrDPbWT2t3mR142QPz84ZuZeXDt3yq+9zmsdPiakxYtmp3fw=="],
+    "i18next": ["i18next@26.5.11", "", { "peerDependencies": { "typescript": "^5 || ^6 || ^7" }, "optionalPeers": ["typescript"] }, "sha512-Wc0klBPKxqZ2tL2qdAnF8xvvnWgr1IMGSY2ikTiAvaFVbz7xiFARtkoU4RidBDw1SyziGROp0qxu6qnJ7l2Wug=="],
 
     "i18next-browser-languagedetector": ["i18next-browser-languagedetector@8.2.1", "", { "dependencies": { "@babel/runtime": "^7.23.2" } }, "sha512-bZg8+4bdmaOiApD7N7BPT9W8MLZG+nPTOFlLiJiT8uzKXFjhxw4v2ierCXOwB5sFDMtuA5G4kgYZ0AznZxQ/cw=="],
 
