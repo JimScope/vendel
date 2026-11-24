@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **SMS retries every 5 minutes** (was 15). A message an agent claimed but never reported becomes stale after 10 minutes (`SMSSendingStaleAfter`), so with a 15-minute cron it could wait almost 25 minutes before being re-queued; it now waits at most about 15. Failed messages also use their 3 retries sooner.
+
 ## [0.4.1] - 2026-05-13
 
 ### Fixed
