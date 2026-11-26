@@ -12,7 +12,7 @@ import (
 func RegisterCronJobs(app *pocketbase.PocketBase) {
 	register(app, "daily-quota-reset", "0 0 * * *", services.ResetMonthlyQuotas, "quota reset failed")
 	register(app, "daily-renewal-check", "0 8 * * *", services.CheckRenewals, "renewal check failed")
-	register(app, "retry-failed-sms", "*/5 * * * *", services.RetryFailedMessages, "retry failed SMS")
+	register(app, "retry-failed-sms", "*/1 * * * *", services.RetryFailedMessages, "retry failed SMS")
 	register(app, "retry-failed-webhooks", "*/1 * * * *", services.RetryFailedWebhooks, "retry failed webhooks")
 	register(app, "process-scheduled-sms", "*/1 * * * *", services.ProcessDueSchedules, "process scheduled SMS")
 	register(app, "purge-expired-data", "0 3 * * *", services.PurgeExpiredData, "purge expired data failed")

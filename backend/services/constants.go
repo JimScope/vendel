@@ -76,8 +76,10 @@ const (
 	// SMSSendingStaleAfter marks "sending" messages as stuck: an agent claims
 	// them via /api/sms/pending and a healthy send completes in well under a
 	// minute, so anything still "sending" after this window belongs to an
-	// agent that died mid-batch and must be re-queued.
-	SMSSendingStaleAfter = 10 * time.Minute
+	// agent that died mid-batch and must be re-queued. Kept short because the
+	// Android agent can claim a batch and be killed (or claim it from its main
+	// screen) without ever sending it; see docs/android-agent-delivery-plan.md.
+	SMSSendingStaleAfter = 3 * time.Minute
 
 	// SMSClaimBatchSize caps how many "assigned" messages an agent flips to
 	// "sending" in one /api/sms/pending call. Kept small enough that even a
@@ -85,7 +87,7 @@ const (
 	// within SMSSendingStaleAfter, so rescueStaleSendingMessages never
 	// re-queues a batch a healthy-but-slow agent is still working through —
 	// which would duplicate sends. The agent simply claims again next poll.
-	SMSClaimBatchSize = 20
+	SMSClaimBatchSize = 5
 )
 
 var SMSRetryBackoffs = []time.Duration{

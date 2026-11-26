@@ -213,6 +213,10 @@ func createMessageRecords(
 			device := devices[i%len(devices)]
 			record.Set("device", device.Id)
 			record.Set("status", "assigned")
+			// The Android agent sends one plain SMS: keep the body in GSM-7.
+			if device.GetString("device_type") == "android" {
+				record.Set("body", FoldToGSM7(msgBody))
+			}
 			record.Set("from_number", device.GetString("phone_number"))
 		} else {
 			record.Set("status", "pending")

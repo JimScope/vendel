@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Stuck SMS re-queued after 3 minutes** (was 10): the retry job runs every minute and an agent claims at most 5 messages per poll, so a slow modem still finishes a claim inside the window.
+- **GSM-7 bodies for Android devices**: accents outside the GSM alphabet are folded (á → a; ñ, é, ü kept) so the single-part Android agent can send bodies up to 160 characters.
 - **SMS retries every 5 minutes** (was 15). A message an agent claimed but never reported becomes stale after 10 minutes (`SMSSendingStaleAfter`), so with a 15-minute cron it could wait almost 25 minutes before being re-queued; it now waits at most about 15. Failed messages also use their 3 retries sooner.
 
 ## [0.4.1] - 2026-05-13
